@@ -14,7 +14,7 @@ import os
 os.environ["TF_USE_LEGACY_KERAS"] = "1"
 os.environ["DDE_BACKEND"] = "tensorflow"
 import deepxde as dde
-import tensorf
+import tensorflow as tf
 import argparse
 
 # %% Define ODE system

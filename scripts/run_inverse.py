@@ -109,13 +109,13 @@ def run_inverse(dataset_path, outdir_base="results_inverse", C1_guess=5.0, C2_gu
 
     # Compile and train the model
     model.compile("adam", lr=0.001, external_trainable_variables=[C1, C2], loss_weights=loss_weights)
-    model.train(iterations=15000, callbacks=[variable_callback])
+    model.train(iterations=10000, callbacks=[variable_callback])
 
     # Predictions
     y_pred = model.predict(t)
 
     # Save estimated parameters
-    est_beta, est_n = C1.value().item(), C2.value().item()
+    est_beta, est_n = C1.value().numpy().item(), C2.value().numpy().item()
     with open(os.path.join(outdir, "inverse_estimated_parameters.csv"), "w", newline="") as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(["Parameter", "True Value", "Estimated Value"])

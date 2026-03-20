@@ -11,6 +11,7 @@ Parameter estimates, predictions, and training losses are saved in a dedicated o
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+os.environ["TF_USE_LEGACY_KERAS"] = "1" # Use legacy Keras API for compatibility with DeepXDE
 os.environ["DDE_BACKEND"] = "tensorflow"  # Force TensorFlow backend before importing deepxde
 import deepxde as dde
 import tensorflow as tf

@@ -10,9 +10,11 @@ Predictions and training losses are saved as plots in a dedicated output folder.
 # %% Import necessary libraries
 import numpy as np
 import matplotlib.pyplot as plt
-import deepxde as dde
-import tensorflow as tf
 import os
+os.environ["TF_USE_LEGACY_KERAS"] = "1"
+os.environ["DDE_BACKEND"] = "tensorflow"
+import deepxde as dde
+import tensorf
 import argparse
 
 # %% Define ODE system

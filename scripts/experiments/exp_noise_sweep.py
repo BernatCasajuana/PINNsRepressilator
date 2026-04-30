@@ -10,7 +10,7 @@ if SCRIPTS_DIR not in sys.path:
     sys.path.insert(0, SCRIPTS_DIR)
 
 from experiments.experiment_utils import aggregate_metrics, ensure_project_directories, finalize_figure, make_synthetic_dataset, write_csv
-from pinn.run_inverse import run_inverse
+from pinns.run_inverse import run_inverse
 
 
 TRUE_BETA = 5.0

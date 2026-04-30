@@ -15,7 +15,7 @@ if SCRIPTS_DIR not in sys.path:
     sys.path.insert(0, SCRIPTS_DIR)
 
 # %% Import the modular 'run_forward' function from run_forward.py
-from pinn.run_forward import run_forward
+from pinns.run_forward import run_forward
 
 # %% Define dataset folder and results folder
 dataset_folder = "datasets"

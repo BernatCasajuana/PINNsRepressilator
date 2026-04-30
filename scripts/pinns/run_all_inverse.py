@@ -15,7 +15,7 @@ if SCRIPTS_DIR not in sys.path:
     sys.path.insert(0, SCRIPTS_DIR)
 
 # %% Import the modular 'run_inverse' function from run_inverse.py
-from pinn.run_inverse import run_inverse
+from pinns.run_inverse import run_inverse
 
 # %% Define dataset folder and results folder
 dataset_folder = "datasets"

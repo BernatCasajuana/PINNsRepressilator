@@ -49,7 +49,7 @@ Each experiment script runs one study, sweeps the relevant condition across seed
 
 - `scripts/experiments/exp_noise_sweep.py`: Experiment 1, sensitivity to observation noise.
 - `scripts/experiments/exp_partial_observation.py`: Experiment 2, sensitivity to partial repressor measurements.
-- `scripts/experiments/exp_sampling_density.py`: Experiment 3, sensitivity to sampling density over time.
+- `scripts/experiments/exp_sampling_density.py`: Experiment 3, sensitivity to varying sampling density over time.
 - `scripts/experiments/exp_initial_guess.py`: Experiment 4, sensitivity to initial parameter guesses.
 - `scripts/experiments/exp_regime_comparison.py`: Experiment 5, comparison between stable and oscillatory regimes.
 

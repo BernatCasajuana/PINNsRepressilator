@@ -15,7 +15,6 @@ os.environ["TF_USE_LEGACY_KERAS"] = "1"
 os.environ["DDE_BACKEND"] = "tensorflow"
 import deepxde as dde
 import tensorflow as tf
-import argparse
 
 # %% Define ODE system
 def ode_system(x, y, beta, n):
@@ -32,9 +31,15 @@ def ode_system(x, y, beta, n):
 
 # %% Main function to run forward problem and plot the results
 
-dataset_path = "datasets/beta5.0_n2.0_noise0.1.npz" # example dataset path
-
-def run_forward(dataset_path, loss_weights=None, outdir_base="results_forward"):
+def run_forward(
+    dataset_path,
+    loss_weights=None,
+    outdir_base="results/forward",
+    observation_stride=10,
+    observed_components=None,
+    adam_epochs=5000,
+    run_lbfgs=True,
+):
     # Load dataset
     data_npz = np.load(dataset_path)
     t = data_npz["t"]                                       
@@ -42,9 +47,18 @@ def run_forward(dataset_path, loss_weights=None, outdir_base="results_forward"):
     x0 = x_obs[0]                                           
     beta, n = float(data_npz["beta"]), float(data_npz["n"])
     noise_sigma = data_npz["noise"]                        
+
+    if observed_components is None:
+        observed_components = [0, 1, 2]
+
+    component_tag = "-".join(str(component + 1) for component in observed_components)
     
     # Create results directory
-    outdir = os.path.join(outdir_base, f"beta{beta}_n{n}_noise{noise_sigma}")
+    outdir = os.path.join(
+        outdir_base,
+        f"beta{beta}_n{n}_noise{noise_sigma}",
+        f"obs-{component_tag}_stride-{observation_stride}",
+    )
     os.makedirs(outdir, exist_ok=True)
     
     # Define time domain
@@ -58,11 +72,11 @@ def run_forward(dataset_path, loss_weights=None, outdir_base="results_forward"):
     ic3 = dde.icbc.IC(geom, lambda x: x0[2], boundary, component=2)
 
     # Observations (subsampling every 10 time points)
-    t_obs = t[::10]
-    x_obs_sub = x_obs[::10]
+    t_obs = t[::observation_stride]
+    x_obs_sub = x_obs[::observation_stride]
 
     observe_bc = []
-    for i in range(3):
+    for i in observed_components:
         bc = dde.icbc.PointSetBC(t_obs, x_obs_sub[:, i:i+1], component=i)
         observe_bc.append(bc)
 
@@ -88,11 +102,12 @@ def run_forward(dataset_path, loss_weights=None, outdir_base="results_forward"):
     # Define the model, compile and train
     model = dde.Model(data_ode, net)
     model.compile("adam", lr=0.001, loss_weights=loss_weights) # Adam optimizer
-    model.train(epochs=5000) 
+    model.train(epochs=adam_epochs)
 
     # Fine-tuning with L-BFGS
-    model.compile("L-BFGS")
-    model.train()
+    if run_lbfgs:
+        model.compile("L-BFGS")
+        model.train()
 
     # Predictions
     y_pred = model.predict(t)
@@ -136,16 +151,12 @@ def run_forward(dataset_path, loss_weights=None, outdir_base="results_forward"):
     plt.close()
 
     print(f"Saved forward results in {outdir}") # print path to results
-
-# Run the forward problem with specified dataset and loss weights
-run_forward(dataset_path, loss_weights=None)
-
-# %% Run via command line interface
-# if __name__ == "__main__":
-    # parser = argparse.ArgumentParser()
-    # parser.add_argument("--dataset", type=str, required=True, help="Path to dataset .npz") # dataset path
-    # parser.add_argument("--loss_weights", type=float, nargs="+", default=None, help="Loss weights for ODE/IC/Obs") # optional loss weights
-    # args = parser.parse_args()
-
-    # Run forward with specified dataset and loss weights
-    # run_forward(args.dataset, args.loss_weights)
+    return {
+        "dataset_path": dataset_path,
+        "beta": beta,
+        "n": n,
+        "noise": float(noise_sigma),
+        "observed_components": list(observed_components),
+        "observation_stride": observation_stride,
+        "outdir": outdir,
+    }

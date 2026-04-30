@@ -1,28 +1,30 @@
-# PINNs for the Repressilator Under Varying Experimental Conditions
+# Empirical Characterization of Physics-Informed Neural Networks for Parameter Estimation on the Represilator
 
-This repository studies the performance of Physics-Informed Neural Networks (PINNs) on the repressilator inverse problem. The paper focus is empirical: how reliably can PINNs recover the repressilator parameters and reconstruct the trajectories when the observation conditions become harder?
+This project studies the reverse engineering performance of Physics-Informed Neural Networks (PINNs) in ODE-based models, using the repressilator, a synthetic gene regulatory network that exhibits oscillatory behavior, as a toy example.
 
-The project evaluates inverse-PINN performance under five experimental factors:
+The goal is to characterize how reliably PINNs can recover the system parameters and reconstruct the trajectories when the observation conditions become harder. 
 
-1. observation noise,
+Five experimental factors are considered:
+
+1. data noise,
 2. partial observation of the repressors,
 3. sampling density over time,
 4. sensitivity to the initial parameter guesses,
 5. stable versus oscillatory dynamical regimes.
 
-For all experiments, the main outputs are parameter recovery error and state reconstruction error. Where useful, the per-run training-loss curves are also saved in the results folders.
+For all five experiments, the main outputs are parameter recovery and state reconstruction errors.
 
 ## Repository Organization
 
-- `datasets/`: synthetic repressilator datasets as `.npz` files.
+- `datasets/`: synthetic datasets as `.npz` files.
 - `scripts/`: data generation, PINN training, and experiment driver scripts.
-- `results/`: experiment outputs, including CSV summaries and trained model checkpoints.
-- `figures/`: generated plots for the paper.
+- `results/`: experiment outputs and CSV summaries.
+- `figures/`: generated plots.
 - `jobs/`: SLURM launch scripts.
 
 ## Core Scripts
 
-- `scripts/generate_data.py`: generate a single synthetic repressilator dataset.
+- `scripts/generate_data.py`: generate a single synthetic dataset.
 - `scripts/generate_all_data.py`: generate the dataset grid across parameter regimes and noise levels.
 - `scripts/run_forward.py`: forward PINN training for state reconstruction with known parameters.
 - `scripts/run_inverse.py`: inverse PINN training for estimation of $\beta$ and $n$.

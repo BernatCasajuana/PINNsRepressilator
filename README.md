@@ -22,25 +22,31 @@ For all five experiments, the main outputs are parameter recovery and state reco
 - `figures/`: generated plots.
 - `jobs/`: SLURM launch scripts.
 
+Inside `scripts/`, the code is organized into three one-word folders:
+
+- `scripts/data/`: dataset generation scripts.
+- `scripts/experiments/`: experiment drivers and shared experiment utilities.
+- `scripts/pinn/`: PINN definitions, training routines, batch runners, and formulation checks.
+
 ## Core Scripts
 
-- `scripts/generate_data.py`: generate a single synthetic dataset.
-- `scripts/generate_all_data.py`: generate the dataset grid across parameter regimes and noise levels.
-- `scripts/run_forward.py`: forward PINN training for state reconstruction with known parameters.
-- `scripts/run_inverse.py`: inverse PINN training for estimation of $\beta$ and $n$.
-- `scripts/run_all_forward.py`: batch execution of forward runs across the dataset folder.
-- `scripts/run_all_inverse.py`: batch execution of inverse runs across the dataset folder.
-- `scripts/check_formulation.py`: compare the ODE right-hand side with the TensorFlow formulation used by the PINN.
+- `scripts/data/generate_data.py`: generate a single synthetic dataset.
+- `scripts/data/generate_all_data.py`: generate the dataset grid across parameter regimes and noise levels.
+- `scripts/pinn/run_forward.py`: forward PINN training for state reconstruction with known parameters.
+- `scripts/pinn/run_inverse.py`: inverse PINN training for estimation of $\beta$ and $n$.
+- `scripts/pinn/run_all_forward.py`: batch execution of forward runs across the dataset folder.
+- `scripts/pinn/run_all_inverse.py`: batch execution of inverse runs across the dataset folder.
+- `scripts/pinn/check_formulation.py`: compare the ODE right-hand side with the TensorFlow formulation used by the PINN.
 
 ## Experiment Drivers
 
 Each experiment driver runs one study, sweeps the relevant condition across seeds, writes CSV summaries under `results/`, and saves a paper figure under `figures/`.
 
-- `scripts/exp_noise_sweep.py`: Experiment 1, sensitivity to observation noise.
-- `scripts/exp_partial_observation.py`: Experiment 2, sensitivity to measuring fewer repressors.
-- `scripts/exp_sampling_density.py`: Experiment 3, sensitivity to the number of observation points.
-- `scripts/exp_initial_guess.py`: Experiment 4, sensitivity to the initial guesses for $\beta$ and $n$.
-- `scripts/exp_regime_comparison.py`: Experiment 5, comparison between stable and oscillatory regimes.
+- `scripts/experiments/exp_noise_sweep.py`: Experiment 1, sensitivity to observation noise.
+- `scripts/experiments/exp_partial_observation.py`: Experiment 2, sensitivity to measuring fewer repressors.
+- `scripts/experiments/exp_sampling_density.py`: Experiment 3, sensitivity to the number of observation points.
+- `scripts/experiments/exp_initial_guess.py`: Experiment 4, sensitivity to the initial guesses for $\beta$ and $n$.
+- `scripts/experiments/exp_regime_comparison.py`: Experiment 5, comparison between stable and oscillatory regimes.
 
 All experiment drivers use repeated seeds per configuration and report:
 
@@ -122,5 +128,5 @@ pip install -r requirements.txt
 
 The repository does not use command-line argument parsing for the experiment drivers. Each script defines its configuration near the top of the file and can be run directly as a Python script.
 
-The reusable training code lives in `run_forward.py` and `run_inverse.py`, while the experiment drivers call those functions and organize outputs under `results/` and `figures/`.
+The reusable training code lives in `scripts/pinn/run_forward.py` and `scripts/pinn/run_inverse.py`, while the experiment drivers in `scripts/experiments/` call those functions and organize outputs under `results/` and `figures/`.
 

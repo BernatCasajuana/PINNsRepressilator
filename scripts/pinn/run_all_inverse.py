@@ -8,9 +8,14 @@ Enables running a full set of inverse experiments for multiple parameter initial
 
 # %% Import necessary libraries
 import os
+import sys
+
+SCRIPTS_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if SCRIPTS_DIR not in sys.path:
+    sys.path.insert(0, SCRIPTS_DIR)
 
 # %% Import the modular 'run_inverse' function from run_inverse.py
-from run_inverse import run_inverse
+from pinn.run_inverse import run_inverse
 
 # %% Define dataset folder and results folder
 dataset_folder = "datasets"
@@ -26,9 +31,14 @@ guesses = {
 }
 
 # %% Run inverse PINN for each file in the datasets folder
-for file in os.listdir(dataset_folder):
-    if file.endswith(".npz"):
-        dataset_path = os.path.join(dataset_folder, file)
-        C1_guess, C2_guess = guesses.get(file, (5.0, 2.0))  # default guesses
-        print(f"\n=== Running Inverse PINN for {dataset_path} with guesses C1={C1_guess}, C2={C2_guess} ===")
-        run_inverse(dataset_path, outdir_base=outdir_base, C1_guess=C1_guess, C2_guess=C2_guess)
+def main():
+    for file in os.listdir(dataset_folder):
+        if file.endswith(".npz"):
+            dataset_path = os.path.join(dataset_folder, file)
+            C1_guess, C2_guess = guesses.get(file, (5.0, 2.0))  # default guesses
+            print(f"\n=== Running Inverse PINN for {dataset_path} with guesses C1={C1_guess}, C2={C2_guess} ===")
+            run_inverse(dataset_path, outdir_base=outdir_base, C1_guess=C1_guess, C2_guess=C2_guess)
+
+
+if __name__ == "__main__":
+    main()

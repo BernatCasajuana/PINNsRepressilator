@@ -1,12 +1,17 @@
 """Experiment 4: inverse-PINN sensitivity to initial parameter guesses."""
 
 import os
+import sys
 
 import matplotlib.pyplot as plt
 import numpy as np
 
-from experiment_utils import aggregate_metrics, ensure_project_directories, finalize_figure, make_synthetic_dataset, write_csv
-from run_inverse import run_inverse
+SCRIPTS_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if SCRIPTS_DIR not in sys.path:
+    sys.path.insert(0, SCRIPTS_DIR)
+
+from experiments.experiment_utils import aggregate_metrics, ensure_project_directories, finalize_figure, make_synthetic_dataset, write_csv
+from pinn.run_inverse import run_inverse
 
 
 TRUE_BETA = 5.0

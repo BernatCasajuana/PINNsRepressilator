@@ -3,9 +3,14 @@
 import csv
 import os
 import random
+import sys
 
 os.environ["TF_USE_LEGACY_KERAS"] = "1"
 os.environ["DDE_BACKEND"] = "tensorflow"
+
+SCRIPTS_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if SCRIPTS_DIR not in sys.path:
+    sys.path.insert(0, SCRIPTS_DIR)
 
 import deepxde as dde
 import matplotlib.pyplot as plt
@@ -13,7 +18,7 @@ import numpy as np
 import scipy.integrate
 import tensorflow as tf
 
-from generate_data import protein_repressilator_rhs
+from data.generate_data import protein_repressilator_rhs
 
 
 DEFAULT_X0 = [1.0, 1.0, 1.2]

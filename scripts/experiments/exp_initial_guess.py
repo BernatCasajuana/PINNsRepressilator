@@ -1,4 +1,8 @@
-"""Experiment 4: inverse-PINN sensitivity to initial parameter guesses."""
+"""Experiment 4: inverse-PINN sensitivity to initial parameter guesses. Question: how sensitive is inverse-PINN training to the initial guesses for $\beta$ and $n$?
+
+Design: the inverse problem is run over a grid of initial guesses for $\beta_0$ and $n_0`.
+
+Output: heatmaps of the relative recovery error on $\beta$ and $n$ over the initial-guess grid."""
 
 import os
 import sys

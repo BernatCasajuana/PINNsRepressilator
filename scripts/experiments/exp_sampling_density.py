@@ -1,4 +1,8 @@
-"""Experiment 3: inverse-PINN sensitivity to sampling density."""
+"""Experiment 3: inverse-PINN sensitivity to sampling density. Question: how sparse can the measurements be before recovery fails?
+
+Design: noise is fixed, all three repressors are observed, and the number of observation points is varied over `10, 25, 50, 100, 200`.
+
+Output: parameter and state errors versus the number of observation points."""
 
 import os
 import sys

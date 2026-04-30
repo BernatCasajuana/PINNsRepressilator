@@ -1,4 +1,8 @@
-"""Experiment 5: inverse-PINN comparison between stable and oscillatory regimes."""
+"""Experiment 5: inverse-PINN comparison between stable and oscillatory regimes. Question: does the dynamical regime change the difficulty of inverse-PINN recovery?
+
+Design: a stable regime and an oscillatory regime are compared across multiple noise levels.
+
+Output: a regime comparison figure for parameter recovery error and state reconstruction error."""
 
 import os
 import sys

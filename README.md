@@ -60,6 +60,8 @@ All experiment drivers use repeated seeds per configuration and report:
 - an aggregate parameter recovery error,
 - RMSE on the reconstructed trajectory.
 
+A dedicated script `scripts/experiments/all_experiments.py` runs all five experiments sequentially.
+
 ## Dependencies
 
 Dependencies are listed in `requirements.txt`. The main libraries are DeepXDE, TensorFlow, NumPy, SciPy, and Matplotlib.
@@ -77,4 +79,3 @@ pip install -r requirements.txt
 Each script defines its configuration near the top of the file and can be run directly as a Python script.
 
 The reusable training code lives in `scripts/pinns/forward.py` and `scripts/pinns/inverse.py`, while the experiment drivers in `scripts/experiments/` call those functions and organize outputs under `results/` and `figures/`.
-

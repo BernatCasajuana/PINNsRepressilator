@@ -1,16 +1,20 @@
-"""Utilities shared by the PINN experiment driver scripts."""
+"""
+Utilities shared by the experiment driver scripts.
+
+"""
 
 import csv
 import os
 import random
 import sys
 
-os.environ["TF_USE_LEGACY_KERAS"] = "1"
-os.environ["DDE_BACKEND"] = "tensorflow"
+os.environ["tf_use_legacy_keras"] = "1" # Ensure compatibility with DeepXDE's use of Keras
+os.environ["dde_backend"] = "tensorflow" # Ensure DeepXDE uses TensorFlow as the backend (compatible)
 
-SCRIPTS_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if SCRIPTS_DIR not in sys.path:
-    sys.path.insert(0, SCRIPTS_DIR)
+# Add the parent directory of "scripts" to the Python path to allow imports from "data" and "pinns"
+scripts_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if scripts_dir not in sys.path:
+    sys.path.insert(0, scripts_dir)
 
 import deepxde as dde
 import matplotlib.pyplot as plt
@@ -18,43 +22,43 @@ import numpy as np
 import scipy.integrate
 import tensorflow as tf
 
-from data.generate_data import protein_repressilator_rhs
+from data.generate_data import protein_repressilator_rhs # Import the ODE function
 
+# Default parameters for synthetic dataset generation
+default_x0 = [1.0, 1.0, 1.2]
+default_t_max = 20.0
+default_n_points = 1000
 
-DEFAULT_X0 = [1.0, 1.0, 1.2]
-DEFAULT_T_MAX = 20.0
-DEFAULT_N_POINTS = 1000
-
-
+# Function to ensure necessary directories exist
 def ensure_project_directories():
     os.makedirs("datasets", exist_ok=True)
     os.makedirs("results", exist_ok=True)
     os.makedirs("figures", exist_ok=True)
 
-
+# Function to set global random seeds for reproducibility
 def set_global_seed(seed):
     random.seed(seed)
     np.random.seed(seed)
     tf.random.set_seed(seed)
     dde.config.set_random_seed(seed)
 
-
-def simulate_repressilator(beta, n, x0=None, t_max=DEFAULT_T_MAX, n_points=DEFAULT_N_POINTS):
+# Function to simulate the system and generate clean data
+def simulate_repressilator(beta, n, x0=None, t_max=default_t_max, n_points=default_n_points):
     if x0 is None:
-        x0 = DEFAULT_X0
+        x0 = default_x0
     t = np.linspace(0, t_max, n_points)[:, None]
     y_clean = scipy.integrate.odeint(protein_repressilator_rhs, x0, t.flatten(), args=(beta, n))
     return t, y_clean
 
-
+# Function to create a synthetic dataset with added noise
 def make_synthetic_dataset(
     beta,
     n,
     noise_level,
     seed,
     x0=None,
-    t_max=DEFAULT_T_MAX,
-    n_points=DEFAULT_N_POINTS,
+    t_max=default_t_max,
+    n_points=default_n_points,
 ):
     t, y_clean = simulate_repressilator(beta=beta, n=n, x0=x0, t_max=t_max, n_points=n_points)
     signal_amplitude = float(np.mean(np.ptp(y_clean, axis=0)))
@@ -73,13 +77,13 @@ def make_synthetic_dataset(
         "signal_amplitude": signal_amplitude,
     }
 
-
+# Function to compute observation indices
 def evenly_spaced_observation_indices(total_points, observation_count):
     if observation_count >= total_points:
         return list(range(total_points))
     return np.unique(np.linspace(0, total_points - 1, observation_count, dtype=int)).tolist()
 
-
+# Function to store results in a structured CSV file
 def write_csv(path, rows, fieldnames):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", newline="") as csvfile:
@@ -87,7 +91,7 @@ def write_csv(path, rows, fieldnames):
         writer.writeheader()
         writer.writerows(rows)
 
-
+# Function to aggregate metrics from multiple runs
 def aggregate_metrics(rows, group_keys, metric_keys):
     groups = {}
     for row in rows:
@@ -106,7 +110,7 @@ def aggregate_metrics(rows, group_keys, metric_keys):
 
     return summary_rows
 
-
+# Function to finalize and save a figure
 def finalize_figure(path):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     plt.tight_layout()

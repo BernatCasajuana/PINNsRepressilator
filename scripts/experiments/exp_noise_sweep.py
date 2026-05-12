@@ -1,22 +1,22 @@
-"""Experiment 1: inverse-PINN sensitivity to observation noise. Experiment 1: Noise sensitivity
-
+"""
+Experiment 1: sensitivity to observation noise.
 Question: how does inverse-PINN recovery degrade as observation noise increases?
-
 Design: all three repressors are observed, dense sampling is used, and the relative noise level is swept over `0.01, 0.05, 0.10, 0.20, 0.30`.
+Output: a two-panel figure with parameter recovery error and state reconstruction error versus noise.
 
-Output: a two-panel figure with parameter recovery error and state reconstruction error versus noise."""
+"""
 
+# %% Import necessary libraries and set up paths
 import os
 import sys
-
 import matplotlib.pyplot as plt
 
-SCRIPTS_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if SCRIPTS_DIR not in sys.path:
-    sys.path.insert(0, SCRIPTS_DIR)
+scripts_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if scripts_dir not in sys.path:
+    sys.path.insert(0, scripts_dir)
 
 from experiments.experiment_utils import aggregate_metrics, ensure_project_directories, finalize_figure, make_synthetic_dataset, write_csv
-from pinns.run_inverse import run_inverse
+from scripts.pinns.inverse import run_inverse
 
 
 TRUE_BETA = 5.0

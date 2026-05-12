@@ -1,8 +1,11 @@
-# Comparing numerical derivatives from scipy's odeint with TensorFlow's evaluation of the ODE system (correct formulation).
+'''
+Comparing numerical derivatives from scipy's odeint with TensorFlow's evaluation of the ODE system (correct formulation).
+
+'''
 
 # %% Import necessary libraries
 import os
-os.environ["DDE_BACKEND"] = "tensorflow"  # Force TensorFlow backend before importing deepxde
+os.environ["dde_backend"] = "tensorflow"  # Force TensorFlow backend before importing deepxde
 import tensorflow as tf
 import deepxde as dde
 tf.config.run_functions_eagerly(True)

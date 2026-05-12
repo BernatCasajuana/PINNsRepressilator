@@ -1,18 +1,19 @@
 """
-run_forward.py
-
 Trains a Physics-Informed Neural Network (PINN) to predict the Repressilator dynamics from a single dataset.
 Loads the .npz file containing time points, simulated protein concentrations, and model parameters (beta, n, noise).
 The ODE system, initial conditions and the observed data are defined for the PINN, which is then trained.
 Predictions and training losses are saved as plots in a dedicated output folder.
+
 """
 
 # %% Import necessary libraries
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-os.environ["TF_USE_LEGACY_KERAS"] = "1"
-os.environ["DDE_BACKEND"] = "tensorflow"
+
+os.environ["tf_use_legacy_keras"] = "1"
+os.environ["dde_backend"] = "tensorflow"
+
 import deepxde as dde
 import tensorflow as tf
 

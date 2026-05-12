@@ -1,18 +1,19 @@
 """
-run_inverse.py
-
 Trains a Physics-Informed Neural Network (PINN) to estimate the Repressilator parameters (beta, n) from a single dataset.
 Loads the .npz file containing time points, simulated protein concentrations, and true model parameters (beta, n, noise).
 Defines the ODE system, initial conditions, observed data, and trainable parameters with initial guesses for the PINN, which is then trained.
 Parameter estimates, predictions, and training losses are saved in a dedicated output folder.
+
 """
 
 # %% Import necessary libraries
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+
 os.environ["tf_use_legacy_keras"] = "1" # Use legacy Keras API for compatibility with DeepXDE
 os.environ["dde_backend"] = "tensorflow"  # Force TensorFlow backend before importing deepxde
+
 import deepxde as dde
 import tensorflow as tf
 import csv

@@ -3,7 +3,7 @@
 #SBATCH --output=forward_output.txt     # Fitxer de sortida
 #SBATCH --error=forward_error.txt       # Fitxer d’errors
 #SBATCH --time=04:00:00                 # Temps màxim (hh:mm:ss)
-#SBATCH --cpus-per-task=4               # Nombre de CPUs per tasca
+#SBATCH --cpus-per-task=8               # Nombre de CPUs per tasca
 #SBATCH --mem=8GB                       # Memòria assignada
 
 # Load conda module and activate environment

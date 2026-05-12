@@ -1,0 +1,50 @@
+=== Running forward test on datasets/beta5.0_n3.0_noise0.05.npz ===
+Compiling model...
+'compile' took 0.018767 s
+
+Warning: epochs is deprecated and will be removed in a future version. Use iterations instead.
+Training model...
+
+Step      Train loss                                                                                    Test loss                                                                                     Test metric
+0         [1.15e+01, 6.90e+00, 8.71e+00, 7.48e-02, 5.46e-02, 2.33e-01, 4.59e-01, 7.03e-01, 8.01e-01]    [1.15e+01, 6.89e+00, 8.71e+00, 7.48e-02, 5.46e-02, 2.33e-01, 4.59e-01, 7.03e-01, 8.01e-01]    []  
+500       [1.33e-03, 2.42e-03, 7.65e-03, 5.02e-06, 4.32e-04, 3.92e-06, 6.27e-02, 5.48e-02, 5.82e-02]    [1.27e-03, 2.35e-03, 6.93e-03, 5.02e-06, 4.32e-04, 3.92e-06, 6.27e-02, 5.48e-02, 5.82e-02]    []  
+
+Best model at step 500:
+  train loss: 1.88e-01
+  test loss: 1.87e-01
+  test metric: []
+
+'train' took 26.611170 s
+
+Saved forward results in results/test_cluster/forward/beta5.0_n3.0_noise0.05/obs-1-2-3_stride-10
+Forward results saved in results/test_cluster/forward/beta5.0_n3.0_noise0.05/obs-1-2-3_stride-10
+=== Running inverse test on datasets/beta5.0_n3.0_noise0.05.npz ===
+Compiling model...
+'compile' took 0.005921 s
+
+Training model...
+
+Step      Train loss                                                                                    Test loss                                                                                     Test metric
+0         [6.10e+00, 3.49e+00, 4.73e+00, 7.48e-02, 5.46e-02, 2.33e-01, 4.59e-01, 7.03e-01, 8.01e-01]    [6.10e+00, 3.49e+00, 4.73e+00, 7.48e-02, 5.46e-02, 2.33e-01, 4.59e-01, 7.03e-01, 8.01e-01]    []  
+0 [4.00e+00, 2.50e+00]
+100 [3.99e+00, 2.47e+00]
+200 [3.99e+00, 2.46e+00]
+300 [4.00e+00, 2.44e+00]
+400 [4.01e+00, 2.42e+00]
+500 [4.02e+00, 2.41e+00]
+600 [4.03e+00, 2.39e+00]
+700 [4.04e+00, 2.39e+00]
+800 [4.06e+00, 2.40e+00]
+900 [4.08e+00, 2.41e+00]
+1000      [8.06e-03, 6.60e-03, 7.06e-03, 1.36e-05, 4.40e-05, 9.46e-07, 2.12e-02, 2.03e-02, 2.22e-02]    [8.06e-03, 6.60e-03, 7.06e-03, 1.36e-05, 4.40e-05, 9.46e-07, 2.12e-02, 2.03e-02, 2.22e-02]    []  
+1000 [4.09e+00, 2.43e+00]
+
+Best model at step 1000:
+  train loss: 8.55e-02
+  test loss: 8.55e-02
+  test metric: []
+
+'train' took 17.789763 s
+
+Saved inverse results in results/test_cluster/inverse/beta5.0_n3.0_noise0.05/obs-1-2-3_count-100/seed-0
+Inverse results saved in results/test_cluster/inverse/beta5.0_n3.0_noise0.05/obs-1-2-3_count-100/seed-0

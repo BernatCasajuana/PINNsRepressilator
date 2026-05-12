@@ -7,7 +7,7 @@
 #SBATCH --mem=8GB                       # Memòria assignada
 
 # Working directory
-cd $HOME/PINNsRepressilator
+cd $HOME/projects/pinns-repressilator
 
 # Execute the Python script
-python scripts/run_all_inverse.py
+python scripts/all_inverse.py

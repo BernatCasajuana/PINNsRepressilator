@@ -1,6 +1,6 @@
 """
 Automates the training of the PINN for all datasets stored in the 'datasets' folder.
-Iterates over every .npz file, calling the `run_forward` function for each dataset and saving the corresponding results.
+Iterates over every .npz file, calling the `run_forward` function from `scripts/pinns/forward.py` for each dataset and saving the corresponding results.
 Enables running a full set of forward experiments for multiple parameter and noise combinations in one go.
 """
 

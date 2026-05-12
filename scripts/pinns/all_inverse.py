@@ -1,6 +1,6 @@
 """
 Automates the training of the PINN for all datasets stored in the 'datasets' folder.
-Iterates over every .npz file, calling the `run_inverse` function for each dataset and saving the corresponding results.
+Iterates over every .npz file, calling the `run_inverse` function from `scripts/pinns/inverse.py` for each dataset and saving the corresponding results.
 Enables running a full set of inverse experiments for multiple parameter initial guesses and noise combinations in one go.
 """
 

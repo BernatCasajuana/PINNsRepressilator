@@ -1,8 +1,10 @@
-"""Experiment 2: inverse-PINN sensitivity to partial observation. Question: how much performance is lost when fewer repressors are measured?
-
+"""
+Experiment 2: inverse sensitivity to partial observation. 
+Question: how much performance is lost when fewer repressors are measured?
 Design: noise is fixed and four observation designs are compared: all three repressors, `x1,x2`, `x1,x3`, and `x1` only.
+Output: a grouped comparison of parameter and state errors across observation designs.
 
-Output: a grouped comparison of parameter and state errors across observation designs."""
+"""
 
 import os
 import sys

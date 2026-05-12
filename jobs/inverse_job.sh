@@ -14,4 +14,4 @@ conda activate pinnsvenv
 cd ~/projects/pinns-repressilator
 
 # Execute the Python script
-python scripts/pinns/all_inverse.py
+python -m scripts.pinns.all_inverse

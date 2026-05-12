@@ -14,4 +14,4 @@ conda activate pinnsvenv
 cd ~/projects/pinns-repressilator
 
 # Execute the Python script
-python scripts/experiments/all_experiments.py
+python -m scripts.experiments.all_experiments

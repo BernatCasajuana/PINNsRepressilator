@@ -20,7 +20,7 @@ from scripts.pinns.inverse import run_inverse
 # Experiment parameters and output paths
 true_beta = 5.0
 true_n = 3.0
-noise_levels = [0.01, 0.05, 0.10, 0.20, 0.30]
+noise_levels = [0.01, 0.05, 0.10, 0.20]
 seeds = [0, 1]
 observed_components = [0, 1, 2]
 train_iterations = 5000

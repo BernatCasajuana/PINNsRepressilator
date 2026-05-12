@@ -10,4 +10,4 @@
 cd $HOME/projects/pinns-repressilator
 
 # Execute the Python script
-python scripts/all_inverse.py
+python scripts/pinns/all_inverse.py

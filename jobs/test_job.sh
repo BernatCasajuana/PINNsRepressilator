@@ -7,7 +7,7 @@
 --mem = 8GB                       # Memoria assignada
 
 # Working directory
-cd $HOME/projects/pinns-repressilator
+cd $HOME/projects/pinns-repressilator/jobs
 
 # Optional virtual environment
 if [ -f venv/bin/activate ]; then

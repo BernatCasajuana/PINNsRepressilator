@@ -218,7 +218,8 @@ def run_inverse(
     ]
 
     plt.figure(figsize=(10, 6))
-    for i in range(len(component_names)):
+    n = min(len(loss_components), len(component_names))
+    for i in range(n):
         plt.semilogy(epochs, loss_components[i], label=component_names[i])
     plt.xlabel("Iterations")
     plt.ylabel("Loss (log scale)")

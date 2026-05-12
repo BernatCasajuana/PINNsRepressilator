@@ -1,0 +1,271 @@
+2026-05-12 20:56:24.324246: I tensorflow/core/util/port.cc:113] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2026-05-12 20:56:24.329440: I external/local_tsl/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2026-05-12 20:56:24.365931: I external/local_tsl/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2026-05-12 20:56:24.421122: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:479] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+2026-05-12 20:56:24.491564: E external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:10575] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+2026-05-12 20:56:24.492117: E external/local_xla/xla/stream_executor/cuda/cuda_blas.cc:1442] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+2026-05-12 20:56:24.564334: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 AVX512F AVX512_VNNI FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2026-05-12 20:56:26.281267: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT
+Using backend: tensorflow
+Other supported backends: tensorflow.compat.v1, pytorch, jax, paddle.
+paddle supports more examples now and is recommended.
+WARNING:tensorflow:AutoGraph could not transform <function run_inverse.<locals>.<lambda> at 0x78d98e018f40> and will run it as-is.
+Cause: could not parse the source code of <function run_inverse.<locals>.<lambda> at 0x78d98e018f40>: no matching AST found among candidates:
+# coding=utf-8
+lambda x, on: np.array([on_boundary(x[i], on[i]) for i in range(len(x))])
+# coding=utf-8
+lambda x, on: np.array([on_boundary1(x[i], on[i]) for i in range(len(x))])
+# coding=utf-8
+lambda x, on: np.array([on_boundary2(x[i], on[i]) for i in range(len(x))])
+To silence this warning, decorate the function with @tf.autograph.experimental.do_not_convert
+WARNING:tensorflow:AutoGraph could not transform <function run_inverse.<locals>.<lambda> at 0x78d98e019260> and will run it as-is.
+Cause: could not parse the source code of <function run_inverse.<locals>.<lambda> at 0x78d98e019260>: no matching AST found among candidates:
+# coding=utf-8
+lambda x, on: np.array([on_boundary(x[i], on[i]) for i in range(len(x))])
+# coding=utf-8
+lambda x, on: np.array([on_boundary1(x[i], on[i]) for i in range(len(x))])
+# coding=utf-8
+lambda x, on: np.array([on_boundary2(x[i], on[i]) for i in range(len(x))])
+To silence this warning, decorate the function with @tf.autograph.experimental.do_not_convert
+WARNING:tensorflow:AutoGraph could not transform <function run_inverse.<locals>.<lambda> at 0x78d98e0194e0> and will run it as-is.
+Cause: could not parse the source code of <function run_inverse.<locals>.<lambda> at 0x78d98e0194e0>: no matching AST found among candidates:
+# coding=utf-8
+lambda x, on: np.array([on_boundary(x[i], on[i]) for i in range(len(x))])
+# coding=utf-8
+lambda x, on: np.array([on_boundary1(x[i], on[i]) for i in range(len(x))])
+# coding=utf-8
+lambda x, on: np.array([on_boundary2(x[i], on[i]) for i in range(len(x))])
+To silence this warning, decorate the function with @tf.autograph.experimental.do_not_convert
+WARNING:tensorflow:AutoGraph could not transform <function run_inverse.<locals>.<lambda> at 0x78d961f872e0> and will run it as-is.
+Cause: could not parse the source code of <function run_inverse.<locals>.<lambda> at 0x78d961f872e0>: no matching AST found among candidates:
+# coding=utf-8
+lambda x, on: np.array([on_boundary(x[i], on[i]) for i in range(len(x))])
+# coding=utf-8
+lambda x, on: np.array([on_boundary1(x[i], on[i]) for i in range(len(x))])
+# coding=utf-8
+lambda x, on: np.array([on_boundary2(x[i], on[i]) for i in range(len(x))])
+To silence this warning, decorate the function with @tf.autograph.experimental.do_not_convert
+WARNING:tensorflow:AutoGraph could not transform <function run_inverse.<locals>.<lambda> at 0x78d961f87240> and will run it as-is.
+Cause: could not parse the source code of <function run_inverse.<locals>.<lambda> at 0x78d961f87240>: no matching AST found among candidates:
+# coding=utf-8
+lambda x, on: np.array([on_boundary(x[i], on[i]) for i in range(len(x))])
+# coding=utf-8
+lambda x, on: np.array([on_boundary1(x[i], on[i]) for i in range(len(x))])
+# coding=utf-8
+lambda x, on: np.array([on_boundary2(x[i], on[i]) for i in range(len(x))])
+To silence this warning, decorate the function with @tf.autograph.experimental.do_not_convert
+WARNING:tensorflow:AutoGraph could not transform <function run_inverse.<locals>.<lambda> at 0x78d961f87380> and will run it as-is.
+Cause: could not parse the source code of <function run_inverse.<locals>.<lambda> at 0x78d961f87380>: no matching AST found among candidates:
+# coding=utf-8
+lambda x, on: np.array([on_boundary(x[i], on[i]) for i in range(len(x))])
+# coding=utf-8
+lambda x, on: np.array([on_boundary1(x[i], on[i]) for i in range(len(x))])
+# coding=utf-8
+lambda x, on: np.array([on_boundary2(x[i], on[i]) for i in range(len(x))])
+To silence this warning, decorate the function with @tf.autograph.experimental.do_not_convert
+WARNING:tensorflow:AutoGraph could not transform <function run_inverse.<locals>.<lambda> at 0x78d968309da0> and will run it as-is.
+Cause: could not parse the source code of <function run_inverse.<locals>.<lambda> at 0x78d968309da0>: no matching AST found among candidates:
+# coding=utf-8
+lambda x, on: np.array([on_boundary(x[i], on[i]) for i in range(len(x))])
+# coding=utf-8
+lambda x, on: np.array([on_boundary1(x[i], on[i]) for i in range(len(x))])
+# coding=utf-8
+lambda x, on: np.array([on_boundary2(x[i], on[i]) for i in range(len(x))])
+To silence this warning, decorate the function with @tf.autograph.experimental.do_not_convert
+WARNING:tensorflow:AutoGraph could not transform <function run_inverse.<locals>.<lambda> at 0x78d968309d00> and will run it as-is.
+Cause: could not parse the source code of <function run_inverse.<locals>.<lambda> at 0x78d968309d00>: no matching AST found among candidates:
+# coding=utf-8
+lambda x, on: np.array([on_boundary(x[i], on[i]) for i in range(len(x))])
+# coding=utf-8
+lambda x, on: np.array([on_boundary1(x[i], on[i]) for i in range(len(x))])
+# coding=utf-8
+lambda x, on: np.array([on_boundary2(x[i], on[i]) for i in range(len(x))])
+To silence this warning, decorate the function with @tf.autograph.experimental.do_not_convert
+WARNING:tensorflow:AutoGraph could not transform <function run_inverse.<locals>.<lambda> at 0x78d96830ac00> and will run it as-is.
+Cause: could not parse the source code of <function run_inverse.<locals>.<lambda> at 0x78d96830ac00>: no matching AST found among candidates:
+# coding=utf-8
+lambda x, on: np.array([on_boundary(x[i], on[i]) for i in range(len(x))])
+# coding=utf-8
+lambda x, on: np.array([on_boundary1(x[i], on[i]) for i in range(len(x))])
+# coding=utf-8
+lambda x, on: np.array([on_boundary2(x[i], on[i]) for i in range(len(x))])
+To silence this warning, decorate the function with @tf.autograph.experimental.do_not_convert
+WARNING:tensorflow:AutoGraph could not transform <function run_inverse.<locals>.<lambda> at 0x78d9613bb740> and will run it as-is.
+Cause: could not parse the source code of <function run_inverse.<locals>.<lambda> at 0x78d9613bb740>: no matching AST found among candidates:
+# coding=utf-8
+lambda x, on: np.array([on_boundary(x[i], on[i]) for i in range(len(x))])
+# coding=utf-8
+lambda x, on: np.array([on_boundary1(x[i], on[i]) for i in range(len(x))])
+# coding=utf-8
+lambda x, on: np.array([on_boundary2(x[i], on[i]) for i in range(len(x))])
+To silence this warning, decorate the function with @tf.autograph.experimental.do_not_convert
+WARNING:tensorflow:AutoGraph could not transform <function run_inverse.<locals>.<lambda> at 0x78d9612742c0> and will run it as-is.
+Cause: could not parse the source code of <function run_inverse.<locals>.<lambda> at 0x78d9612742c0>: no matching AST found among candidates:
+# coding=utf-8
+lambda x, on: np.array([on_boundary(x[i], on[i]) for i in range(len(x))])
+# coding=utf-8
+lambda x, on: np.array([on_boundary1(x[i], on[i]) for i in range(len(x))])
+# coding=utf-8
+lambda x, on: np.array([on_boundary2(x[i], on[i]) for i in range(len(x))])
+To silence this warning, decorate the function with @tf.autograph.experimental.do_not_convert
+WARNING:tensorflow:AutoGraph could not transform <function run_inverse.<locals>.<lambda> at 0x78d961274680> and will run it as-is.
+Cause: could not parse the source code of <function run_inverse.<locals>.<lambda> at 0x78d961274680>: no matching AST found among candidates:
+# coding=utf-8
+lambda x, on: np.array([on_boundary(x[i], on[i]) for i in range(len(x))])
+# coding=utf-8
+lambda x, on: np.array([on_boundary1(x[i], on[i]) for i in range(len(x))])
+# coding=utf-8
+lambda x, on: np.array([on_boundary2(x[i], on[i]) for i in range(len(x))])
+To silence this warning, decorate the function with @tf.autograph.experimental.do_not_convert
+WARNING:tensorflow:AutoGraph could not transform <function run_inverse.<locals>.<lambda> at 0x78d961db3920> and will run it as-is.
+Cause: could not parse the source code of <function run_inverse.<locals>.<lambda> at 0x78d961db3920>: no matching AST found among candidates:
+# coding=utf-8
+lambda x, on: np.array([on_boundary(x[i], on[i]) for i in range(len(x))])
+# coding=utf-8
+lambda x, on: np.array([on_boundary1(x[i], on[i]) for i in range(len(x))])
+# coding=utf-8
+lambda x, on: np.array([on_boundary2(x[i], on[i]) for i in range(len(x))])
+To silence this warning, decorate the function with @tf.autograph.experimental.do_not_convert
+WARNING:tensorflow:AutoGraph could not transform <function run_inverse.<locals>.<lambda> at 0x78d961db2980> and will run it as-is.
+Cause: could not parse the source code of <function run_inverse.<locals>.<lambda> at 0x78d961db2980>: no matching AST found among candidates:
+# coding=utf-8
+lambda x, on: np.array([on_boundary(x[i], on[i]) for i in range(len(x))])
+# coding=utf-8
+lambda x, on: np.array([on_boundary1(x[i], on[i]) for i in range(len(x))])
+# coding=utf-8
+lambda x, on: np.array([on_boundary2(x[i], on[i]) for i in range(len(x))])
+To silence this warning, decorate the function with @tf.autograph.experimental.do_not_convert
+WARNING:tensorflow:AutoGraph could not transform <function run_inverse.<locals>.<lambda> at 0x78d961db2f20> and will run it as-is.
+Cause: could not parse the source code of <function run_inverse.<locals>.<lambda> at 0x78d961db2f20>: no matching AST found among candidates:
+# coding=utf-8
+lambda x, on: np.array([on_boundary(x[i], on[i]) for i in range(len(x))])
+# coding=utf-8
+lambda x, on: np.array([on_boundary1(x[i], on[i]) for i in range(len(x))])
+# coding=utf-8
+lambda x, on: np.array([on_boundary2(x[i], on[i]) for i in range(len(x))])
+To silence this warning, decorate the function with @tf.autograph.experimental.do_not_convert
+WARNING:tensorflow:5 out of the last 5 calls to <function Model._compile_tensorflow.<locals>.outputs at 0x78d961b47060> triggered tf.function retracing. Tracing is expensive and the excessive number of tracings could be due to (1) creating @tf.function repeatedly in a loop, (2) passing tensors with different shapes, (3) passing Python objects instead of tensors. For (1), please define your @tf.function outside of the loop. For (2), @tf.function has reduce_retracing=True option that can avoid unnecessary retracing. For (3), please refer to https://www.tensorflow.org/guide/function#controlling_retracing and https://www.tensorflow.org/api_docs/python/tf/function for  more details.
+WARNING:tensorflow:AutoGraph could not transform <function run_inverse.<locals>.<lambda> at 0x78d96071df80> and will run it as-is.
+Cause: could not parse the source code of <function run_inverse.<locals>.<lambda> at 0x78d96071df80>: no matching AST found among candidates:
+# coding=utf-8
+lambda x, on: np.array([on_boundary(x[i], on[i]) for i in range(len(x))])
+# coding=utf-8
+lambda x, on: np.array([on_boundary1(x[i], on[i]) for i in range(len(x))])
+# coding=utf-8
+lambda x, on: np.array([on_boundary2(x[i], on[i]) for i in range(len(x))])
+To silence this warning, decorate the function with @tf.autograph.experimental.do_not_convert
+WARNING:tensorflow:AutoGraph could not transform <function run_inverse.<locals>.<lambda> at 0x78d96071dee0> and will run it as-is.
+Cause: could not parse the source code of <function run_inverse.<locals>.<lambda> at 0x78d96071dee0>: no matching AST found among candidates:
+# coding=utf-8
+lambda x, on: np.array([on_boundary(x[i], on[i]) for i in range(len(x))])
+# coding=utf-8
+lambda x, on: np.array([on_boundary1(x[i], on[i]) for i in range(len(x))])
+# coding=utf-8
+lambda x, on: np.array([on_boundary2(x[i], on[i]) for i in range(len(x))])
+To silence this warning, decorate the function with @tf.autograph.experimental.do_not_convert
+WARNING:tensorflow:AutoGraph could not transform <function run_inverse.<locals>.<lambda> at 0x78d96071ef20> and will run it as-is.
+Cause: could not parse the source code of <function run_inverse.<locals>.<lambda> at 0x78d96071ef20>: no matching AST found among candidates:
+# coding=utf-8
+lambda x, on: np.array([on_boundary(x[i], on[i]) for i in range(len(x))])
+# coding=utf-8
+lambda x, on: np.array([on_boundary1(x[i], on[i]) for i in range(len(x))])
+# coding=utf-8
+lambda x, on: np.array([on_boundary2(x[i], on[i]) for i in range(len(x))])
+To silence this warning, decorate the function with @tf.autograph.experimental.do_not_convert
+WARNING:tensorflow:6 out of the last 6 calls to <function Model._compile_tensorflow.<locals>.outputs at 0x78d960591e40> triggered tf.function retracing. Tracing is expensive and the excessive number of tracings could be due to (1) creating @tf.function repeatedly in a loop, (2) passing tensors with different shapes, (3) passing Python objects instead of tensors. For (1), please define your @tf.function outside of the loop. For (2), @tf.function has reduce_retracing=True option that can avoid unnecessary retracing. For (3), please refer to https://www.tensorflow.org/guide/function#controlling_retracing and https://www.tensorflow.org/api_docs/python/tf/function for  more details.
+WARNING:tensorflow:AutoGraph could not transform <function run_inverse.<locals>.<lambda> at 0x78d943ccdb20> and will run it as-is.
+Cause: could not parse the source code of <function run_inverse.<locals>.<lambda> at 0x78d943ccdb20>: no matching AST found among candidates:
+# coding=utf-8
+lambda x, on: np.array([on_boundary(x[i], on[i]) for i in range(len(x))])
+# coding=utf-8
+lambda x, on: np.array([on_boundary1(x[i], on[i]) for i in range(len(x))])
+# coding=utf-8
+lambda x, on: np.array([on_boundary2(x[i], on[i]) for i in range(len(x))])
+To silence this warning, decorate the function with @tf.autograph.experimental.do_not_convert
+WARNING:tensorflow:AutoGraph could not transform <function run_inverse.<locals>.<lambda> at 0x78d943cba0c0> and will run it as-is.
+Cause: could not parse the source code of <function run_inverse.<locals>.<lambda> at 0x78d943cba0c0>: no matching AST found among candidates:
+# coding=utf-8
+lambda x, on: np.array([on_boundary(x[i], on[i]) for i in range(len(x))])
+# coding=utf-8
+lambda x, on: np.array([on_boundary1(x[i], on[i]) for i in range(len(x))])
+# coding=utf-8
+lambda x, on: np.array([on_boundary2(x[i], on[i]) for i in range(len(x))])
+To silence this warning, decorate the function with @tf.autograph.experimental.do_not_convert
+WARNING:tensorflow:AutoGraph could not transform <function run_inverse.<locals>.<lambda> at 0x78d943b78180> and will run it as-is.
+Cause: could not parse the source code of <function run_inverse.<locals>.<lambda> at 0x78d943b78180>: no matching AST found among candidates:
+# coding=utf-8
+lambda x, on: np.array([on_boundary(x[i], on[i]) for i in range(len(x))])
+# coding=utf-8
+lambda x, on: np.array([on_boundary1(x[i], on[i]) for i in range(len(x))])
+# coding=utf-8
+lambda x, on: np.array([on_boundary2(x[i], on[i]) for i in range(len(x))])
+To silence this warning, decorate the function with @tf.autograph.experimental.do_not_convert
+WARNING:tensorflow:AutoGraph could not transform <function run_inverse.<locals>.<lambda> at 0x78d943d489a0> and will run it as-is.
+Cause: could not parse the source code of <function run_inverse.<locals>.<lambda> at 0x78d943d489a0>: no matching AST found among candidates:
+# coding=utf-8
+lambda x, on: np.array([on_boundary(x[i], on[i]) for i in range(len(x))])
+# coding=utf-8
+lambda x, on: np.array([on_boundary1(x[i], on[i]) for i in range(len(x))])
+# coding=utf-8
+lambda x, on: np.array([on_boundary2(x[i], on[i]) for i in range(len(x))])
+To silence this warning, decorate the function with @tf.autograph.experimental.do_not_convert
+WARNING:tensorflow:AutoGraph could not transform <function run_inverse.<locals>.<lambda> at 0x78d943d48720> and will run it as-is.
+Cause: could not parse the source code of <function run_inverse.<locals>.<lambda> at 0x78d943d48720>: no matching AST found among candidates:
+# coding=utf-8
+lambda x, on: np.array([on_boundary(x[i], on[i]) for i in range(len(x))])
+# coding=utf-8
+lambda x, on: np.array([on_boundary1(x[i], on[i]) for i in range(len(x))])
+# coding=utf-8
+lambda x, on: np.array([on_boundary2(x[i], on[i]) for i in range(len(x))])
+To silence this warning, decorate the function with @tf.autograph.experimental.do_not_convert
+WARNING:tensorflow:AutoGraph could not transform <function run_inverse.<locals>.<lambda> at 0x78d943d48c20> and will run it as-is.
+Cause: could not parse the source code of <function run_inverse.<locals>.<lambda> at 0x78d943d48c20>: no matching AST found among candidates:
+# coding=utf-8
+lambda x, on: np.array([on_boundary(x[i], on[i]) for i in range(len(x))])
+# coding=utf-8
+lambda x, on: np.array([on_boundary1(x[i], on[i]) for i in range(len(x))])
+# coding=utf-8
+lambda x, on: np.array([on_boundary2(x[i], on[i]) for i in range(len(x))])
+To silence this warning, decorate the function with @tf.autograph.experimental.do_not_convert
+WARNING:tensorflow:AutoGraph could not transform <function run_inverse.<locals>.<lambda> at 0x78d9433ce520> and will run it as-is.
+Cause: could not parse the source code of <function run_inverse.<locals>.<lambda> at 0x78d9433ce520>: no matching AST found among candidates:
+# coding=utf-8
+lambda x, on: np.array([on_boundary(x[i], on[i]) for i in range(len(x))])
+# coding=utf-8
+lambda x, on: np.array([on_boundary1(x[i], on[i]) for i in range(len(x))])
+# coding=utf-8
+lambda x, on: np.array([on_boundary2(x[i], on[i]) for i in range(len(x))])
+To silence this warning, decorate the function with @tf.autograph.experimental.do_not_convert
+WARNING:tensorflow:AutoGraph could not transform <function run_inverse.<locals>.<lambda> at 0x78d9433ce480> and will run it as-is.
+Cause: could not parse the source code of <function run_inverse.<locals>.<lambda> at 0x78d9433ce480>: no matching AST found among candidates:
+# coding=utf-8
+lambda x, on: np.array([on_boundary(x[i], on[i]) for i in range(len(x))])
+# coding=utf-8
+lambda x, on: np.array([on_boundary1(x[i], on[i]) for i in range(len(x))])
+# coding=utf-8
+lambda x, on: np.array([on_boundary2(x[i], on[i]) for i in range(len(x))])
+To silence this warning, decorate the function with @tf.autograph.experimental.do_not_convert
+WARNING:tensorflow:AutoGraph could not transform <function run_inverse.<locals>.<lambda> at 0x78d9433cf4c0> and will run it as-is.
+Cause: could not parse the source code of <function run_inverse.<locals>.<lambda> at 0x78d9433cf4c0>: no matching AST found among candidates:
+# coding=utf-8
+lambda x, on: np.array([on_boundary(x[i], on[i]) for i in range(len(x))])
+# coding=utf-8
+lambda x, on: np.array([on_boundary1(x[i], on[i]) for i in range(len(x))])
+# coding=utf-8
+lambda x, on: np.array([on_boundary2(x[i], on[i]) for i in range(len(x))])
+To silence this warning, decorate the function with @tf.autograph.experimental.do_not_convert
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/10040984@uvic.local/projects/pinns-repressilator/scripts/experiments/all_experiments.py", line 35, in <module>
+    main()
+  File "/home/10040984@uvic.local/projects/pinns-repressilator/scripts/experiments/all_experiments.py", line 31, in main
+    experiment_main()
+  File "/home/10040984@uvic.local/projects/pinns-repressilator/scripts/experiments/exp_partial_observation.py", line 43, in main
+    result = run_inverse(
+             ^^^^^^^^^^^^
+  File "/home/10040984@uvic.local/projects/pinns-repressilator/scripts/pinns/inverse.py", line 222, in run_inverse
+    plt.semilogy(epochs, loss_components[i], label=component_names[i])
+                         ~~~~~~~~~~~~~~~^^^
+IndexError: index 8 is out of bounds for axis 0 with size 8

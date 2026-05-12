@@ -21,9 +21,9 @@ from scripts.pinns.inverse import run_inverse
 true_beta = 5.0
 true_n = 3.0
 noise_levels = [0.01, 0.05, 0.10, 0.20, 0.30]
-seeds = [0, 1, 2, 3, 4]
+seeds = [0, 1]
 observed_components = [0, 1, 2]
-train_iterations = 10000
+train_iterations = 5000
 results_dir = "results/exp_noise_sweep"
 figure_path = "figures/exp_noise_sweep.png"
 

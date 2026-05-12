@@ -23,8 +23,8 @@ regimes = [
     ("oscillatory", {"beta": 5.0, "n": 3.0}),
 ]
 noise_levels = [0.05, 0.10, 0.20]
-seeds = [0, 1, 2, 3, 4]
-train_iterations = 10000
+seeds = [0, 1]
+train_iterations = 5000
 results_dir = "results/exp_regime_comparison"
 figure_path = "figures/exp_regime_comparison.png"
 

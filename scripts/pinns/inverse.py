@@ -61,7 +61,7 @@ def run_inverse(
     loss_weights=None,
     observation_stride=10,
     observed_components=None,
-    train_iterations=10000,
+    train_iterations=5000,
     observation_indices=None,
     random_seed=None,
     save_checkpoint=False,

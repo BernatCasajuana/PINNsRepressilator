@@ -1,7 +1,6 @@
 """
 Runs all experiment drivers in the experiments package sequentially.
 Each experiment is responsible for generating its own results and figures.
-
 """
 
 import os
@@ -11,7 +10,7 @@ scripts_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if scripts_dir not in sys.path:
     sys.path.insert(0, scripts_dir)
 
-from experiments.exp_initial_guess import SCRIPTS_DIR, main as run_exp_initial_guess
+from experiments.exp_initial_guess import scripts_dir, main as run_exp_initial_guess
 from experiments.exp_noise_sweep import main as run_exp_noise_sweep
 from experiments.exp_partial_observation import main as run_exp_partial_observation
 from experiments.exp_regime_comparison import main as run_exp_regime_comparison

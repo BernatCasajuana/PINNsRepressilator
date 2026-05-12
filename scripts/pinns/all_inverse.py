@@ -1,6 +1,4 @@
 """
-run_all_inverse.py
-
 Automates the training of the PINN for all datasets stored in the 'datasets' folder.
 Iterates over every .npz file, calling the `run_inverse` function for each dataset and saving the corresponding results.
 Enables running a full set of inverse experiments for multiple parameter initial guesses and noise combinations in one go.
@@ -10,9 +8,9 @@ Enables running a full set of inverse experiments for multiple parameter initial
 import os
 import sys
 
-SCRIPTS_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if SCRIPTS_DIR not in sys.path:
-    sys.path.insert(0, SCRIPTS_DIR)
+scripts_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if scripts_dir not in sys.path:
+    sys.path.insert(0, scripts_dir)
 
 # %% Import the modular 'run_inverse' function from run_inverse.py
 from scripts.pinns.inverse import run_inverse
@@ -36,7 +34,7 @@ def main():
         if file.endswith(".npz"):
             dataset_path = os.path.join(dataset_folder, file)
             C1_guess, C2_guess = guesses.get(file, (5.0, 2.0))  # default guesses
-            print(f"\n=== Running Inverse PINN for {dataset_path} with guesses C1={C1_guess}, C2={C2_guess} ===")
+            print(f"\n=== Running Inverse PINN for {dataset_path} with guesses C1 = {C1_guess}, C2 = {C2_guess} ===")
             run_inverse(dataset_path, outdir_base=outdir_base, C1_guess=C1_guess, C2_guess=C2_guess)
 
 

@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=forward_PINN         # Nom del job
+#SBATCH --job-name=forward              # Nom del job
 #SBATCH --output=forward_output.txt     # Fitxer de sortida
 #SBATCH --error=forward_error.txt       # Fitxer d’errors
 #SBATCH --time=04:00:00                 # Temps màxim (hh:mm:ss)

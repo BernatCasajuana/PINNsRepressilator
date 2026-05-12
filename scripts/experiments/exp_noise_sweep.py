@@ -3,7 +3,6 @@ Experiment 1: inverse sensitivity to observation noise.
 Question: how does inverse-PINN recovery degrade as observation noise increases?
 Design: all three repressors are observed, dense sampling is used, and the relative noise level is swept over `0.01, 0.05, 0.10, 0.20, 0.30`.
 Output: a two-panel figure with parameter recovery error and state reconstruction error versus noise.
-
 """
 
 # Import necessary libraries, utilities, and set up paths
@@ -35,7 +34,7 @@ def main():
 
     for noise_level in noise_levels:
         for seed in seeds:
-            dataset = make_synthetic_dataset(true_beta, true_n, noise_level=noise_level, seed=seed)
+            dataset = make_synthetic_dataset(true_beta, true_n, noise_level = noise_level, seed = seed)
             result = run_inverse(
                 dataset_path = dataset,
                 outdir_base = os.path.join(results_dir, "runs"),

@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=inverse_PINN         # Nom del job
+#SBATCH --job-name=inverse              # Nom del job
 #SBATCH --output=inverse_output.txt     # Fitxer de sortida
 #SBATCH --error=inverse_error.txt       # Fitxer d’errors
 #SBATCH --time=04:00:00                 # Temps màxim (hh:mm:ss)

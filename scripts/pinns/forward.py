@@ -3,7 +3,6 @@ Trains a Physics-Informed Neural Network (PINN) to predict the Repressilator dyn
 Loads the .npz file containing time points, simulated protein concentrations, and model parameters (beta, n, noise).
 The ODE system, initial conditions and the observed data are defined for the PINN, which is then trained.
 Predictions and training losses are saved as plots in a dedicated output folder.
-
 """
 
 # %% Import necessary libraries

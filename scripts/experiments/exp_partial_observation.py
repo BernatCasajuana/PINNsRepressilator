@@ -28,7 +28,7 @@ observation_designs = [
     ("x1,x2", [0, 1]),
     ("x1", [0]),
 ]
-train_iterations = 5000
+train_iterations = 3000
 results_dir = "results/exp_partial_observation"
 figure_path = "figures/exp_partial_observation.png"
 

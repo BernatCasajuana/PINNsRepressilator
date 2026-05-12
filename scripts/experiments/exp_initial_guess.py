@@ -22,10 +22,10 @@ from scripts.pinns.inverse import run_inverse
 true_beta = 5.0
 true_n = 3.0
 noise_level = 0.05
-beta_guesses = [1.0, 3.0, 5.0, 7.0]
-n_guesses = [1.5, 2.0, 2.5, 3.0]
-seeds = [0, 1]
-train_iterations = 5000
+beta_guesses = [1.0, 5.0, 7.0]
+n_guesses = [2.0, 3.0]
+seeds = [0]
+train_iterations = 3000
 results_dir = "results/exp_initial_guess"
 figure_path = "figures/exp_initial_guess.png"
 

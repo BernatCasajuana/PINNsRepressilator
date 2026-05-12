@@ -1,13 +1,17 @@
-!/bin/bash
---job-name = forward              # Nom del job
---output = forward_output.txt     # Fitxer de sortida
---error = forward_error.txt       # Fitxer d’errors
---time = 04:00:00                 # Temps màxim (hh:mm:ss)
---cpus-per-task = 4               # Nombre de CPUs per tasca
---mem = 8GB                       # Memòria assignada
+#!/bin/bash
+#SBATCH --job-name=forward              # Nom del job
+#SBATCH --output=forward_output.txt     # Fitxer de sortida
+#SBATCH --error=forward_error.txt       # Fitxer d’errors
+#SBATCH --time=04:00:00                 # Temps màxim (hh:mm:ss)
+#SBATCH --cpus-per-task=4               # Nombre de CPUs per tasca
+#SBATCH --mem=8GB                       # Memòria assignada
+
+# Load conda module and activate environment
+module load conda
+conda activate pinnsvenv
 
 # Working directory
-cd $HOME/projects/pinns-repressilator
+cd ~/projects/pinns-repressilator
 
 # Execute the Python script
 python scripts/pinns/all_forward.py

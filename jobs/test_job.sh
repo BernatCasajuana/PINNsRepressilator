@@ -1,18 +1,17 @@
-!/bin/bash
---job-name = test                 # Nom del job
---output = test_output.txt        # Fitxer de sortida
---error = test_error.txt          # Fitxer d'errors
---time = 01:00:00                 # Temps maxim (hh:mm:ss)
---cpus-per-task = 4               # Nombre de CPUs per tasca
---mem = 8GB                       # Memoria assignada
+#!/bin/bash
+#SBATCH --job-name=test                 # Nom del job
+#SBATCH --output=test_output.txt        # Fitxer de sortida
+#SBATCH --error=test_error.txt          # Fitxer d'errors
+#SBATCH --time=01:00:00                 # Temps maxim (hh:mm:ss)
+#SBATCH --cpus-per-task=4               # Nombre de CPUs per tasca
+#SBATCH --mem=8GB                       # Memoria assignada
+
+# Load conda module and activate environment
+module load conda
+conda activate pinnsvenv
 
 # Working directory
-cd $HOME/projects/pinns-repressilator/jobs
-
-# Optional virtual environment
-if [ -f venv/bin/activate ]; then
-    source venv/bin/activate
-fi
+cd ~/projects/pinns-repressilator
 
 # Run one lightweight forward and one lightweight inverse job on a single dataset
 python -u <<'PY'

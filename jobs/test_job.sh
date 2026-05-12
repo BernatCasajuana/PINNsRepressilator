@@ -1,10 +1,10 @@
-#!/bin/bash
-#SBATCH --job-name = test                 # Nom del job
-#SBATCH --output = test_output.txt        # Fitxer de sortida
-#SBATCH --error = test_error.txt          # Fitxer d'errors
-#SBATCH --time = 01:00:00                 # Temps maxim (hh:mm:ss)
-#SBATCH --cpus-per-task = 4               # Nombre de CPUs per tasca
-#SBATCH --mem = 8GB                       # Memoria assignada
+!/bin/bash
+--job-name = test                 # Nom del job
+--output = test_output.txt        # Fitxer de sortida
+--error = test_error.txt          # Fitxer d'errors
+--time = 01:00:00                 # Temps maxim (hh:mm:ss)
+--cpus-per-task = 4               # Nombre de CPUs per tasca
+--mem = 8GB                       # Memoria assignada
 
 # Working directory
 cd $HOME/projects/pinns-repressilator

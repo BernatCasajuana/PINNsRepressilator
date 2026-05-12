@@ -211,16 +211,15 @@ def run_inverse(
     loss_train = np.array(loss_history.loss_train) # loss history per component
     epochs = np.arange(len(loss_train))
     loss_components = loss_train.T
-    component_names = [
-        "Eq1 (dx1/dt)", "Eq2 (dx2/dt)", "Eq3 (dx3/dt)",
-        "IC x1", "IC x2", "IC x3",
-        "Obs x1", "Obs x2", "Obs x3"
-    ]
+    component_names = (
+    ["Eq1 (dx1/dt)", "Eq2 (dx2/dt)", "Eq3 (dx3/dt)"]
+    + ["IC x1", "IC x2", "IC x3"]
+    + [f"Obs x{i+1}" for i in observed_components]
+    )
 
     plt.figure(figsize=(10, 6))
-    n = min(len(loss_components), len(component_names))
-    for i in range(n):
-        plt.semilogy(epochs, loss_components[i], label=component_names[i])
+    for name, loss in zip(component_names, loss_components):
+        plt.semilogy(epochs, loss, label=name)
     plt.xlabel("Iterations")
     plt.ylabel("Loss (log scale)")
     plt.title(f"Training Loss (beta={beta_true}, n={n_true}, noise={noise_sigma})")

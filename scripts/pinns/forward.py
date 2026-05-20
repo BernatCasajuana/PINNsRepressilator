@@ -16,6 +16,56 @@ os.environ["dde_backend"] = "tensorflow"
 import deepxde as dde
 import tensorflow as tf
 
+
+def _normalize_observed_components(observed_components, state_dim):
+    if observed_components is None:
+        components = list(range(state_dim))
+    else:
+        try:
+            components = [int(component) for component in observed_components]
+        except TypeError as exc:
+            raise TypeError("observed_components must be an iterable of integers.") from exc
+
+    if not components:
+        raise ValueError("observed_components cannot be empty.")
+
+    invalid_components = [component for component in components if component < 0 or component >= state_dim]
+    if invalid_components:
+        raise ValueError(
+            f"observed_components must be between 0 and {state_dim - 1}. Got {invalid_components}."
+        )
+
+    if len(set(components)) != len(components):
+        raise ValueError(f"observed_components cannot contain duplicates. Got {components}.")
+
+    return components
+
+
+def _validate_loss_weights(loss_weights, expected_terms):
+    if loss_weights is None:
+        return None
+
+    normalized_weights = list(loss_weights)
+    if len(normalized_weights) != expected_terms:
+        raise ValueError(
+            "loss_weights length mismatch: expected "
+            f"{expected_terms} terms (3 equations + 3 ICs + {expected_terms - 6} observations), "
+            f"got {len(normalized_weights)}."
+        )
+
+    return normalized_weights
+
+
+def _build_loss_component_names(observed_components, actual_count):
+    expected_names = (
+        ["Eq1 (dx1/dt)", "Eq2 (dx2/dt)", "Eq3 (dx3/dt)"]
+        + ["IC x1", "IC x2", "IC x3"]
+        + [f"Obs x{component + 1}" for component in observed_components]
+    )
+    if len(expected_names) == actual_count:
+        return expected_names
+    return [f"Loss {index + 1}" for index in range(actual_count)]
+
 # %% Define ODE system
 def ode_system(x, y, beta, n):
     y1, y2, y3 = y[:, 0:1], y[:, 1:2], y[:, 2:3]
@@ -42,14 +92,29 @@ def run_forward(
 ):
     # Load dataset
     data_npz = np.load(dataset_path)
-    t = data_npz["t"]                                       
-    x_obs = data_npz["y"]                                   
+    t = np.asarray(data_npz["t"], dtype=float)
+    if t.ndim == 1:
+        t = t[:, None]
+    if t.ndim != 2 or t.shape[1] != 1:
+        raise ValueError(f"Expected t to have shape (N, 1) or (N,), got {t.shape}.")
+
+    x_obs = np.asarray(data_npz["y"], dtype=float)
+    if x_obs.ndim != 2 or x_obs.shape[1] != 3:
+        raise ValueError(f"Expected y to have shape (N, 3), got {x_obs.shape}.")
+    if len(t) != len(x_obs):
+        raise ValueError(f"t and y must have the same number of rows. Got {len(t)} and {len(x_obs)}.")
+
     x0 = x_obs[0]                                           
     beta, n = float(data_npz["beta"]), float(data_npz["n"])
-    noise_sigma = data_npz["noise"]                        
+    noise_sigma = float(np.asarray(data_npz["noise"]).squeeze())
 
-    if observed_components is None:
-        observed_components = [0, 1, 2]
+    observed_components = _normalize_observed_components(observed_components, state_dim=x_obs.shape[1])
+    expected_loss_terms = 6 + len(observed_components)
+    loss_weights = _validate_loss_weights(loss_weights, expected_loss_terms)
+
+    observation_stride = int(observation_stride)
+    if observation_stride <= 0:
+        raise ValueError(f"observation_stride must be a positive integer. Got {observation_stride}.")
 
     component_tag = "-".join(str(component + 1) for component in observed_components)
     
@@ -117,15 +182,11 @@ def run_forward(
     loss_train = np.array(loss_history.loss_train) # loss history per component
     epochs = np.arange(len(loss_train))
     loss_components = loss_train.T
-    component_names = [
-        "Eq1 (dx1/dt)", "Eq2 (dx2/dt)", "Eq3 (dx3/dt)",
-        "IC x1", "IC x2", "IC x3",
-        "Obs x1", "Obs x2", "Obs x3"
-    ]
+    component_names = _build_loss_component_names(observed_components, actual_count=loss_components.shape[0])
 
     plt.figure(figsize=(10, 6))
-    for i in range(len(component_names)):
-        plt.semilogy(epochs, loss_components[i], label=component_names[i])
+    for name, loss in zip(component_names, loss_components):
+        plt.semilogy(epochs, loss, label=name)
     plt.xlabel("Iterations")
     plt.ylabel("Loss (log scale)")
     plt.title(f"Training Loss (beta={beta}, n={n}, noise={noise_sigma})")

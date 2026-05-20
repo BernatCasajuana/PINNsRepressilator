@@ -1,0 +1,30 @@
+#!/bin/bash
+#SBATCH --job-name=test_exp_init_guess        # Nom del job
+#SBATCH --output=test_exp_init_guess_output.txt  # Fitxer de sortida
+#SBATCH --error=test_exp_init_guess_error.txt    # Fitxer d'errors
+#SBATCH --time=01:00:00                       # Temps maxim (hh:mm:ss)
+#SBATCH --cpus-per-task=4                     # Nombre de CPUs per tasca
+#SBATCH --mem=8GB                             # Memoria assignada
+
+# Load conda module and activate environment
+module load conda
+conda activate pinnsvenv
+
+# Working directory
+cd ~/projects/pinns-repressilator
+
+# Execute a lightweight test run for Experiment 4
+python -u <<'PY'
+from scripts.experiments import exp_initial_guess as exp
+
+exp.beta_guesses = [4.0]
+exp.n_guesses = [2.5]
+exp.seeds = [0]
+exp.train_iterations = 100
+exp.results_dir = "results/test_jobs/exp_initial_guess"
+exp.figure_path = "figures/test_jobs/exp_initial_guess.png"
+
+print("=== Running quick test: exp_initial_guess ===")
+print(f"beta_guesses={exp.beta_guesses}, n_guesses={exp.n_guesses}, seeds={exp.seeds}, train_iterations={exp.train_iterations}")
+exp.main()
+PY

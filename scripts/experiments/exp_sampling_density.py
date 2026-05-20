@@ -1,7 +1,7 @@
 """
 Experiment 3: inverse sensitivity to sampling density. 
 Question: how sparse can the measurements be before recovery fails?
-Design: noise is fixed, all three repressors are observed, and the number of observation points is varied over `10, 25, 50, 100, 200`.
+Design: noise is fixed, all three repressors are observed, and the number of observation points is varied over `10, 25, 100`.
 Output: parameter and state errors versus the number of observation points.
 """
 

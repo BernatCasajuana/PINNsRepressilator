@@ -78,6 +78,8 @@ def make_synthetic_dataset(
 
 # Function to compute observation indices
 def evenly_spaced_observation_indices(total_points, observation_count):
+    if observation_count <= 0:
+        raise ValueError(f"observation_count must be a positive integer. Got {observation_count}.")
     if observation_count >= total_points:
         return list(range(total_points))
     return np.unique(np.linspace(0, total_points - 1, observation_count, dtype=int)).tolist()

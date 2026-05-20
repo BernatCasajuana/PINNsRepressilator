@@ -53,6 +53,101 @@ def _set_random_seed(random_seed):
     tf.random.set_seed(random_seed)
     dde.config.set_random_seed(random_seed)
 
+
+def _normalize_observed_components(observed_components, state_dim):
+    if observed_components is None:
+        components = list(range(state_dim))
+    else:
+        try:
+            components = [int(component) for component in observed_components]
+        except TypeError as exc:
+            raise TypeError("observed_components must be an iterable of integers.") from exc
+
+    if not components:
+        raise ValueError("observed_components cannot be empty.")
+
+    invalid_components = [component for component in components if component < 0 or component >= state_dim]
+    if invalid_components:
+        raise ValueError(
+            f"observed_components must be between 0 and {state_dim - 1}. Got {invalid_components}."
+        )
+
+    if len(set(components)) != len(components):
+        raise ValueError(f"observed_components cannot contain duplicates. Got {components}.")
+
+    return components
+
+
+def _build_observation_indices(total_points, observation_stride, observation_indices):
+    if observation_indices is None:
+        stride = int(observation_stride)
+        if stride <= 0:
+            raise ValueError(f"observation_stride must be a positive integer. Got {observation_stride}.")
+        return np.arange(0, total_points, stride, dtype=int), stride
+
+    indices = np.array(sorted(set(int(index) for index in observation_indices)), dtype=int)
+    if indices.size == 0:
+        raise ValueError("observation_indices cannot be empty.")
+
+    if np.any(indices < 0) or np.any(indices >= total_points):
+        raise ValueError(
+            f"observation_indices must be between 0 and {total_points - 1}. Got {indices.tolist()}."
+        )
+
+    return indices, -1
+
+
+def _validate_loss_weights(loss_weights, expected_terms):
+    if loss_weights is None:
+        return None
+
+    normalized_weights = list(loss_weights)
+    if len(normalized_weights) != expected_terms:
+        raise ValueError(
+            "loss_weights length mismatch: expected "
+            f"{expected_terms} terms (3 equations + 3 ICs + {expected_terms - 6} observations), "
+            f"got {len(normalized_weights)}."
+        )
+
+    return normalized_weights
+
+
+def _build_loss_component_names(observed_components, actual_count):
+    expected_names = (
+        ["Eq1 (dx1/dt)", "Eq2 (dx2/dt)", "Eq3 (dx3/dt)"]
+        + ["IC x1", "IC x2", "IC x3"]
+        + [f"Obs x{component + 1}" for component in observed_components]
+    )
+    if len(expected_names) == actual_count:
+        return expected_names
+    return [f"Loss {index + 1}" for index in range(actual_count)]
+
+
+def _variable_to_scalar(variable):
+    value = variable.value() if hasattr(variable, "value") else variable
+
+    if hasattr(value, "numpy"):
+        try:
+            return float(np.asarray(value.numpy(), dtype=float).squeeze())
+        except Exception:
+            pass
+
+    try:
+        return float(np.asarray(dde.backend.to_numpy(value), dtype=float).squeeze())
+    except Exception:
+        pass
+
+    try:
+        return float(np.asarray(tf.keras.backend.get_value(value), dtype=float).squeeze())
+    except Exception:
+        pass
+
+    try:
+        session = tf.compat.v1.keras.backend.get_session()
+        return float(np.asarray(session.run(value), dtype=float).squeeze())
+    except Exception as exc:
+        raise TypeError("Unable to convert trainable variable to scalar for current TensorFlow backend.") from exc
+
 def run_inverse(
     dataset_path,
     outdir_base="results/inverse",
@@ -70,23 +165,36 @@ def run_inverse(
 
     # Load dataset
     data_npz, dataset_label = _load_dataset(dataset_path)
-    t = np.asarray(data_npz["t"])
-    x_obs = np.asarray(data_npz["y"])
-    y_true = np.asarray(data_npz["y_clean"] if "y_clean" in data_npz else data_npz["y"])
+    t = np.asarray(data_npz["t"], dtype=float)
+    if t.ndim == 1:
+        t = t[:, None]
+    if t.ndim != 2 or t.shape[1] != 1:
+        raise ValueError(f"Expected t to have shape (N, 1) or (N,), got {t.shape}.")
+
+    x_obs = np.asarray(data_npz["y"], dtype=float)
+    if x_obs.ndim != 2 or x_obs.shape[1] != 3:
+        raise ValueError(f"Expected y to have shape (N, 3), got {x_obs.shape}.")
+    if len(t) != len(x_obs):
+        raise ValueError(f"t and y must have the same number of rows. Got {len(t)} and {len(x_obs)}.")
+
+    y_true = np.asarray(data_npz["y_clean"] if "y_clean" in data_npz else data_npz["y"], dtype=float)
+    if y_true.shape != x_obs.shape:
+        raise ValueError(f"Expected y_clean/y to have shape {x_obs.shape}, got {y_true.shape}.")
     x0 = x_obs[0]
     beta_true, n_true = float(data_npz["beta"]), float(data_npz["n"])
-    noise_sigma = data_npz["noise"]
+    noise_sigma = float(np.asarray(data_npz["noise"]).squeeze())
 
-    if observed_components is None:
-        observed_components = [0, 1, 2]
+    observed_components = _normalize_observed_components(observed_components, state_dim=x_obs.shape[1])
+    expected_loss_terms = 6 + len(observed_components)
+    loss_weights = _validate_loss_weights(loss_weights, expected_loss_terms)
 
     component_tag = "-".join(str(component + 1) for component in observed_components)
 
-    if observation_indices is None:
-        observation_indices = np.arange(0, len(t), observation_stride)
-    else:
-        observation_indices = np.array(sorted(set(int(index) for index in observation_indices)), dtype=int)
-        observation_stride = -1
+    observation_indices, observation_stride = _build_observation_indices(
+        total_points=len(t),
+        observation_stride=observation_stride,
+        observation_indices=observation_indices,
+    )
 
     observation_count = len(observation_indices)
     dataset_tag = _sanitize_label(os.path.splitext(os.path.basename(dataset_label))[0])
@@ -155,7 +263,7 @@ def run_inverse(
 
         def on_epoch_end(self):
             super().on_epoch_end()
-            vals = [v.value().numpy().item() for v in self.var]
+            vals = [_variable_to_scalar(variable) for variable in self.var]
             self.estimated_params.append(vals)
 
     variable_callback = SaveVariablesCallback([C1, C2], period=100)
@@ -171,7 +279,7 @@ def run_inverse(
         model.save(os.path.join(outdir, "model_checkpoint"), protocol="backend", verbose=0)
 
     # Save estimated parameters
-    est_beta, est_n = C1.value().numpy().item(), C2.value().numpy().item()
+    est_beta, est_n = _variable_to_scalar(C1), _variable_to_scalar(C2)
     beta_abs_error = abs(est_beta - beta_true)
     n_abs_error = abs(est_n - n_true)
     beta_rel_error = beta_abs_error / abs(beta_true)
@@ -187,7 +295,7 @@ def run_inverse(
     with open(os.path.join(outdir, "inverse_metrics.csv"), "w", newline="") as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(["metric", "value"])
-        writer.writerow(["dataset_path", dataset_path])
+        writer.writerow(["dataset_path", dataset_label])
         writer.writerow(["beta_true", f"{beta_true:.6f}"])
         writer.writerow(["n_true", f"{n_true:.6f}"])
         writer.writerow(["beta_estimated", f"{est_beta:.6f}"])
@@ -211,11 +319,7 @@ def run_inverse(
     loss_train = np.array(loss_history.loss_train) # loss history per component
     epochs = np.arange(len(loss_train))
     loss_components = loss_train.T
-    component_names = (
-    ["Eq1 (dx1/dt)", "Eq2 (dx2/dt)", "Eq3 (dx3/dt)"]
-    + ["IC x1", "IC x2", "IC x3"]
-    + [f"Obs x{i+1}" for i in observed_components]
-    )
+    component_names = _build_loss_component_names(observed_components, actual_count=loss_components.shape[0])
 
     plt.figure(figsize=(10, 6))
     for name, loss in zip(component_names, loss_components):

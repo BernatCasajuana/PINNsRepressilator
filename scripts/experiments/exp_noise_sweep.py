@@ -1,7 +1,7 @@
 """
 Experiment 1: inverse sensitivity to observation noise.
 Question: how does inverse-PINN recovery degrade as observation noise increases?
-Design: all three repressors are observed, dense sampling is used, and the relative noise level is swept over `0.01, 0.05, 0.10, 0.20, 0.30`.
+Design: all three repressors are observed, dense sampling is used, and the relative noise level is swept over `0.01, 0.05, 0.10`.
 Output: a two-panel figure with parameter recovery error and state reconstruction error versus noise.
 """
 

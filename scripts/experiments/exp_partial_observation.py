@@ -26,6 +26,7 @@ seeds = [0, 1]
 observation_designs = [
     ("x1,x2,x3", [0, 1, 2]),
     ("x1,x2", [0, 1]),
+    ("x1,x3", [0, 2]),
     ("x1", [0]),
 ]
 train_iterations = 3000

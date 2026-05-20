@@ -22,6 +22,11 @@ For all five experiments, the main outputs are parameter recovery and state reco
 - `figures/`: generated plots.
 - `jobs/`: SLURM launch scripts for running the experiments on a cluster.
 
+Inside `jobs/`, the repository currently includes both full runs and quick validation runs:
+
+- `jobs/experiments_job.sh`: runs all experiment drivers sequentially.
+- `jobs/test_exp_*.sh`: lightweight smoke tests for each individual experiment.
+
 Inside `scripts/`, the code is organized into three main folders:
 
 - `scripts/data/`: dataset generation scripts.
@@ -61,6 +66,28 @@ All experiment drivers use repeated seeds per configuration and report:
 - RMSE on the reconstructed trajectory.
 
 A dedicated script `scripts/experiments/all_experiments.py` runs all five experiments sequentially.
+
+## Current Default Experimental Setup
+
+The default configuration in the experiment scripts is currently:
+
+- Experiment 1 (`exp_noise_sweep.py`): noise levels `0.01, 0.05, 0.10`; seeds `0, 1`; `10000` training iterations per run.
+- Experiment 2 (`exp_partial_observation.py`): observation designs `x1,x2,x3`, `x1,x2`, and `x1`; seeds `0, 1`; `10000` training iterations per run.
+- Experiment 3 (`exp_sampling_density.py`): observation counts `10, 25, 100`; seeds `0, 1`; `10000` training iterations per run.
+- Experiment 4 (`exp_initial_guess.py`): initial-guess grid `beta0 in {5.0, 6.0}` and `n0 in {2.0, 3.0}`; seeds `0, 1`; `10000` training iterations per run.
+- Experiment 5 (`exp_regime_comparison.py`): four regime cases (`stable/oscillatory` crossed with `beta=5.0/8.0`, fixed `n` per regime), noise `0.05`, seeds `0, 1`; `10000` training iterations per run.
+
+## Current Default Compute Load
+
+Using the defaults above, the total training-iteration budget is:
+
+- Experiment 1: `3 x 2 x 10000 = 60000`
+- Experiment 2: `3 x 2 x 10000 = 60000`
+- Experiment 3: `3 x 2 x 10000 = 60000`
+- Experiment 4: `2 x 2 x 2 x 10000 = 80000`
+- Experiment 5: `4 x 2 x 10000 = 80000`
+
+Total default budget across all experiments: `340000` training iterations.
 
 ## Dependencies
 

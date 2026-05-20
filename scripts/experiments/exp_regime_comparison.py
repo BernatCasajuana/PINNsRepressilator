@@ -1,7 +1,7 @@
 """
 Experiment 5: inverse sensitivity to dynamical regime. 
 Question: does the dynamical regime change the difficulty of PINN recovery?
-Design: a stable regime and an oscillatory regime are compared across multiple noise levels.
+Design: each regime (stable and oscillatory) is evaluated at two beta values with fixed n.
 Output: a regime comparison figure for parameter recovery error and state reconstruction error.
 """
 
@@ -19,12 +19,14 @@ from scripts.pinns.inverse import run_inverse
 
 # Experiment parameters and output paths
 regimes = [
-    ("stable", {"beta": 5.0, "n": 1.5}),
-    ("oscillatory", {"beta": 5.0, "n": 3.0}),
+    ("stable_beta5", {"regime": "stable", "beta": 5.0, "n": 1.5}),
+    ("stable_beta8", {"regime": "stable", "beta": 8.0, "n": 1.5}),
+    ("oscillatory_beta5", {"regime": "oscillatory", "beta": 5.0, "n": 3.0}),
+    ("oscillatory_beta8", {"regime": "oscillatory", "beta": 8.0, "n": 3.0}),
 ]
 noise_levels = [0.05]
-seeds = [0]
-train_iterations = 5000
+seeds = [0, 1]
+train_iterations = 10000
 results_dir = "results/exp_regime_comparison"
 figure_path = "figures/exp_regime_comparison.png"
 
@@ -33,7 +35,7 @@ def main():
     ensure_project_directories()
     raw_rows = []
 
-    for regime_name, parameters in regimes:
+    for case_name, parameters in regimes:
         for noise_level in noise_levels:
             for seed in seeds:
                 dataset = make_synthetic_dataset(
@@ -55,7 +57,10 @@ def main():
                 )
                 raw_rows.append(
                     {
-                        "regime": regime_name,
+                        "case": case_name,
+                        "regime": parameters["regime"],
+                        "beta": parameters["beta"],
+                        "n": parameters["n"],
                         "noise_level": noise_level,
                         "seed": seed,
                         "beta_rel_error": result["beta_rel_error"],
@@ -68,21 +73,37 @@ def main():
 
     summary_rows = aggregate_metrics(
         raw_rows,
-        group_keys = ["regime", "noise_level"],
+        group_keys = ["case", "regime", "beta", "n", "noise_level"],
         metric_keys = ["beta_rel_error", "n_rel_error", "parameter_rel_error", "state_rmse"],
     )
-    summary_rows.sort(key = lambda row: (row["regime"], row["noise_level"]))
+    case_order = [case_name for case_name, _ in regimes]
+    summary_rows.sort(key = lambda row: (case_order.index(row["case"]), row["noise_level"]))
 
     write_csv(
         os.path.join(results_dir, "regime_comparison_raw.csv"),
         raw_rows,
-        ["regime", "noise_level", "seed", "beta_rel_error", "n_rel_error", "parameter_rel_error", "state_rmse", "outdir"],
+        [
+            "case",
+            "regime",
+            "beta",
+            "n",
+            "noise_level",
+            "seed",
+            "beta_rel_error",
+            "n_rel_error",
+            "parameter_rel_error",
+            "state_rmse",
+            "outdir",
+        ],
     )
     write_csv(
         os.path.join(results_dir, "regime_comparison_summary.csv"),
         summary_rows,
         [
+            "case",
             "regime",
+            "beta",
+            "n",
             "noise_level",
             "num_runs",
             "beta_rel_error_mean",
@@ -97,16 +118,17 @@ def main():
     )
 
     fig, axes = plt.subplots(1, 2, figsize = (12, 5))
-    for regime_name, _ in regimes:
-        regime_rows = [row for row in summary_rows if row["regime"] == regime_name]
-        noise_values = [row["noise_level"] for row in regime_rows]
-        parameter_means = [row["parameter_rel_error_mean"] for row in regime_rows]
-        parameter_stds = [row["parameter_rel_error_std"] for row in regime_rows]
-        state_means = [row["state_rmse_mean"] for row in regime_rows]
-        state_stds = [row["state_rmse_std"] for row in regime_rows]
+    for case_name, parameters in regimes:
+        case_rows = [row for row in summary_rows if row["case"] == case_name]
+        noise_values = [row["noise_level"] for row in case_rows]
+        parameter_means = [row["parameter_rel_error_mean"] for row in case_rows]
+        parameter_stds = [row["parameter_rel_error_std"] for row in case_rows]
+        state_means = [row["state_rmse_mean"] for row in case_rows]
+        state_stds = [row["state_rmse_std"] for row in case_rows]
+        label = f"{parameters['regime']} (beta={parameters['beta']}, n={parameters['n']})"
 
-        axes[0].errorbar(noise_values, parameter_means, yerr = parameter_stds, marker = "o", capsize = 4, label = regime_name)
-        axes[1].errorbar(noise_values, state_means, yerr = state_stds, marker = "o", capsize = 4, label = regime_name)
+        axes[0].errorbar(noise_values, parameter_means, yerr = parameter_stds, marker = "o", capsize = 4, label = label)
+        axes[1].errorbar(noise_values, state_means, yerr = state_stds, marker = "o", capsize = 4, label = label)
 
     axes[0].set_xlabel("Relative noise level")
     axes[0].set_ylabel("Parameter recovery error")

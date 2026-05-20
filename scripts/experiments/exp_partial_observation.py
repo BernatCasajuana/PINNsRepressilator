@@ -1,7 +1,7 @@
 """
 Experiment 2: inverse sensitivity to partial observation. 
 Question: how much performance is lost when fewer repressors are measured?
-Design: noise is fixed and four observation designs are compared: all three repressors, `x1,x2`, `x1,x3`, and `x1` only.
+Design: noise is fixed and three observation designs are compared: `x1,x2,x3`, `x1,x2`, and `x1`.
 Output: a grouped comparison of parameter and state errors across observation designs.
 """
 
@@ -26,10 +26,9 @@ seeds = [0, 1]
 observation_designs = [
     ("x1,x2,x3", [0, 1, 2]),
     ("x1,x2", [0, 1]),
-    ("x1,x3", [0, 2]),
     ("x1", [0]),
 ]
-train_iterations = 3000
+train_iterations = 10000
 results_dir = "results/exp_partial_observation"
 figure_path = "figures/exp_partial_observation.png"
 

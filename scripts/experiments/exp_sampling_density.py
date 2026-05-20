@@ -22,8 +22,8 @@ true_beta = 5.0
 true_n = 3.0
 noise_level = 0.05
 observation_counts = [10, 25, 100]
-seeds = [0]
-train_iterations = 3000
+seeds = [0, 1]
+train_iterations = 10000
 results_dir = "results/exp_sampling_density"
 figure_path = "figures/exp_sampling_density.png"
 

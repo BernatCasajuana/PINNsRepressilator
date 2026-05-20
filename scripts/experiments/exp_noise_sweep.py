@@ -23,7 +23,7 @@ true_n = 3.0
 noise_levels = [0.01, 0.05, 0.10]
 seeds = [0, 1]
 observed_components = [0, 1, 2]
-train_iterations = 5000
+train_iterations = 10000
 results_dir = "results/exp_noise_sweep"
 figure_path = "figures/exp_noise_sweep.png"
 

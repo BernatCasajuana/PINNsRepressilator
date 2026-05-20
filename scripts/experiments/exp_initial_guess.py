@@ -1,7 +1,7 @@
 """
 Experiment 4: inverse sensitivity to initial parameter guesses. 
 Question: how sensitive is inverse-PINN training to the initial guesses for $\beta$ and $n$?
-Design: the inverse problem is run over a grid of initial guesses for $\beta_0$ and $n_0`.
+Design: the inverse problem is run over a 2x2 grid of initial guesses, including the true pair and nearby offsets: $\beta_0 \in \{5.0, 6.0\}$ and $n_0 \in \{2.0, 3.0\}$.
 Output: heatmaps of the relative recovery error on $\beta$ and $n$ over the initial-guess grid.
 """
 
@@ -22,10 +22,10 @@ from scripts.pinns.inverse import run_inverse
 true_beta = 5.0
 true_n = 3.0
 noise_level = 0.05
-beta_guesses = [1.0, 5.0, 7.0]
+beta_guesses = [5.0, 6.0]
 n_guesses = [2.0, 3.0]
-seeds = [0]
-train_iterations = 3000
+seeds = [0, 1]
+train_iterations = 10000
 results_dir = "results/exp_initial_guess"
 figure_path = "figures/exp_initial_guess.png"
 

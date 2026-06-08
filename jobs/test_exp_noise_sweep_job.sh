@@ -8,7 +8,7 @@
 
 # Load conda module and activate environment
 module load conda
-conda activate pinnsvenv
+conda activate
 
 # Working directory
 cd ~/projects/pinns-repressilator

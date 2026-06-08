@@ -7,11 +7,13 @@
 #SBATCH --mem=8GB                             # Memoria assignada
 
 # Load conda module and activate environment
-module load conda
-conda activate
+source /opt/software/miniconda3/bin/activate base
 
 # Working directory
-cd ~/projects/pinns-repressilator
+cd /home/10040984@uvic.local/projects/pinns-repressilator
+
+# Set PYTHONPATH to include the current directory
+export PYTHONPATH=/home/10040984@uvic.local/projects/pinns-repressilator:$PYTHONPATH
 
 # Execute a lightweight test run for Experiment 1
 python -u <<'PY'

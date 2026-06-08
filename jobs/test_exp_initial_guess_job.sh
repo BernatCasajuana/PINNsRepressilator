@@ -23,8 +23,11 @@ exp.beta_guesses = [4.0]
 exp.n_guesses = [2.5]
 exp.seeds = [0]
 exp.train_iterations = 100
-exp.results_dir = "results/test_jobs/exp_initial_guess"
-exp.figure_path = "figures/test_jobs/exp_initial_guess.png"
+
+ROOT = "/home/10040984@uvic.local/projects/pinns-repressilator"
+
+exp.results_dir = ROOT + "/results/test_exp_initial_guess"
+exp.figure_path = ROOT + "/figures/test_exp_initial_guess.png"
 
 print("=== Running quick test: exp_initial_guess ===")
 print(f"beta_guesses={exp.beta_guesses}, n_guesses={exp.n_guesses}, seeds={exp.seeds}, train_iterations={exp.train_iterations}")

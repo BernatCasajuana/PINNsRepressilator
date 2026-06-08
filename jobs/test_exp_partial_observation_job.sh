@@ -25,8 +25,11 @@ exp.observation_designs = [
     ("x1", [0]),
 ]
 exp.train_iterations = 100
-exp.results_dir = "results/test_jobs/exp_partial_observation"
-exp.figure_path = "figures/test_jobs/exp_partial_observation.png"
+
+ROOT = "/home/10040984@uvic.local/projects/pinns-repressilator"
+
+exp.results_dir = ROOT + "/results/test_exp_partial_observation"
+exp.figure_path = ROOT + "/figures/test_exp_partial_observation.png"
 
 print("=== Running quick test: exp_partial_observation ===")
 print(f"designs={exp.observation_designs}, seeds={exp.seeds}, train_iterations={exp.train_iterations}")

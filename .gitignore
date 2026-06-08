@@ -1,5 +1,51 @@
-# Ignore
-venv/
+# =========================
+# EXPERIMENT OUTPUTS
+# =========================
+results/
+figures/
+logs/
+outputs/
+
+*.png
+*.jpg
+*.jpeg
+*.pdf
+*.csv
+*.txt
+*.h5
+*.ckpt
+
+# IMPORTANT EXCEPTION (see note below)
+!jobs/*.sh
+
+# =========================
+# SLURM / HPC JOB OUTPUTS
+# =========================
+jobs/*.out
+jobs/*.err
+jobs/*_output.txt
+jobs/*_error.txt
+
+# =========================
+# PYTHON
+# =========================
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+
+# Envs
+venv/
+.venv/
+.env/
+
+# =========================
+# IDEs
+# =========================
+.vscode/
+.idea/
+
+# =========================
+# OS
+# =========================
 .DS_Store

@@ -7,7 +7,7 @@
 #SBATCH --mem=8GB                             # Memoria assignada
 
 # Load conda module and activate environment
-source /opt/software/miniconda3/bin/activate base
+source /opt/software/miniconda3/bin/activate pinns-repressilator-venv
 
 # Working directory
 cd /home/10040984@uvic.local/projects/pinns-repressilator

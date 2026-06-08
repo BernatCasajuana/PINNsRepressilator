@@ -1,17 +1,19 @@
 #!/bin/bash
 #SBATCH --job-name=test_exp_partial_obs       # Nom del job
-#SBATCH --output=test_exp_partial_obs_output.txt  # Fitxer de sortida
-#SBATCH --error=test_exp_partial_obs_error.txt    # Fitxer d'errors
+#SBATCH --output=/home/10040984@uvic.local/projects/pinns-repressilator/jobs/test_exp_partial_obs_output.txt # Fitxer de sortida
+#SBATCH --error=/home/10040984@uvic.local/projects/pinns-repressilator/jobs/test_exp_partial_obs_error.txt # Fitxer d'error
 #SBATCH --time=01:00:00                       # Temps maxim (hh:mm:ss)
 #SBATCH --cpus-per-task=4                     # Nombre de CPUs per tasca
 #SBATCH --mem=8GB                             # Memoria assignada
 
 # Load conda module and activate environment
-module load conda
-conda activate pinnsvenv
+source /opt/software/miniconda3/bin/activate pinns-repressilator-venv
 
 # Working directory
-cd ~/projects/pinns-repressilator
+cd /home/10040984@uvic.local/projects/pinns-repressilator
+
+# Set PYTHONPATH to include the current directory
+export PYTHONPATH=/home/10040984@uvic.local/projects/pinns-repressilator:$PYTHONPATH
 
 # Execute a lightweight test run for Experiment 2
 python -u <<'PY'

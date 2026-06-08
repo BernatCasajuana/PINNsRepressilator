@@ -25,8 +25,8 @@ exp.train_iterations = 100
 
 ROOT = "/home/10040984@uvic.local/projects/pinns-repressilator"
 
-exp.results_dir = ROOT + "/results/test_jobs/exp_noise_sweep"
-exp.figure_path = ROOT + "/figures/test_jobs/exp_noise_sweep.png"
+exp.results_dir = ROOT + "/results/test_exp_noise_sweep"
+exp.figure_path = ROOT + "/figures/test_exp_noise_sweep.png"
 
 print("=== Running quick test: exp_noise_sweep ===")
 print(f"noise_levels={exp.noise_levels}, seeds={exp.seeds}, train_iterations={exp.train_iterations}")

@@ -148,6 +148,20 @@ def _variable_to_scalar(variable):
     except Exception as exc:
         raise TypeError("Unable to convert trainable variable to scalar for current TensorFlow backend.") from exc
 
+
+def _format_noise_for_plot(data_npz, noise_sigma):
+    if "noise_level" in data_npz:
+        noise_value = float(np.asarray(data_npz["noise_level"]).squeeze())
+    else:
+        noise_value = float(noise_sigma)
+    formatted = f"{noise_value:.3f}".rstrip("0").rstrip(".")
+    if "." not in formatted:
+        return f"{formatted}.00"
+    decimal_count = len(formatted.split(".", 1)[1])
+    if decimal_count == 1:
+        return f"{formatted}0"
+    return formatted
+
 def run_inverse(
     dataset_path,
     outdir_base="results/inverse",
@@ -183,6 +197,7 @@ def run_inverse(
     x0 = x_obs[0]
     beta_true, n_true = float(data_npz["beta"]), float(data_npz["n"])
     noise_sigma = float(np.asarray(data_npz["noise"]).squeeze())
+    noise_text = _format_noise_for_plot(data_npz, noise_sigma)
 
     observed_components = _normalize_observed_components(observed_components, state_dim=x_obs.shape[1])
     expected_loss_terms = 6 + len(observed_components)
@@ -325,8 +340,8 @@ def run_inverse(
     for name, loss in zip(component_names, loss_components):
         plt.semilogy(epochs, loss, label=name)
     plt.xlabel("Iterations")
-    plt.ylabel("Loss (log scale)")
-    plt.title(f"Training Loss (beta={beta_true}, n={n_true}, noise={noise_sigma})")
+    plt.ylabel("Loss (Log Scale)")
+    plt.title(f"Training Loss (Beta={beta_true:.3f}, n={n_true:.3f}, Noise={noise_text})")
     plt.legend()
     plt.tight_layout()
     plt.savefig(os.path.join(outdir, "inverse_loss.png")) # save plot
@@ -338,11 +353,11 @@ def run_inverse(
     colors = ["tab:blue", "tab:orange", "tab:green"]
 
     for i in range(3):
-        plt.plot(t, x_obs[:, i], "-", color=colors[i], label=f"{labels[i]} (data)") # obtained data
+        plt.plot(t, x_obs[:, i], "-", color=colors[i], label=f"{labels[i]} (Data)") # obtained data
         plt.plot(t, y_pred[:, i], "--", color=colors[i], label=f"{labels[i]} (PINN)") # PINN prediction
     plt.xlabel("Time")
     plt.ylabel("Protein Concentration")
-    plt.title(f"Inverse Problem Repressilator Dynamics Prediction (beta={beta_true}, n={n_true}, noise={noise_sigma})")
+    plt.title(f"Inverse Repressilator Dynamics Prediction (Beta={beta_true:.3f}, n={n_true:.3f}, Noise={noise_text})")
     plt.legend()
     plt.tight_layout()
     plt.savefig(os.path.join(outdir, "inverse_prediction.png")) # save plot

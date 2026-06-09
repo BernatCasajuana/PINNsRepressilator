@@ -9,6 +9,7 @@ Output: heatmaps of the relative recovery error on $\beta$ and $n$ over the init
 import os
 import sys
 import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
 import numpy as np
 
 scripts_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -28,6 +29,7 @@ seeds = [0, 1]
 train_iterations = 10000
 results_dir = "results/exp_initial_guess"
 figure_path = "figures/exp_initial_guess.png"
+heatmap_cmap = "Blues"
 
 # Main experiment loop
 def main():
@@ -100,22 +102,26 @@ def main():
         beta_heatmap[n_index, beta_index] = row["beta_rel_error_mean"]
         n_heatmap[n_index, beta_index] = row["n_rel_error_mean"]
 
+    vmin = min(float(np.min(beta_heatmap)), float(np.min(n_heatmap)))
+    vmax = max(float(np.max(beta_heatmap)), float(np.max(n_heatmap)))
+    norm = mcolors.Normalize(vmin = vmin, vmax = vmax)
+
     fig, axes = plt.subplots(1, 2, figsize = (12, 5))
-    beta_image = axes[0].imshow(beta_heatmap, origin = "lower", aspect = "auto")
+    beta_image = axes[0].imshow(beta_heatmap, origin = "lower", aspect = "auto", cmap = heatmap_cmap, norm = norm)
     axes[0].set_xticks(range(len(beta_guesses)), [str(value) for value in beta_guesses])
     axes[0].set_yticks(range(len(n_guesses)), [str(value) for value in n_guesses])
     axes[0].set_xlabel(r"Initial $\beta$")
     axes[0].set_ylabel(r"Initial $n$")
-    axes[0].set_title(r"Relative error on $\beta$")
-    fig.colorbar(beta_image, ax=axes[0])
+    axes[0].set_title(r"Relative Error on $\beta$")
 
-    n_image = axes[1].imshow(n_heatmap, origin = "lower", aspect = "auto")
+    n_image = axes[1].imshow(n_heatmap, origin = "lower", aspect = "auto", cmap = heatmap_cmap, norm = norm)
     axes[1].set_xticks(range(len(beta_guesses)), [str(value) for value in beta_guesses])
     axes[1].set_yticks(range(len(n_guesses)), [str(value) for value in n_guesses])
     axes[1].set_xlabel(r"Initial $\beta$")
     axes[1].set_ylabel(r"Initial $n$")
-    axes[1].set_title(r"Relative error on $n$")
-    fig.colorbar(n_image, ax=axes[1])
+    axes[1].set_title(r"Relative Error on $n$")
+    shared_colorbar = fig.colorbar(n_image, ax = axes)
+    shared_colorbar.set_label("Relative Error")
 
     finalize_figure(figure_path)
 

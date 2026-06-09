@@ -31,6 +31,8 @@ observation_designs = [
 train_iterations = 10000
 results_dir = "results/exp_partial_observation"
 figure_path = "figures/exp_partial_observation.png"
+parameter_color = "#1F77B4"
+state_color = "#6C757D"
 
 # Main experiment loop
 def main():
@@ -101,15 +103,33 @@ def main():
     state_stds = [row["state_rmse_std"] for row in summary_rows]
 
     fig, axes = plt.subplots(1, 2, figsize = (13, 5))
-    axes[0].bar(positions, parameter_means, yerr = parameter_stds, capsize = 4)
+    axes[0].bar(
+        positions,
+        parameter_means,
+        yerr = parameter_stds,
+        capsize = 4,
+        color = parameter_color,
+        edgecolor = "black",
+        linewidth = 0.5,
+    )
     axes[0].set_xticks(positions, [row["design"] for row in summary_rows], rotation = 20)
-    axes[0].set_ylabel("Parameter recovery error")
-    axes[0].set_title("Partial observation vs parameter recovery")
+    axes[0].set_xlabel("Observation Design")
+    axes[0].set_ylabel("Parameter Recovery Error")
+    axes[0].set_title("Partial Observation vs Parameter Recovery")
 
-    axes[1].bar(positions, state_means, yerr = state_stds, capsize = 4)
+    axes[1].bar(
+        positions,
+        state_means,
+        yerr = state_stds,
+        capsize = 4,
+        color = state_color,
+        edgecolor = "black",
+        linewidth = 0.5,
+    )
     axes[1].set_xticks(positions, [row["design"] for row in summary_rows], rotation = 20)
-    axes[1].set_ylabel("State reconstruction RMSE")
-    axes[1].set_title("Partial observation vs state reconstruction")
+    axes[1].set_xlabel("Observation Design")
+    axes[1].set_ylabel("State Reconstruction RMSE")
+    axes[1].set_title("Partial Observation vs State Reconstruction")
 
     finalize_figure(figure_path)
 

@@ -26,6 +26,8 @@ seeds = [0, 1]
 train_iterations = 10000
 results_dir = "results/exp_sampling_density"
 figure_path = "figures/exp_sampling_density.png"
+parameter_color = "#1F77B4"
+state_color = "#6C757D"
 
 
 def main():
@@ -89,21 +91,41 @@ def main():
     )
 
     observation_values = [row["observation_count"] for row in summary_rows]
+    positions = list(range(len(observation_values)))
+    observation_labels = [str(observation_value) for observation_value in observation_values]
     parameter_means = [row["parameter_rel_error_mean"] for row in summary_rows]
     parameter_stds = [row["parameter_rel_error_std"] for row in summary_rows]
     state_means = [row["state_rmse_mean"] for row in summary_rows]
     state_stds = [row["state_rmse_std"] for row in summary_rows]
 
     fig, axes = plt.subplots(1, 2, figsize = (12, 5))
-    axes[0].errorbar(observation_values, parameter_means, yerr = parameter_stds, marker = "o", capsize = 4)
-    axes[0].set_xlabel("Number of observation points")
-    axes[0].set_ylabel("Parameter recovery error")
-    axes[0].set_title("Sampling density vs parameter recovery")
+    axes[0].bar(
+        positions,
+        parameter_means,
+        yerr = parameter_stds,
+        capsize = 4,
+        color = parameter_color,
+        edgecolor = "black",
+        linewidth = 0.5,
+    )
+    axes[0].set_xticks(positions, observation_labels)
+    axes[0].set_xlabel("Number of Observation Points")
+    axes[0].set_ylabel("Parameter Recovery Error")
+    axes[0].set_title("Sampling Density vs Parameter Recovery")
 
-    axes[1].errorbar(observation_values, state_means, yerr = state_stds, marker = "o", capsize = 4)
-    axes[1].set_xlabel("Number of observation points")
-    axes[1].set_ylabel("State reconstruction RMSE")
-    axes[1].set_title("Sampling density vs state reconstruction")
+    axes[1].bar(
+        positions,
+        state_means,
+        yerr = state_stds,
+        capsize = 4,
+        color = state_color,
+        edgecolor = "black",
+        linewidth = 0.5,
+    )
+    axes[1].set_xticks(positions, observation_labels)
+    axes[1].set_xlabel("Number of Observation Points")
+    axes[1].set_ylabel("State Reconstruction RMSE")
+    axes[1].set_title("Sampling Density vs State Reconstruction")
 
     finalize_figure(figure_path)
 

@@ -26,6 +26,8 @@ observed_components = [0, 1, 2]
 train_iterations = 10000
 results_dir = "results/exp_noise_sweep"
 figure_path = "figures/exp_noise_sweep.png"
+parameter_color = "#1F77B4"
+state_color = "#6C757D"
 
 # Main experiment loop
 def main():
@@ -88,21 +90,47 @@ def main():
     )
 
     noise_values = [row["noise_level"] for row in summary_rows]
+    positions = list(range(len(noise_values)))
+    noise_labels = [f"{noise_value:.3f}" for noise_value in noise_values]
     parameter_means = [row["parameter_rel_error_mean"] for row in summary_rows]
     parameter_stds = [row["parameter_rel_error_std"] for row in summary_rows]
     state_means = [row["state_rmse_mean"] for row in summary_rows]
     state_stds = [row["state_rmse_std"] for row in summary_rows]
 
     fig, axes = plt.subplots(1, 2, figsize = (12, 5))
-    axes[0].errorbar(noise_values, parameter_means, yerr = parameter_stds, marker = "o", capsize = 4)
-    axes[0].set_xlabel("Relative noise level")
-    axes[0].set_ylabel("Parameter recovery error")
-    axes[0].set_title("Noise vs parameter recovery")
+    axes[0].errorbar(
+        positions,
+        parameter_means,
+        yerr = parameter_stds,
+        fmt = "o",
+        linestyle = "none",
+        capsize = 4,
+        color = parameter_color,
+        ecolor = parameter_color,
+        markerfacecolor = parameter_color,
+        markeredgecolor = parameter_color,
+    )
+    axes[0].set_xticks(positions, noise_labels)
+    axes[0].set_xlabel("Relative Noise Level")
+    axes[0].set_ylabel("Parameter Recovery Error")
+    axes[0].set_title("Noise vs Parameter Recovery")
 
-    axes[1].errorbar(noise_values, state_means, yerr = state_stds, marker = "o", capsize = 4)
-    axes[1].set_xlabel("Relative noise level")
-    axes[1].set_ylabel("State reconstruction RMSE")
-    axes[1].set_title("Noise vs state reconstruction")
+    axes[1].errorbar(
+        positions,
+        state_means,
+        yerr = state_stds,
+        fmt = "o",
+        linestyle = "none",
+        capsize = 4,
+        color = state_color,
+        ecolor = state_color,
+        markerfacecolor = state_color,
+        markeredgecolor = state_color,
+    )
+    axes[1].set_xticks(positions, noise_labels)
+    axes[1].set_xlabel("Relative Noise Level")
+    axes[1].set_ylabel("State Reconstruction RMSE")
+    axes[1].set_title("Noise vs State Reconstruction")
 
     finalize_figure(figure_path)
 

@@ -29,6 +29,8 @@ seeds = [0, 1]
 train_iterations = 10000
 results_dir = "results/exp_regime_comparison"
 figure_path = "figures/exp_regime_comparison.png"
+parameter_color = "#1F77B4"
+state_color = "#6C757D"
 
 # Main experiment loop
 def main():
@@ -117,28 +119,53 @@ def main():
         ],
     )
 
-    fig, axes = plt.subplots(1, 2, figsize = (12, 5))
+    rows_by_case = {row["case"]: row for row in summary_rows}
+    case_labels = []
+    parameter_means = []
+    parameter_stds = []
+    state_means = []
+    state_stds = []
+
     for case_name, parameters in regimes:
-        case_rows = [row for row in summary_rows if row["case"] == case_name]
-        noise_values = [row["noise_level"] for row in case_rows]
-        parameter_means = [row["parameter_rel_error_mean"] for row in case_rows]
-        parameter_stds = [row["parameter_rel_error_std"] for row in case_rows]
-        state_means = [row["state_rmse_mean"] for row in case_rows]
-        state_stds = [row["state_rmse_std"] for row in case_rows]
-        label = f"{parameters['regime']} (beta={parameters['beta']}, n={parameters['n']})"
+        row = rows_by_case.get(case_name)
+        if row is None:
+            continue
+        case_labels.append(f"{parameters['regime'].title()} (beta={parameters['beta']}, n={parameters['n']})")
+        parameter_means.append(row["parameter_rel_error_mean"])
+        parameter_stds.append(row["parameter_rel_error_std"])
+        state_means.append(row["state_rmse_mean"])
+        state_stds.append(row["state_rmse_std"])
 
-        axes[0].errorbar(noise_values, parameter_means, yerr = parameter_stds, marker = "o", capsize = 4, label = label)
-        axes[1].errorbar(noise_values, state_means, yerr = state_stds, marker = "o", capsize = 4, label = label)
+    positions = list(range(len(case_labels)))
 
-    axes[0].set_xlabel("Relative noise level")
-    axes[0].set_ylabel("Parameter recovery error")
-    axes[0].set_title("Regime comparison: parameter recovery")
-    axes[0].legend()
+    fig, axes = plt.subplots(1, 2, figsize = (14, 5))
+    axes[0].bar(
+        positions,
+        parameter_means,
+        yerr = parameter_stds,
+        capsize = 4,
+        color = parameter_color,
+        edgecolor = "black",
+        linewidth = 0.5,
+    )
+    axes[0].set_xticks(positions, case_labels, rotation = 20, ha = "right")
+    axes[0].set_xlabel("Regime Case")
+    axes[0].set_ylabel("Parameter Recovery Error")
+    axes[0].set_title("Parameter Recovery")
 
-    axes[1].set_xlabel("Relative noise level")
-    axes[1].set_ylabel("State reconstruction RMSE")
-    axes[1].set_title("Regime comparison: state reconstruction")
-    axes[1].legend()
+    axes[1].bar(
+        positions,
+        state_means,
+        yerr = state_stds,
+        capsize = 4,
+        color = state_color,
+        edgecolor = "black",
+        linewidth = 0.5,
+    )
+    axes[1].set_xticks(positions, case_labels, rotation = 20, ha = "right")
+    axes[1].set_xlabel("Regime Case")
+    axes[1].set_ylabel("State Reconstruction RMSE")
+    axes[1].set_title("State Reconstruction")
 
     finalize_figure(figure_path)
 

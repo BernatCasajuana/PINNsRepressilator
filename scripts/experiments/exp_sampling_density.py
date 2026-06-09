@@ -88,19 +88,19 @@ def main():
         ],
     )
 
-    observation_counts = [row["observation_count"] for row in summary_rows]
+    observation_values = [row["observation_count"] for row in summary_rows]
     parameter_means = [row["parameter_rel_error_mean"] for row in summary_rows]
     parameter_stds = [row["parameter_rel_error_std"] for row in summary_rows]
     state_means = [row["state_rmse_mean"] for row in summary_rows]
     state_stds = [row["state_rmse_std"] for row in summary_rows]
 
     fig, axes = plt.subplots(1, 2, figsize = (12, 5))
-    axes[0].errorbar(observation_counts, parameter_means, yerr = parameter_stds, marker = "o", capsize = 4)
+    axes[0].errorbar(observation_values, parameter_means, yerr = parameter_stds, marker = "o", capsize = 4)
     axes[0].set_xlabel("Number of observation points")
     axes[0].set_ylabel("Parameter recovery error")
     axes[0].set_title("Sampling density vs parameter recovery")
 
-    axes[1].errorbar(observation_counts, state_means, yerr = state_stds, marker = "o", capsize = 4)
+    axes[1].errorbar(observation_values, state_means, yerr = state_stds, marker = "o", capsize = 4)
     axes[1].set_xlabel("Number of observation points")
     axes[1].set_ylabel("State reconstruction RMSE")
     axes[1].set_title("Sampling density vs state reconstruction")

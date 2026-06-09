@@ -15,5 +15,10 @@ cd /home/10040984@uvic.local/projects/pinns-repressilator
 # Set PYTHONPATH to include the current directory
 export PYTHONPATH=/home/10040984@uvic.local/projects/pinns-repressilator:$PYTHONPATH
 
-# Execute the Python script
-python -m scripts.experiments.all_experiments
+# Execute all experiments
+python -u <<'PY'
+from scripts.experiments import all_experiments as exp
+
+print("=== Running full experiments suite ===")
+exp.main()
+PY

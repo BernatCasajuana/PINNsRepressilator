@@ -332,13 +332,17 @@ def run_inverse(
     # Plot training loss
     loss_history = model.losshistory
     loss_train = np.array(loss_history.loss_train) # loss history per component
-    epochs = np.arange(len(loss_train))
+    loss_steps = np.asarray(getattr(loss_history, "steps", []), dtype=float)
+    if loss_steps.shape[0] == loss_train.shape[0]:
+        iteration_axis = loss_steps
+    else:
+        iteration_axis = np.arange(loss_train.shape[0], dtype=float)
     loss_components = loss_train.T
     component_names = _build_loss_component_names(observed_components, actual_count=loss_components.shape[0])
 
     plt.figure(figsize=(10, 6))
     for name, loss in zip(component_names, loss_components):
-        plt.semilogy(epochs, loss, label=name)
+        plt.semilogy(iteration_axis, loss, label=name)
     plt.xlabel("Iterations")
     plt.ylabel("Loss (Log Scale)")
     plt.title(f"Training Loss (Beta={beta_true:.3f}, n={n_true:.3f}, Noise={noise_text})")

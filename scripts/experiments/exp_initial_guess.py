@@ -1,7 +1,7 @@
 """
 Experiment 4: inverse sensitivity to initial parameter guesses. 
 Question: how sensitive is inverse-PINN training to the initial guesses for $\beta$ and $n$?
-Design: the inverse problem is run over a 2x2 grid of initial guesses, including the true pair and nearby offsets: $\beta_0 \in \{5.0, 6.0\}$ and $n_0 \in \{2.0, 3.0\}$.
+Design: the inverse problem is run over a 4x4 grid of initial guesses, spanning the true pair and nearby offsets: $\beta_0 \in \{4.0, 5.0, 6.0, 7.0\}$ and $n_0 \in \{2.0, 2.5, 3.0, 3.5\}$.
 Output: heatmaps of the relative recovery error on $\beta$ and $n$ over the initial-guess grid.
 """
 
@@ -23,13 +23,16 @@ from scripts.pinns.inverse import run_inverse
 true_beta = 5.0
 true_n = 3.0
 noise_level = 0.05
-beta_guesses = [5.0, 6.0]
-n_guesses = [2.0, 3.0]
+beta_guesses = [4.0, 5.0, 6.0, 7.0]
+n_guesses = [2.0, 2.5, 3.0, 3.5]
 seeds = [0, 1]
 train_iterations = 10000
 results_dir = "results/exp_initial_guess"
 figure_path = "figures/exp_initial_guess.png"
-heatmap_cmap = "Blues"
+heatmap_cmap = mcolors.LinearSegmentedColormap.from_list(
+    "paper_blues_exact_tones",
+    ["#A6C8E0", "#5DA5DA", "#1F77B4"],
+)
 
 # Main experiment loop
 def main():
@@ -106,21 +109,26 @@ def main():
     vmax = max(float(np.max(beta_heatmap)), float(np.max(n_heatmap)))
     norm = mcolors.Normalize(vmin = vmin, vmax = vmax)
 
-    fig, axes = plt.subplots(1, 2, figsize = (12, 5))
-    beta_image = axes[0].imshow(beta_heatmap, origin = "lower", aspect = "auto", cmap = heatmap_cmap, norm = norm)
-    axes[0].set_xticks(range(len(beta_guesses)), [str(value) for value in beta_guesses])
-    axes[0].set_yticks(range(len(n_guesses)), [str(value) for value in n_guesses])
-    axes[0].set_xlabel(r"Initial $\beta$")
-    axes[0].set_ylabel(r"Initial $n$")
-    axes[0].set_title(r"Relative Error on $\beta$")
+    fig = plt.figure(figsize = (12, 5))
+    grid = fig.add_gridspec(1, 3, width_ratios = [1.0, 0.06, 1.0], wspace = 0.30)
+    left_ax = fig.add_subplot(grid[0, 0])
+    cbar_ax = fig.add_subplot(grid[0, 1])
+    right_ax = fig.add_subplot(grid[0, 2])
 
-    n_image = axes[1].imshow(n_heatmap, origin = "lower", aspect = "auto", cmap = heatmap_cmap, norm = norm)
-    axes[1].set_xticks(range(len(beta_guesses)), [str(value) for value in beta_guesses])
-    axes[1].set_yticks(range(len(n_guesses)), [str(value) for value in n_guesses])
-    axes[1].set_xlabel(r"Initial $\beta$")
-    axes[1].set_ylabel(r"Initial $n$")
-    axes[1].set_title(r"Relative Error on $n$")
-    shared_colorbar = fig.colorbar(n_image, ax = axes)
+    beta_image = left_ax.imshow(beta_heatmap, origin = "lower", aspect = "auto", cmap = heatmap_cmap, norm = norm)
+    left_ax.set_xticks(range(len(beta_guesses)), [str(value) for value in beta_guesses])
+    left_ax.set_yticks(range(len(n_guesses)), [str(value) for value in n_guesses])
+    left_ax.set_xlabel(r"Initial $\beta$")
+    left_ax.set_ylabel(r"Initial $n$")
+    left_ax.set_title(r"Relative Error on $\beta$")
+
+    n_image = right_ax.imshow(n_heatmap, origin = "lower", aspect = "auto", cmap = heatmap_cmap, norm = norm)
+    right_ax.set_xticks(range(len(beta_guesses)), [str(value) for value in beta_guesses])
+    right_ax.set_yticks(range(len(n_guesses)), [str(value) for value in n_guesses])
+    right_ax.set_xlabel(r"Initial $\beta$")
+    right_ax.set_ylabel(r"Initial $n$")
+    right_ax.set_title(r"Relative Error on $n$")
+    shared_colorbar = fig.colorbar(n_image, cax = cbar_ax)
     shared_colorbar.set_label("Relative Error")
 
     finalize_figure(figure_path)

@@ -27,7 +27,7 @@ train_iterations = 10000
 results_dir = "results/exp_noise_sweep"
 figure_path = "figures/exp_noise_sweep.png"
 parameter_color = "#1F77B4"
-state_color = "#6C757D"
+state_color = "#1F77B4"
 
 # Main experiment loop
 def main():

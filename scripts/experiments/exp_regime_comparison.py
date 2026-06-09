@@ -9,6 +9,7 @@ Output: a regime comparison figure for parameter recovery error and state recons
 import os
 import sys
 import matplotlib.pyplot as plt
+from matplotlib.patches import Patch
 
 scripts_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if scripts_dir not in sys.path:
@@ -29,8 +30,8 @@ seeds = [0, 1]
 train_iterations = 10000
 results_dir = "results/exp_regime_comparison"
 figure_path = "figures/exp_regime_comparison.png"
-parameter_color = "#1F77B4"
-state_color = "#6C757D"
+stable_color = "#1F77B4"
+oscillatory_color = "#5DA5DA"
 
 # Main experiment loop
 def main():
@@ -125,6 +126,7 @@ def main():
     parameter_stds = []
     state_means = []
     state_stds = []
+    bar_colors = []
 
     for case_name, parameters in regimes:
         row = rows_by_case.get(case_name)
@@ -135,6 +137,7 @@ def main():
         parameter_stds.append(row["parameter_rel_error_std"])
         state_means.append(row["state_rmse_mean"])
         state_stds.append(row["state_rmse_std"])
+        bar_colors.append(stable_color if parameters["regime"] == "stable" else oscillatory_color)
 
     positions = list(range(len(case_labels)))
 
@@ -144,7 +147,7 @@ def main():
         parameter_means,
         yerr = parameter_stds,
         capsize = 4,
-        color = parameter_color,
+        color = bar_colors,
         edgecolor = "black",
         linewidth = 0.5,
     )
@@ -158,7 +161,7 @@ def main():
         state_means,
         yerr = state_stds,
         capsize = 4,
-        color = state_color,
+        color = bar_colors,
         edgecolor = "black",
         linewidth = 0.5,
     )
@@ -166,6 +169,12 @@ def main():
     axes[1].set_xlabel("Regime Case")
     axes[1].set_ylabel("State Reconstruction RMSE")
     axes[1].set_title("State Reconstruction")
+
+    legend_handles = [
+        Patch(facecolor = stable_color, edgecolor = "black", label = "Stable"),
+        Patch(facecolor = oscillatory_color, edgecolor = "black", label = "Oscillatory"),
+    ]
+    axes[0].legend(handles = legend_handles, title = "Regime")
 
     finalize_figure(figure_path)
 

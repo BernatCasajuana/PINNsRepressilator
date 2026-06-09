@@ -10,6 +10,7 @@ import os
 import sys
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.patches import Patch
 
 scripts_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if scripts_dir not in sys.path:
@@ -31,8 +32,11 @@ observation_designs = [
 train_iterations = 10000
 results_dir = "results/exp_partial_observation"
 figure_path = "figures/exp_partial_observation.png"
-parameter_color = "#1F77B4"
-state_color = "#6C757D"
+design_colors = {
+    "x1,x2,x3": "#1F77B4",
+    "x1,x2": "#5DA5DA",
+    "x1": "#A6C8E0",
+}
 
 # Main experiment loop
 def main():
@@ -96,7 +100,7 @@ def main():
     )
 
     positions = np.arange(len(summary_rows))
-    width = 0.35
+    bar_colors = [design_colors[row["design"]] for row in summary_rows]
     parameter_means = [row["parameter_rel_error_mean"] for row in summary_rows]
     parameter_stds = [row["parameter_rel_error_std"] for row in summary_rows]
     state_means = [row["state_rmse_mean"] for row in summary_rows]
@@ -108,7 +112,7 @@ def main():
         parameter_means,
         yerr = parameter_stds,
         capsize = 4,
-        color = parameter_color,
+        color = bar_colors,
         edgecolor = "black",
         linewidth = 0.5,
     )
@@ -122,7 +126,7 @@ def main():
         state_means,
         yerr = state_stds,
         capsize = 4,
-        color = state_color,
+        color = bar_colors,
         edgecolor = "black",
         linewidth = 0.5,
     )
@@ -130,6 +134,12 @@ def main():
     axes[1].set_xlabel("Observation Design")
     axes[1].set_ylabel("State Reconstruction RMSE")
     axes[1].set_title("Partial Observation vs State Reconstruction")
+
+    legend_handles = [
+        Patch(facecolor = design_colors[design_name], edgecolor = "black", label = design_name)
+        for design_name, _ in observation_designs
+    ]
+    axes[0].legend(handles = legend_handles, title = "Observed Components")
 
     finalize_figure(figure_path)
 

@@ -19,9 +19,7 @@ export PYTHONPATH=/home/10040984@uvic.local/projects/pinns-repressilator:$PYTHON
 python -u <<'PY'
 from scripts.experiments import exp_regime_comparison as exp
 
-exp.noise_levels = [0.05]
-exp.seeds = [0]
-exp.train_iterations = 500
+exp.train_iterations = 200
 
 ROOT = "/home/10040984@uvic.local/projects/pinns-repressilator"
 
@@ -29,6 +27,6 @@ exp.results_dir = ROOT + "/results/test_exp_regime_comparison"
 exp.figure_path = ROOT + "/figures/test_exp_regime_comparison.png"
 
 print("=== Running quick test: exp_regime_comparison ===")
-print(f"regimes={exp.regimes}, noise_levels={exp.noise_levels}, seeds={exp.seeds}, train_iterations={exp.train_iterations}")
+print(f"train_iterations={exp.train_iterations} (default experiment setup)")
 exp.main()
 PY

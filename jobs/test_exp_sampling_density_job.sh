@@ -19,9 +19,7 @@ export PYTHONPATH=/home/10040984@uvic.local/projects/pinns-repressilator:$PYTHON
 python -u <<'PY'
 from scripts.experiments import exp_sampling_density as exp
 
-exp.observation_counts = [10]
-exp.seeds = [0]
-exp.train_iterations = 500
+exp.train_iterations = 200
 
 ROOT = "/home/10040984@uvic.local/projects/pinns-repressilator"
 
@@ -29,6 +27,6 @@ exp.results_dir = ROOT + "/results/test_exp_sampling_density"
 exp.figure_path = ROOT + "/figures/test_exp_sampling_density.png"
 
 print("=== Running quick test: exp_sampling_density ===")
-print(f"observation_counts={exp.observation_counts}, seeds={exp.seeds}, train_iterations={exp.train_iterations}")
+print(f"train_iterations={exp.train_iterations} (default experiment setup)")
 exp.main()
 PY

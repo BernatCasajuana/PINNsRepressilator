@@ -16,6 +16,7 @@ from scipy.integrate import odeint
 beta = 10
 n = 3
 x0 = np.array([1.0, 1.0, 1.2])
+plot_colors = ["#0072B2", "#E69F00", "#009E73"]
 
 # %% Define right-hand side (RHS) of the repressilator ODE system (for scipy.odeint)
 def protein_repressilator_rhs(x, t, beta, n):
@@ -55,7 +56,7 @@ sol_tensor = np.array(sol_tensor)
 # %% Plot protein concentrations (solution) from odeint
 plt.figure(figsize=(10, 6))
 for i, label in enumerate(["Repressor 1", "Repressor 2", "Repressor 3"]):
-    plt.plot(t_values, sol_odeint[:, i], label=f"{label}")
+    plt.plot(t_values, sol_odeint[:, i], color=plot_colors[i], label=f"{label}")
 plt.xlabel("Time")
 plt.ylabel("Protein Concentration")
 plt.title("Simulation of Repressilator Dynamics using ODEINT")
@@ -65,8 +66,8 @@ plt.show()
 # %% Plot derivatives: numerical from odeint vs TensorFlow RHS evaluation
 plt.figure(figsize=(10, 6))
 for i, label in enumerate(["Repressor 1", "Repressor 2", "Repressor 3"]):
-    plt.plot(t_values, deriv_numeric[:, i], label=f"{label} (Numerical Derivative)")
-    plt.plot(t_values, sol_tensor[:, i], "--", label=f"{label} (TF RHS)")
+    plt.plot(t_values, deriv_numeric[:, i], color=plot_colors[i], label=f"{label} (Numerical Derivative)")
+    plt.plot(t_values, sol_tensor[:, i], "--", color=plot_colors[i], label=f"{label} (TF RHS)")
 plt.xlabel("Time")
 plt.ylabel("Derivative")
 plt.title("Comparison: ODEINT Numerical Derivative vs. TensorFlow RHS")

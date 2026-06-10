@@ -14,24 +14,49 @@ scripts_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if scripts_dir not in sys.path:
     sys.path.insert(0, scripts_dir)
 
-from experiments.experiment_utils import aggregate_metrics, ensure_project_directories, finalize_figure, make_synthetic_dataset, write_csv
+from experiments.experiment_utils import (
+    aggregate_metrics,
+    ensure_project_directories,
+    finalize_figure,
+    make_synthetic_dataset,
+    write_csv,
+    write_run_manifest,
+)
 from scripts.pinns.inverse import run_inverse
 
 # Experiment parameters and output paths
 true_beta = 5.0
 true_n = 3.0
-noise_levels = [0.01, 0.05, 0.10]
-seeds = [0, 1]
+noise_levels = [0.01, 0.05, 0.10, 0.20]
+seeds = [0, 1, 2]
 observed_components = [0, 1, 2]
 train_iterations = 10000
 results_dir = "results/exp_noise_sweep"
 figure_path = "figures/exp_noise_sweep.png"
-parameter_color = "#1F77B4"
-state_color = "#1F77B4"
+parameter_color = "#0072B2"
+state_color = "#E69F00"
 
 # Main experiment loop
 def main():
     ensure_project_directories()
+    expected_runs = len(noise_levels) * len(seeds)
+    write_run_manifest(
+        os.path.join(results_dir, "run_manifest.json"),
+        {
+            "experiment_name": "exp_noise_sweep",
+            "script_path": __file__,
+            "results_dir": results_dir,
+            "figure_path": figure_path,
+            "train_iterations": train_iterations,
+            "seeds": list(seeds),
+            "noise_levels": list(noise_levels),
+            "observed_components": list(observed_components),
+            "true_beta": true_beta,
+            "true_n": true_n,
+            "expected_runs": expected_runs,
+            "expected_total_train_iterations": expected_runs * train_iterations,
+        },
+    )
     raw_rows = []
 
     for noise_level in noise_levels:
@@ -96,15 +121,17 @@ def main():
     parameter_stds = [row["parameter_rel_error_std"] for row in summary_rows]
     state_means = [row["state_rmse_mean"] for row in summary_rows]
     state_stds = [row["state_rmse_std"] for row in summary_rows]
+    show_error_bars = len(seeds) > 1
 
     fig, axes = plt.subplots(1, 2, figsize = (12, 5))
     axes[0].errorbar(
         positions,
         parameter_means,
-        yerr = parameter_stds,
+        yerr = parameter_stds if show_error_bars else None,
         fmt = "o",
-        linestyle = "none",
-        capsize = 4,
+        linestyle = "-",
+        linewidth = 1.5,
+        capsize = 4 if show_error_bars else 0,
         color = parameter_color,
         ecolor = parameter_color,
         markerfacecolor = parameter_color,
@@ -118,10 +145,11 @@ def main():
     axes[1].errorbar(
         positions,
         state_means,
-        yerr = state_stds,
+        yerr = state_stds if show_error_bars else None,
         fmt = "o",
-        linestyle = "none",
-        capsize = 4,
+        linestyle = "-",
+        linewidth = 1.5,
+        capsize = 4 if show_error_bars else 0,
         color = state_color,
         ecolor = state_color,
         markerfacecolor = state_color,
@@ -131,6 +159,10 @@ def main():
     axes[1].set_xlabel("Relative Noise Level")
     axes[1].set_ylabel("State Reconstruction RMSE")
     axes[1].set_title("Noise vs State Reconstruction")
+
+    for axis in axes:
+        axis.xaxis.get_offset_text().set_visible(False)
+        axis.yaxis.get_offset_text().set_visible(False)
 
     finalize_figure(figure_path)
 

@@ -17,6 +17,8 @@ import deepxde as dde
 import tensorflow as tf
 import csv
 
+PREDICTION_COLORS = ("#0072B2", "#E69F00", "#009E73")
+
 # %% Define ODE system for PINN with trainable parameters
 def ode_system(x, y, C1, C2):
     y1, y2, y3 = y[:, 0:1], y[:, 1:2], y[:, 2:3]
@@ -121,6 +123,31 @@ def _build_loss_component_names(observed_components, actual_count):
     if len(expected_names) == actual_count:
         return expected_names
     return [f"Loss {index + 1}" for index in range(actual_count)]
+
+
+def _build_loss_component_styles(actual_count):
+    category_colors = {
+        "eq": PREDICTION_COLORS[0],
+        "ic": PREDICTION_COLORS[1],
+        "obs": PREDICTION_COLORS[2],
+    }
+    term_linestyles = ["-", "--", ":"]
+
+    styles = []
+    for index in range(actual_count):
+        if index < 3:
+            color = category_colors["eq"]
+            term_index = index
+        elif index < 6:
+            color = category_colors["ic"]
+            term_index = index - 3
+        else:
+            color = category_colors["obs"]
+            term_index = (index - 6) % len(term_linestyles)
+
+        styles.append((color, term_linestyles[term_index % len(term_linestyles)]))
+
+    return styles
 
 
 def _variable_to_scalar(variable):
@@ -332,20 +359,20 @@ def run_inverse(
     # Plot training loss
     loss_history = model.losshistory
     loss_train = np.array(loss_history.loss_train) # loss history per component
-    loss_steps = np.asarray(getattr(loss_history, "steps", []), dtype=float)
-    if loss_steps.shape[0] == loss_train.shape[0]:
-        iteration_axis = loss_steps
-    else:
-        iteration_axis = np.arange(loss_train.shape[0], dtype=float)
+    iteration_axis = np.linspace(0.0, float(train_iterations), loss_train.shape[0], dtype=float)
     loss_components = loss_train.T
     component_names = _build_loss_component_names(observed_components, actual_count=loss_components.shape[0])
+    component_styles = _build_loss_component_styles(loss_components.shape[0])
 
     plt.figure(figsize=(10, 6))
-    for name, loss in zip(component_names, loss_components):
-        plt.semilogy(iteration_axis, loss, label=name)
+    for name, loss, (color, linestyle) in zip(component_names, loss_components, component_styles):
+        plt.semilogy(iteration_axis, loss, label=name, color=color, linestyle=linestyle)
+    axis = plt.gca()
+    axis.ticklabel_format(style="plain", axis="x", useOffset=False)
+    axis.xaxis.get_offset_text().set_visible(False)
     plt.xlabel("Iterations")
     plt.ylabel("Loss (Log Scale)")
-    plt.title(f"Training Loss (Beta={beta_true:.3f}, n={n_true:.3f}, Noise={noise_text})")
+    plt.title(f"Training Loss ($\\beta$={beta_true:.1f}, $n$={n_true:.1f}, $\\sigma$={noise_text})")
     plt.legend()
     plt.tight_layout()
     plt.savefig(os.path.join(outdir, "inverse_loss.png")) # save plot
@@ -354,14 +381,14 @@ def run_inverse(
     # Plot predictions vs data
     plt.figure(figsize=(12, 6))
     labels = ["Repressor 1", "Repressor 2", "Repressor 3"]
-    colors = ["tab:blue", "tab:orange", "tab:green"]
+    colors = list(PREDICTION_COLORS)
 
     for i in range(3):
         plt.plot(t, x_obs[:, i], "-", color=colors[i], label=f"{labels[i]} (Data)") # obtained data
         plt.plot(t, y_pred[:, i], "--", color=colors[i], label=f"{labels[i]} (PINN)") # PINN prediction
     plt.xlabel("Time")
     plt.ylabel("Protein Concentration")
-    plt.title(f"Inverse Repressilator Dynamics Prediction (Beta={beta_true:.3f}, n={n_true:.3f}, Noise={noise_text})")
+    plt.title(f"Inverse Repressilator Dynamics Prediction ($\\beta$={beta_true:.1f}, $n$={n_true:.1f}, $\\sigma$={noise_text})")
     plt.legend()
     plt.tight_layout()
     plt.savefig(os.path.join(outdir, "inverse_prediction.png")) # save plot

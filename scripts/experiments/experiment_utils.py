@@ -3,12 +3,18 @@ Utilities shared by the experiment driver scripts.
 """
 
 import csv
+import json
 import os
 import random
 import sys
+from datetime import datetime, timezone
 
-os.environ["tf_use_legacy_keras"] = "1" # Ensure compatibility with DeepXDE's use of Keras
-os.environ["dde_backend"] = "tensorflow" # Ensure DeepXDE uses TensorFlow as the backend (compatible)
+os.environ.setdefault("TF_USE_LEGACY_KERAS", "1") # Ensure compatibility with DeepXDE's use of Keras
+os.environ.setdefault("DDE_BACKEND", "tensorflow") # Ensure DeepXDE uses TensorFlow as the backend (compatible)
+
+# Lowercase compatibility for local scripts that still read these keys.
+os.environ.setdefault("tf_use_legacy_keras", os.environ["TF_USE_LEGACY_KERAS"])
+os.environ.setdefault("dde_backend", os.environ["DDE_BACKEND"])
 
 # Add the parent directory of "scripts" to the Python path to allow imports from "data" and "pinns"
 scripts_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -91,6 +97,15 @@ def write_csv(path, rows, fieldnames):
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(rows)
+
+
+def write_run_manifest(path, manifest_data):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    payload = dict(manifest_data)
+    payload["generated_at_utc"] = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+    with open(path, "w", encoding="utf-8") as manifest_file:
+        json.dump(payload, manifest_file, indent=2, sort_keys=True)
+        manifest_file.write("\n")
 
 # Function to aggregate metrics from multiple runs
 def aggregate_metrics(rows, group_keys, metric_keys):

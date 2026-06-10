@@ -10,20 +10,26 @@ import os
 import sys
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.patches import Patch
 
 scripts_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if scripts_dir not in sys.path:
     sys.path.insert(0, scripts_dir)
 
-from experiments.experiment_utils import aggregate_metrics, ensure_project_directories, finalize_figure, make_synthetic_dataset, write_csv
+from experiments.experiment_utils import (
+    aggregate_metrics,
+    ensure_project_directories,
+    finalize_figure,
+    make_synthetic_dataset,
+    write_csv,
+    write_run_manifest,
+)
 from scripts.pinns.inverse import run_inverse
 
 # Experiment parameters and output paths
 true_beta = 5.0
 true_n = 3.0
 noise_level = 0.05
-seeds = [0, 1]
+seeds = [0, 1, 2]
 observation_designs = [
     ("x1,x2,x3", [0, 1, 2]),
     ("x1,x2", [0, 1]),
@@ -33,14 +39,35 @@ train_iterations = 10000
 results_dir = "results/exp_partial_observation"
 figure_path = "figures/exp_partial_observation.png"
 design_colors = {
-    "x1,x2,x3": "#1F77B4",
-    "x1,x2": "#5DA5DA",
-    "x1": "#A6C8E0",
+    "x1,x2,x3": "#0072B2",
+    "x1,x2": "#E69F00",
+    "x1": "#009E73",
 }
 
 # Main experiment loop
 def main():
     ensure_project_directories()
+    expected_runs = len(observation_designs) * len(seeds)
+    write_run_manifest(
+        os.path.join(results_dir, "run_manifest.json"),
+        {
+            "experiment_name": "exp_partial_observation",
+            "script_path": __file__,
+            "results_dir": results_dir,
+            "figure_path": figure_path,
+            "train_iterations": train_iterations,
+            "seeds": list(seeds),
+            "observation_designs": [
+                {"design": design_name, "observed_components": list(observed_components)}
+                for design_name, observed_components in observation_designs
+            ],
+            "true_beta": true_beta,
+            "true_n": true_n,
+            "noise_level": noise_level,
+            "expected_runs": expected_runs,
+            "expected_total_train_iterations": expected_runs * train_iterations,
+        },
+    )
     raw_rows = []
 
     for design_name, observed_components in observation_designs:
@@ -105,13 +132,14 @@ def main():
     parameter_stds = [row["parameter_rel_error_std"] for row in summary_rows]
     state_means = [row["state_rmse_mean"] for row in summary_rows]
     state_stds = [row["state_rmse_std"] for row in summary_rows]
+    show_error_bars = len(seeds) > 1
 
     fig, axes = plt.subplots(1, 2, figsize = (13, 5))
     axes[0].bar(
         positions,
         parameter_means,
-        yerr = parameter_stds,
-        capsize = 4,
+        yerr = parameter_stds if show_error_bars else None,
+        capsize = 4 if show_error_bars else 0,
         color = bar_colors,
         edgecolor = "black",
         linewidth = 0.5,
@@ -124,8 +152,8 @@ def main():
     axes[1].bar(
         positions,
         state_means,
-        yerr = state_stds,
-        capsize = 4,
+        yerr = state_stds if show_error_bars else None,
+        capsize = 4 if show_error_bars else 0,
         color = bar_colors,
         edgecolor = "black",
         linewidth = 0.5,
@@ -134,12 +162,6 @@ def main():
     axes[1].set_xlabel("Observation Design")
     axes[1].set_ylabel("State Reconstruction RMSE")
     axes[1].set_title("Partial Observation vs State Reconstruction")
-
-    legend_handles = [
-        Patch(facecolor = design_colors[design_name], edgecolor = "black", label = design_name)
-        for design_name, _ in observation_designs
-    ]
-    axes[0].legend(handles = legend_handles, title = "Observed Components")
 
     finalize_figure(figure_path)
 

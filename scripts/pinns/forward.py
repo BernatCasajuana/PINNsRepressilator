@@ -16,6 +16,8 @@ os.environ["dde_backend"] = "tensorflow"
 import deepxde as dde
 import tensorflow as tf
 
+PREDICTION_COLORS = ("#0072B2", "#E69F00", "#009E73")
+
 
 def _normalize_observed_components(observed_components, state_dim):
     if observed_components is None:
@@ -66,6 +68,41 @@ def _build_loss_component_names(observed_components, actual_count):
         return expected_names
     return [f"Loss {index + 1}" for index in range(actual_count)]
 
+
+def _build_loss_component_styles(actual_count):
+    category_colors = {
+        "eq": PREDICTION_COLORS[0],
+        "ic": PREDICTION_COLORS[1],
+        "obs": PREDICTION_COLORS[2],
+    }
+    term_linestyles = ["-", "--", ":"]
+
+    styles = []
+    for index in range(actual_count):
+        if index < 3:
+            color = category_colors["eq"]
+            term_index = index
+        elif index < 6:
+            color = category_colors["ic"]
+            term_index = index - 3
+        else:
+            color = category_colors["obs"]
+            term_index = (index - 6) % len(term_linestyles)
+
+        styles.append((color, term_linestyles[term_index % len(term_linestyles)]))
+
+    return styles
+
+
+def _format_noise_for_plot(noise_sigma):
+    formatted = f"{float(noise_sigma):.3f}".rstrip("0").rstrip(".")
+    if "." not in formatted:
+        return f"{formatted}.00"
+    decimal_count = len(formatted.split(".", 1)[1])
+    if decimal_count == 1:
+        return f"{formatted}0"
+    return formatted
+
 # %% Define ODE system
 def ode_system(x, y, beta, n):
     y1, y2, y3 = y[:, 0:1], y[:, 1:2], y[:, 2:3]
@@ -107,6 +144,7 @@ def run_forward(
     x0 = x_obs[0]                                           
     beta, n = float(data_npz["beta"]), float(data_npz["n"])
     noise_sigma = float(np.asarray(data_npz["noise"]).squeeze())
+    noise_text = _format_noise_for_plot(noise_sigma)
 
     observed_components = _normalize_observed_components(observed_components, state_dim=x_obs.shape[1])
     expected_loss_terms = 6 + len(observed_components)
@@ -180,20 +218,24 @@ def run_forward(
     # Plot training loss
     loss_history = model.losshistory
     loss_train = np.array(loss_history.loss_train) # loss history per component
-    loss_steps = np.asarray(getattr(loss_history, "steps", []), dtype=float)
-    if loss_steps.shape[0] == loss_train.shape[0]:
-        iteration_axis = loss_steps
-    else:
-        iteration_axis = np.arange(loss_train.shape[0], dtype=float)
+    loss_steps = np.asarray(getattr(loss_history, "steps", []), dtype=float).reshape(-1)
+    total_iterations = float(adam_epochs)
+    if loss_steps.size > 0 and np.all(np.diff(loss_steps) >= 0):
+        total_iterations = max(total_iterations, float(loss_steps[-1]))
+    iteration_axis = np.linspace(0.0, total_iterations, loss_train.shape[0], dtype=float)
     loss_components = loss_train.T
     component_names = _build_loss_component_names(observed_components, actual_count=loss_components.shape[0])
+    component_styles = _build_loss_component_styles(loss_components.shape[0])
 
     plt.figure(figsize=(10, 6))
-    for name, loss in zip(component_names, loss_components):
-        plt.semilogy(iteration_axis, loss, label=name)
+    for name, loss, (color, linestyle) in zip(component_names, loss_components, component_styles):
+        plt.semilogy(iteration_axis, loss, label=name, color=color, linestyle=linestyle)
+    axis = plt.gca()
+    axis.ticklabel_format(style="plain", axis="x", useOffset=False)
+    axis.xaxis.get_offset_text().set_visible(False)
     plt.xlabel("Iterations")
     plt.ylabel("Loss (log scale)")
-    plt.title(f"Training Loss (beta={beta}, n={n}, noise={noise_sigma})")
+    plt.title(f"Training Loss ($\\beta$={beta:.1f}, $n$={n:.1f}, $\\sigma$={noise_text})")
     plt.legend()
     plt.tight_layout()
     plt.savefig(os.path.join(outdir, "forward_loss.png")) # save plot
@@ -202,14 +244,14 @@ def run_forward(
     # Plot predictions vs data
     plt.figure(figsize=(12, 6))
     labels = ["Repressor 1", "Repressor 2", "Repressor 3"]
-    colors = ["tab:blue", "tab:orange", "tab:green"]
+    colors = list(PREDICTION_COLORS)
 
     for i in range(3):
         plt.plot(t, x_obs[:, i], "-", color=colors[i], label=f"{labels[i]} (data)") # obtained data
         plt.plot(t, y_pred[:, i], "--", color=colors[i], label=f"{labels[i]} (PINN)") # PINN prediction
     plt.xlabel("Time")
     plt.ylabel("Protein Concentration")
-    plt.title(f"Repressilator Dynamics (beta={beta}, n={n}, noise={noise_sigma})")
+    plt.title(f"Repressilator Dynamics Prediction ($\\beta$={beta:.1f}, $n$={n:.1f}, $\\sigma$={noise_text})")
     plt.legend()
     plt.tight_layout()
     plt.savefig(os.path.join(outdir, "forward_prediction.png")) # save plot

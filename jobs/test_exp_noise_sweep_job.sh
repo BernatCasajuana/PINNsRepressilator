@@ -21,7 +21,7 @@ from scripts.experiments import exp_noise_sweep as exp
 
 exp.noise_levels = [0.05]
 exp.seeds = [0]
-exp.train_iterations = 100
+exp.train_iterations = 500
 
 ROOT = "/home/10040984@uvic.local/projects/pinns-repressilator"
 

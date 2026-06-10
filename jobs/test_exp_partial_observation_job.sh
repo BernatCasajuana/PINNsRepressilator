@@ -24,7 +24,7 @@ exp.observation_designs = [
     ("x1,x2,x3", [0, 1, 2]),
     ("x1", [0]),
 ]
-exp.train_iterations = 100
+exp.train_iterations = 500
 
 ROOT = "/home/10040984@uvic.local/projects/pinns-repressilator"
 

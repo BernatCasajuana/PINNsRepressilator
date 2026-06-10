@@ -22,7 +22,7 @@ from scripts.experiments import exp_initial_guess as exp
 exp.beta_guesses = [4.0]
 exp.n_guesses = [2.5]
 exp.seeds = [0]
-exp.train_iterations = 100
+exp.train_iterations = 500
 
 ROOT = "/home/10040984@uvic.local/projects/pinns-repressilator"
 

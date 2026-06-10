@@ -21,7 +21,7 @@ from scripts.experiments import exp_sampling_density as exp
 
 exp.observation_counts = [10]
 exp.seeds = [0]
-exp.train_iterations = 100
+exp.train_iterations = 500
 
 ROOT = "/home/10040984@uvic.local/projects/pinns-repressilator"
 

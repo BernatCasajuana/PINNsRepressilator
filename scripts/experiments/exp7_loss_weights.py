@@ -20,11 +20,12 @@ Design:
      λ_0, λ_0, λ_0,   ← 3 IC terms
      λ_y, λ_y, λ_y]   ← 3 observation terms
 
-Figure: 4-panel 2×2 layout
-  - (0,0): β relative error vs λ_f (log x-axis) + seed dots
-  - (0,1): n relative error vs λ_f (log x-axis) + seed dots
-  - (1,0): combined parameter error + significance brackets (vs λ_f = 1.0 baseline)
-  - (1,1): state RMSE + seed dots + significance brackets
+Figure: 3-panel 1×3 layout (15×5)
+  - Panel A: β and n relative error vs λ_f — overlaid lines with significance brackets
+             for both β (lower) and n (upper, stacked above β brackets)
+  - Panel B: combined parameter error + significance brackets (vs λ_f = 1.0 baseline)
+  - Panel C: state RMSE + significance brackets (vs λ_f = 1.0 baseline)
+  Panels B and C show brackets vs λ_f = 1.0; Panel A stacks β brackets then n brackets.
 
 Key finding expected: very low λ_f (<0.1) lets the network ignore the ODE constraint,
 degrading parameter recovery while fitting observations well.  Very high λ_f (>10) can
@@ -64,8 +65,8 @@ train_iterations = 5000
 results_dir = "results/exp7_loss_weights"
 figure_path = "figures/exp7_loss_weights.png"
 
-BETA_COLOR = "#4C78A8"
-N_COLOR = "#F58518"
+BETA_COLOR = "#009E73"
+N_COLOR = "#D55E00"
 COMBINED_COLOR = "#222222"
 RMSE_COLOR = "#222222"
 
@@ -175,24 +176,22 @@ def main():
 
     parameter_significance = pairwise_significance(parameter_vals_by_lf, lf_comparisons)
     state_significance = pairwise_significance(state_vals_by_lf, lf_comparisons)
+    beta_significance = pairwise_significance(beta_vals_by_lf, lf_comparisons)
+    n_significance = pairwise_significance(n_vals_by_lf, lf_comparisons)
 
     plt.rcParams['axes.formatter.useoffset'] = False
 
     fig, axes = plt.subplots(1, 3, figsize=(15, 5))
-    fig.suptitle(
-        rf"Physics Loss Weight $\lambda_f$ Sweep ($\beta$={true_beta}, $n$={true_n}, $\sigma$={noise_level}, {len(seeds)} seeds)",
-        fontsize=13,
-    )
 
     def _label(ax, letter):
         ax.text(-0.02, 1.04, letter, transform=ax.transAxes,
                 fontsize=15, fontweight='bold', va='bottom', ha='left', color='black', clip_on=False)
 
-    def _errorbar(ax, color, label, means, stds):
+    def _errorbar(ax, color, label, means, stds, marker="o"):
         ax.errorbar(
             positions, means,
             yerr=stds if show_eb else None,
-            fmt="o", linestyle="-", linewidth=1.5,
+            fmt=marker, linestyle="-", linewidth=1.0,
             capsize=4 if show_eb else 0,
             color=color, ecolor=color,
             markerfacecolor=color, markeredgecolor=color,
@@ -210,13 +209,23 @@ def main():
 
     position_by_lf = {lf: i for i, lf in enumerate(lf_values)}
 
-    # Panel A: β and n merged (blue=β, grey=n), no jitter, baseline highlight
-    _errorbar(axes[0], BETA_COLOR, r"$\beta$", beta_means, beta_stds)
-    _errorbar(axes[0], N_COLOR, r"$n$", n_means, n_stds)
+    # Panel A: β and n recovery with significance vs λf=1 baseline
+    _errorbar(axes[0], BETA_COLOR, r"$\beta$", beta_means, beta_stds, marker="o")
+    _errorbar(axes[0], N_COLOR, r"$n$", n_means, n_stds, marker="s")
     _highlight_baseline(axes[0])
     _xformat(axes[0])
+    beta_tops_pa = {lf: beta_means[i] + (beta_stds[i] if show_eb else 0.0)
+                   for i, lf in enumerate(lf_values)}
+    annotate_pairwise_comparisons(
+        axes[0], x_positions=position_by_lf, top_values=beta_tops_pa,
+        comparisons=lf_comparisons, significance=beta_significance, use_adjusted_p_value=True)
+    n_tops_pa = {lf: n_means[i] + (n_stds[i] if show_eb else 0.0)
+                for i, lf in enumerate(lf_values)}
+    annotate_pairwise_comparisons(
+        axes[0], x_positions=position_by_lf, top_values=n_tops_pa,
+        comparisons=lf_comparisons, significance=n_significance, use_adjusted_p_value=True)
     axes[0].set_ylabel("Relative Error")
-    axes[0].set_title(r"$\beta$ and $n$ Recovery vs $\lambda_f$")
+    axes[0].set_title(r"$\beta$ and $n$ Recovery")
     axes[0].legend(fontsize=9)
     _label(axes[0], 'A')
 
@@ -224,8 +233,8 @@ def main():
     _errorbar(axes[1], COMBINED_COLOR, None, parameter_means, parameter_stds)
     _highlight_baseline(axes[1])
     _xformat(axes[1])
-    axes[1].set_ylabel("Combined Parameter Error  0.5(|Δβ|/β + |Δn|/n)")
-    axes[1].set_title(r"Combined Parameter Recovery vs $\lambda_f$")
+    axes[1].set_ylabel("Param. Error")
+    axes[1].set_title("Combined Parameter Recovery")
     parameter_tops = [m + (s if show_eb else 0.0) for m, s in zip(parameter_means, parameter_stds)]
     parameter_top_by_lf = {lf: t for lf, t in zip(lf_values, parameter_tops)}
     annotate_pairwise_comparisons(
@@ -237,8 +246,8 @@ def main():
     _errorbar(axes[2], COMBINED_COLOR, None, state_means, state_stds)
     _highlight_baseline(axes[2])
     _xformat(axes[2])
-    axes[2].set_ylabel("State RMSE  (vs clean trajectory)")
-    axes[2].set_title(r"Trajectory Reconstruction vs $\lambda_f$")
+    axes[2].set_ylabel("State RMSE")
+    axes[2].set_title("Trajectory Reconstruction")
     state_tops = [m + (s if show_eb else 0.0) for m, s in zip(state_means, state_stds)]
     state_top_by_lf = {lf: t for lf, t in zip(lf_values, state_tops)}
     annotate_pairwise_comparisons(

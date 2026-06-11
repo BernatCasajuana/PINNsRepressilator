@@ -337,6 +337,12 @@ def annotate_significance_markers(axis, positions, top_values, labels):
 
 # Function to finalize and save a figure
 def finalize_figure(path):
+    import matplotlib.ticker as mticker
+    _fmt = mticker.FuncFormatter(lambda x, _: f'{x:.3g}')
+    for ax in plt.gcf().get_axes():
+        if ax.get_yscale() != 'log':
+            if not isinstance(ax.yaxis.get_major_formatter(), mticker.FixedFormatter):
+                ax.yaxis.set_major_formatter(_fmt)
     os.makedirs(os.path.dirname(path), exist_ok=True)
     plt.tight_layout()
     plt.savefig(path, dpi=300)

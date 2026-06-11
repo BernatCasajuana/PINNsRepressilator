@@ -94,8 +94,8 @@ def main() -> None:
 
     parser = argparse.ArgumentParser(description="Run lightweight pilot figures for all experiments.")
     parser.add_argument(
-        "--train-iterations", type=int, default=10,
-        help="Training iterations per run (default: 10).",
+        "--train-iterations", type=int, default=100,
+        help="Training iterations per run (default: 100).",
     )
     parser.add_argument(
         "--only", nargs="+",

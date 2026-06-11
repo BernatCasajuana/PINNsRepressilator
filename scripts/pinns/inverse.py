@@ -305,11 +305,14 @@ def run_inverse(
             self.var = var_list
 
         def on_epoch_end(self):
+            if self.model.train_state.step % self.period != 0:
+                return
             super().on_epoch_end()
             vals = [_variable_to_scalar(variable) for variable in self.var]
             self.estimated_params.append(vals)
 
-    variable_callback = SaveVariablesCallback([beta_var, n_var], period=100)
+    checkpoint_period = max(1, min(100, train_iterations // 10))
+    variable_callback = SaveVariablesCallback([beta_var, n_var], period=checkpoint_period)
 
     # Compile and train the model
     model.compile("adam", lr=0.001, external_trainable_variables=[beta_var, n_var], loss_weights=loss_weights)
@@ -361,8 +364,7 @@ def run_inverse(
     iteration_axis = np.linspace(0.0, float(train_iterations), loss_train.shape[0], dtype=float)
 
     param_evo = np.array(variable_callback.estimated_params) if variable_callback.estimated_params else np.empty((0, 2))
-    period = 100
-    param_evo_iterations = np.arange(1, len(param_evo) + 1, dtype=float) * period
+    param_evo_iterations = np.arange(1, len(param_evo) + 1, dtype=float) * checkpoint_period
     loss_components = loss_train.T
     component_names = _build_loss_component_names(observed_components, actual_count=loss_components.shape[0])
     component_styles = _build_loss_component_styles(loss_components.shape[0])

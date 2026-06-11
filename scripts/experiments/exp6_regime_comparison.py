@@ -15,10 +15,10 @@ Design:
       oscillatory_beta8:  β = 8.0, n = 3.0  — sustained oscillations, higher production
   - The stable/oscillatory boundary is ~n = 2.0 for β = 5.0 (Müller et al.)
 
-Figure: 2-panel layout with box-and-whisker + individual seed dots (strip plot overlay)
-  - Left:  combined parameter error for all four cases
-  - Right: state RMSE for all four cases
-  Inset trajectory panels show a representative stable vs oscillatory time-series.
+Figure: 2-panel layout (15×6) with bars (edgecolor black) + individual seed dots (strip plot overlay)
+  - Panel A: combined parameter error for all four cases; legend shows Stable / Oscillatory
+  - Panel B: state RMSE for all four cases
+  Each panel has a small inset trajectory showing a representative stable or oscillatory time-series.
   Significance: stable_beta5 vs oscillatory_beta5 and stable_beta8 vs oscillatory_beta8.
 
 Key finding expected: the stable regime produces lower RMSE because trajectories are
@@ -62,8 +62,8 @@ train_iterations = 10000
 results_dir = "results/exp6_regime_comparison"
 figure_path = "figures/exp6_regime_comparison.png"
 
-STABLE_COLOR = "#55A868"
-OSCILLATORY_COLOR = "#C44E52"
+STABLE_COLOR = "#0072B2"
+OSCILLATORY_COLOR = "#E69F00"
 TRAJ_COLORS = ("#0072B2", "#E69F00", "#009E73")
 
 
@@ -188,10 +188,6 @@ def main():
     plt.rcParams['axes.formatter.useoffset'] = False
 
     fig, axes = plt.subplots(1, 2, figsize=(15, 6))
-    fig.suptitle(
-        rf"Regime Comparison ($\sigma$={noise_level}, {len(seeds)} seeds)",
-        fontsize=13,
-    )
 
     rng = np.random.default_rng(42)
     jw = 0.13
@@ -204,7 +200,7 @@ def main():
             yerr=stds if show_eb else None,
             capsize=4 if show_eb else 0,
             color=bar_colors,
-            edgecolor="white",
+            edgecolor="black",
             linewidth=0.5,
             zorder=3,
         )
@@ -222,8 +218,8 @@ def main():
     # Panel (0): combined parameter error
     _barstrip(axes[0], parameter_means, parameter_stds, parameter_vals_by_case)
     _xformat(axes[0])
-    axes[0].set_ylabel("Combined Parameter Error  0.5(|Δβ|/β + |Δn|/n)")
-    axes[0].set_title("Parameter Recovery by Regime")
+    axes[0].set_ylabel("Param. Error")
+    axes[0].set_title("Parameter Recovery")
     axes[0].text(-0.02, 1.04, 'A', transform=axes[0].transAxes,
                  fontsize=15, fontweight='bold', va='bottom', ha='left', color='black', clip_on=False)
 
@@ -241,8 +237,8 @@ def main():
     # Panel (1): state RMSE
     _barstrip(axes[1], state_means, state_stds, state_vals_by_case)
     _xformat(axes[1])
-    axes[1].set_ylabel("State RMSE  (vs clean trajectory)")
-    axes[1].set_title("Trajectory Reconstruction by Regime")
+    axes[1].set_ylabel("State RMSE")
+    axes[1].set_title("Trajectory Reconstruction")
     axes[1].text(-0.02, 1.04, 'B', transform=axes[1].transAxes,
                  fontsize=15, fontweight='bold', va='bottom', ha='left', color='black', clip_on=False)
 
@@ -264,18 +260,19 @@ def main():
         for k in range(3):
             inset_ax.plot(t_ins, y_ins[:, k], color=TRAJ_COLORS[k], linewidth=0.7)
         inset_ax.set_xlim(t_ins[0], t_ins[-1])
-        inset_ax.set_xlabel("t", fontsize=6)
         inset_ax.set_title(
             rf"$\beta$={b:.0f}, $n$={nn:.1f}",
-            fontsize=6, pad=1,
+            fontsize=6, pad=5,
         )
-        inset_ax.tick_params(labelsize=5)
+        inset_ax.tick_params(labelbottom=False, labelleft=False, length=0)
+        for spine in inset_ax.spines.values():
+            spine.set_linewidth(0.5)
 
     legend_handles = [
         Patch(facecolor=STABLE_COLOR, alpha=0.85, edgecolor="none", label="Stable"),
         Patch(facecolor=OSCILLATORY_COLOR, alpha=0.85, edgecolor="none", label="Oscillatory"),
     ]
-    axes[0].legend(handles=legend_handles, title="Regime", fontsize=9, title_fontsize=9, loc="upper right")
+    axes[0].legend(handles=legend_handles, fontsize=9, loc="upper right")
 
     finalize_figure(figure_path)
 

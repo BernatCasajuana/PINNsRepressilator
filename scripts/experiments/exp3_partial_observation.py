@@ -13,11 +13,12 @@ Design:
       "1/3"  component  [0]:        one repressor observed   — x2, x3 inferred from ODE
   - Initial guesses: β₀ = 4.0, n₀ = 2.5
 
-Figure: 4-panel 2×2 layout with bars + individual seed dots (strip plot overlay)
-  - (0,0): β relative error per design
-  - (0,1): n relative error per design
-  - (1,0): combined parameter error + significance brackets (vs 3/3 baseline)
-  - (1,1): state RMSE + significance brackets (vs 3/3 baseline)
+Figure: 2-panel layout (10×5), line plot with mean ± SD
+  - Panel A: combined parameter error + significance brackets (vs 3/3 baseline)
+  - Panel B: state RMSE + significance brackets (vs 3/3 baseline)
+
+  A combined 2×2 figure (exp3_4_observability) is also produced by exp4_sampling_density.py,
+  placing partial-observation and sampling-density panels side by side for the paper.
 
 Significance: two-sided Mann–Whitney U, Holm–Bonferroni corrected, vs full-observation baseline.
 
@@ -120,7 +121,7 @@ def main():
                 }
             )
 
-    design_order = [label for label, _ in observation_designs]
+    design_order = list(reversed([label for label, _ in observation_designs]))
     summary_rows = aggregate_metrics(
         raw_rows,
         group_keys=["design"],
@@ -158,8 +159,8 @@ def main():
     show_eb = len(seeds) > 1
     bar_width = 0.55
 
-    baseline_design = design_order[0]
-    design_comparisons = [(baseline_design, d) for d in design_order[1:]]
+    baseline_design = "3/3"
+    design_comparisons = [(baseline_design, d) for d in design_order if d != baseline_design]
     beta_vals_by_design = metric_values_by_group(raw_rows, "design", "beta_rel_error")
     n_vals_by_design = metric_values_by_group(raw_rows, "design", "n_rel_error")
     parameter_vals_by_design = metric_values_by_group(raw_rows, "design", "parameter_rel_error")
@@ -171,97 +172,55 @@ def main():
 
     plt.rcParams['axes.formatter.useoffset'] = False
 
-    # 3 categories: blue (3/3 best), mid-grey (2/3), light-grey (1/3 worst)
-    DESIGN_COLORS = {"3/3": "#444444", "2/3": "#888888", "1/3": "#CCCCCC"}
-    design_bar_colors = [DESIGN_COLORS[d] for d in design_order]
-    BLUE = "#4C78A8"
-    GREY = "#F58518"
+    COMBINED_COLOR = "#222222"
 
-    x = np.arange(len(design_order))
-    bar_w = 0.35
-    bar_wide = 0.55
-    rng = np.random.default_rng(42)
-    jw = 0.10
-
-    fig, axes = plt.subplots(1, 3, figsize=(15, 5))
-    fig.suptitle(
-        rf"Partial Observation ($\beta$={true_beta}, $n$={true_n}, $\sigma$={noise_level}, {len(seeds)} seeds)",
-        fontsize=13,
-    )
-
-    def _label(ax, letter):
-        ax.text(-0.02, 1.10, letter, transform=ax.transAxes,
-                fontsize=15, fontweight='bold', va='bottom', ha='left', color='black', clip_on=False)
-
-    def _strip(ax, x_base, vals):
-        j = rng.uniform(-0.08, 0.08, len(vals))
-        ax.scatter(x_base + j, vals, color="black", alpha=0.65, s=18, zorder=5, linewidths=0)
-
-    def _xformat(ax):
-        ax.set_xticks(x, design_order)
-        ax.set_xlabel("Observed Repressors")
-
+    positions = list(range(len(design_order)))
     position_by_design = {d: i for i, d in enumerate(design_order)}
 
-    # Panel A: β and n grouped bars (blue=β, grey=n), strip dots
-    axes[0].bar(x - bar_w / 2, beta_means, width=bar_w,
-                yerr=beta_stds if show_eb else None, capsize=4 if show_eb else 0,
-                color=BLUE, edgecolor="white", linewidth=0.5, label=r"$\beta$", zorder=3)
-    axes[0].bar(x + bar_w / 2, n_means, width=bar_w,
-                yerr=n_stds if show_eb else None, capsize=4 if show_eb else 0,
-                color=GREY, edgecolor="white", linewidth=0.5, label=r"$n$", zorder=3)
-    for i, d in enumerate(design_order):
-        _strip(axes[0], i - bar_w / 2, beta_vals_by_design.get(d, []))
-        _strip(axes[0], i + bar_w / 2, n_vals_by_design.get(d, []))
+    fig, axes = plt.subplots(1, 2, figsize=(10, 5))
+
+    def _label(ax, letter):
+        ax.text(-0.02, 1.04, letter, transform=ax.transAxes,
+                fontsize=15, fontweight='bold', va='bottom', ha='left', color='black', clip_on=False)
+
+    def _errorbar(ax, color, label, means, stds):
+        ax.errorbar(
+            positions, means,
+            yerr=stds if show_eb else None,
+            fmt="o", linestyle="-", linewidth=1.0,
+            capsize=4 if show_eb else 0,
+            color=color, ecolor=color,
+            markerfacecolor=color, markeredgecolor=color,
+            zorder=4, label=label,
+        )
+
+    def _xformat(ax):
+        ax.set_xticks(positions, design_order)
+        ax.set_xlabel("Observed Repressors")
+
+    # Panel A: combined parameter error + significance
+    _errorbar(axes[0], COMBINED_COLOR, None, parameter_means, parameter_stds)
     _xformat(axes[0])
-    axes[0].set_ylabel("Relative Error")
-    axes[0].set_title(r"$\beta$ and $n$ recovery vs Observation Design")
-    axes[0].legend(fontsize=9)
-    _label(axes[0], 'A')
-    beta_pos_by_design = {d: i - bar_w / 2 for i, d in enumerate(design_order)}
-    n_pos_by_design = {d: i + bar_w / 2 for i, d in enumerate(design_order)}
-    beta_tops = [m + (s if show_eb else 0.0) for m, s in zip(beta_means, beta_stds)]
-    n_tops = [m + (s if show_eb else 0.0) for m, s in zip(n_means, n_stds)]
-    beta_top_by_design = {d: t for d, t in zip(design_order, beta_tops)}
-    n_top_by_design = {d: t for d, t in zip(design_order, n_tops)}
+    axes[0].set_ylabel("Param. Error")
+    axes[0].set_title("Combined Parameter Recovery")
+    parameter_tops = {d: parameter_means[i] + (parameter_stds[i] if show_eb else 0.0)
+                     for i, d in enumerate(design_order)}
     annotate_pairwise_comparisons(
-        axes[0], x_positions=beta_pos_by_design, top_values=beta_top_by_design,
-        comparisons=design_comparisons, significance=beta_significance, use_adjusted_p_value=True)
-    annotate_pairwise_comparisons(
-        axes[0], x_positions=n_pos_by_design, top_values=n_top_by_design,
-        comparisons=design_comparisons, significance=n_significance, use_adjusted_p_value=True)
-
-    # Panel B: combined error (3-category bar colors) + significance + strip
-    axes[1].bar(x, parameter_means, width=bar_wide,
-                yerr=parameter_stds if show_eb else None, capsize=4 if show_eb else 0,
-                color=design_bar_colors, edgecolor="white", linewidth=0.5, zorder=3)
-    for i, d in enumerate(design_order):
-        _strip(axes[1], i, parameter_vals_by_design.get(d, []))
-    _xformat(axes[1])
-    axes[1].set_ylabel("Combined Parameter Error  0.5(|Δβ|/β + |Δn|/n)")
-    axes[1].set_title("Combined Parameter Recovery vs Observation Design")
-    parameter_tops = [m + (s if show_eb else 0.0) for m, s in zip(parameter_means, parameter_stds)]
-    parameter_top_by_design = {d: t for d, t in zip(design_order, parameter_tops)}
-    annotate_pairwise_comparisons(
-        axes[1], x_positions=position_by_design, top_values=parameter_top_by_design,
+        axes[0], x_positions=position_by_design, top_values=parameter_tops,
         comparisons=design_comparisons, significance=parameter_significance, use_adjusted_p_value=True)
-    _label(axes[1], 'B')
+    _label(axes[0], 'A')
 
-    # Panel C: state RMSE (3-category bar colors) + significance + strip
-    axes[2].bar(x, state_means, width=bar_wide,
-                yerr=state_stds if show_eb else None, capsize=4 if show_eb else 0,
-                color=design_bar_colors, edgecolor="white", linewidth=0.5, zorder=3)
-    for i, d in enumerate(design_order):
-        _strip(axes[2], i, state_vals_by_design.get(d, []))
-    _xformat(axes[2])
-    axes[2].set_ylabel("State RMSE  (vs clean trajectory)")
-    axes[2].set_title("Trajectory Reconstruction vs Observation Design")
-    state_tops = [m + (s if show_eb else 0.0) for m, s in zip(state_means, state_stds)]
-    state_top_by_design = {d: t for d, t in zip(design_order, state_tops)}
+    # Panel B: state RMSE + significance
+    _errorbar(axes[1], COMBINED_COLOR, None, state_means, state_stds)
+    _xformat(axes[1])
+    axes[1].set_ylabel("State RMSE")
+    axes[1].set_title("Trajectory Reconstruction")
+    state_tops = {d: state_means[i] + (state_stds[i] if show_eb else 0.0)
+                 for i, d in enumerate(design_order)}
     annotate_pairwise_comparisons(
-        axes[2], x_positions=position_by_design, top_values=state_top_by_design,
+        axes[1], x_positions=position_by_design, top_values=state_tops,
         comparisons=design_comparisons, significance=state_significance, use_adjusted_p_value=True)
-    _label(axes[2], 'C')
+    _label(axes[1], 'B')
 
     finalize_figure(figure_path)
 

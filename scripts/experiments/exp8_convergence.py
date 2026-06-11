@@ -51,8 +51,8 @@ train_iterations = 10000
 results_dir = "results/exp8_convergence"
 figure_path = "figures/exp8_convergence.png"
 
-BETA_COLOR = "#4C78A8"
-N_COLOR = "#F58518"
+BETA_COLOR = "#009E73"
+N_COLOR = "#D55E00"
 TOTAL_LOSS_COLOR = "#222222"
 EQ_COLOR = "#C62828"
 IC_COLOR = "#00897B"
@@ -127,10 +127,6 @@ def main():
     plt.rcParams['axes.formatter.useoffset'] = False
 
     fig, axes = plt.subplots(2, 2, figsize=(12, 9), squeeze=False)
-    fig.suptitle(
-        rf"Training Convergence ($\beta$={true_beta}, $n$={true_n}, $\sigma$={noise_level}, {len(seeds)} seeds, {train_iterations} iterations)",
-        fontsize=13,
-    )
 
     seed_alphas = [0.8, 0.55, 0.35]
 
@@ -148,7 +144,7 @@ def main():
         param_iter = result["param_evo_iterations"]
 
         total_loss = loss_train.sum(axis=1)
-        ax_loss.semilogy(iter_axis, total_loss, color=TOTAL_LOSS_COLOR, alpha=alpha, linewidth=1.2,
+        ax_loss.semilogy(iter_axis, total_loss, color=TOTAL_LOSS_COLOR, alpha=alpha, linewidth=1.0,
                          label=f"seed {seed}")
 
         if loss_train.shape[1] >= 9:
@@ -166,8 +162,8 @@ def main():
                 ax_comp.semilogy(iter_axis, loss_train[:, k], alpha=alpha, linewidth=0.8)
 
         if param_evo.shape[0] > 0:
-            ax_beta.plot(param_iter, param_evo[:, 0], color=BETA_COLOR, alpha=alpha, linewidth=1.2)
-            ax_n.plot(param_iter, param_evo[:, 1], color=N_COLOR, alpha=alpha, linewidth=1.2)
+            ax_beta.plot(param_iter, param_evo[:, 0], color=BETA_COLOR, alpha=alpha, linewidth=1.0)
+            ax_n.plot(param_iter, param_evo[:, 1], color=N_COLOR, alpha=alpha, linewidth=1.0)
 
     ax_beta.axhline(true_beta, color="black", linestyle="--", linewidth=1.0,
                     alpha=0.7, label=rf"true $\beta$ = {true_beta}")
@@ -179,24 +175,24 @@ def main():
                       fontsize=15, fontweight='bold', va='bottom', ha='left', color='black', clip_on=False)
 
     ax_loss.set_xlabel("Iterations")
-    ax_loss.set_ylabel("Total Loss  (log)")
+    ax_loss.set_ylabel("Loss (log scale)")
     ax_loss.set_title("Total Loss")
-    ax_loss.legend(fontsize=8, loc="upper right")
+    ax_loss.legend(fontsize=11, loc="upper right")
 
     ax_comp.set_xlabel("Iterations")
-    ax_comp.set_ylabel("Loss Component  (log)")
+    ax_comp.set_ylabel("Loss (log scale)")
     ax_comp.set_title("Loss Components")
-    ax_comp.legend(fontsize=8, loc="upper right")
+    ax_comp.legend(fontsize=11, loc="upper right")
 
     ax_beta.set_xlabel("Iterations")
     ax_beta.set_ylabel(r"$\hat{\beta}$")
     ax_beta.set_title(r"$\hat{\beta}$ Convergence")
-    ax_beta.legend(fontsize=8)
+    ax_beta.legend(fontsize=11)
 
     ax_n.set_xlabel("Iterations")
     ax_n.set_ylabel(r"$\hat{n}$")
     ax_n.set_title(r"$\hat{n}$ Convergence")
-    ax_n.legend(fontsize=8)
+    ax_n.legend(fontsize=11)
 
     finalize_figure(figure_path)
 

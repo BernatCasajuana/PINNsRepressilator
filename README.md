@@ -22,16 +22,16 @@ where `L_eq` penalises violations of the repressilator equations, `L_IC` enforce
 
 Eight experiments characterise when and how this approach succeeds or fails:
 
-| # | Experiment | Factor varied | Key finding |
-|---|---|---|---|
-| 1 | Forward vs inverse | RMSE with/without parameter estimation | Low RMSE does not guarantee accurate parameter recovery |
-| 2 | Noise sweep | Relative observation noise (0%–20%) | Parameter error is stable; trajectory RMSE degrades faster |
-| 3 | Partial observation | Observed repressors (1/3, 2/3, 3/3) | Losing phase-coupled repressors inflates variance sharply |
-| 4 | Sampling density | Observation count (10–100 points) | Sparse sampling removes informative oscillatory phases |
-| 5 | Initial guesses | Starting (β₀, n₀) on 7×7 grid | Non-convex landscape reveals failure basins |
-| 6 | Regime comparison | Stable (n=1.5) vs oscillatory (n=3.0) | Oscillatory is harder to reconstruct but more informative |
-| 7 | Loss weight λ_f | Physics loss weight {0.01, 0.1, 1, 10, 100} | λ_f ≈ 1 balances physics and data constraints |
-| 8 | Convergence | Training curves over 10000 iterations | β̂ converges faster than n̂; 10k iters is typically sufficient |
+| # | Experiment | Factor varied | Figure layout | Key finding |
+|---|---|---|---|---|
+| 1 | Forward vs inverse | RMSE with/without parameter estimation | 1-panel: state RMSE line plot | Low RMSE does not guarantee accurate parameter recovery |
+| 2 | Noise sweep | Relative observation noise (0%–20%) | 2×2: β, n, combined, state RMSE | Parameter error is stable; trajectory RMSE degrades faster |
+| 3 | Partial observation | Observed repressors (1/3, 2/3, 3/3) | 2-panel: combined + state RMSE | Losing phase-coupled repressors inflates variance sharply |
+| 4 | Sampling density | Observation count (10–1000 points) | 2-panel + combined exp3_4 figure | Sparse sampling removes informative oscillatory phases |
+| 5 | Initial guesses | Starting (β₀, n₀) on 7×7 grid | 1-panel: heatmap | Non-convex landscape reveals failure basins |
+| 6 | Regime comparison | Stable (n=1.5) vs oscillatory (n=3.0) | 2-panel: bar + strip, inset trajs | Oscillatory is harder to reconstruct but more informative |
+| 7 | Loss weight λ_f | Physics loss weight {0.01, 0.1, 1, 10, 100} | 3-panel: β+n, combined, state | λ_f ≈ 1 balances physics and data constraints |
+| 8 | Convergence | Training curves over 10000 iterations | 2×2: loss, components, β̂, n̂ | β̂ converges faster than n̂; 10k iters is typically sufficient |
 
 The central finding is that **a low trajectory RMSE does not guarantee accurate parameter recovery**. PINNs reconstruct trajectories reliably but parameter identification is more fragile — a distinction that matters for reverse-engineering biological circuits.
 
@@ -175,9 +175,13 @@ Each driver in `scripts/experiments/` follows the same pattern:
 Pairwise comparisons use the two-sided Mann–Whitney U test (non-parametric, appropriate for small n=5 seeds). Multiple testing is corrected with Holm–Bonferroni within each panel. Brackets show adjusted p-values; stars indicate `*` p<0.05, `**` p<0.01, `***` p<0.001. Baseline comparisons:
 
 - Noise sweep: each level vs σ=0
-- Sampling density: each count vs 100 points
+- Sampling density: each count vs the densest condition
 - Partial observation: each design vs full (3/3) observation
 - Regime comparison: oscillatory vs stable at matching β
+- Loss weight: each λ_f vs λ_f=1 (baseline)
+
+The combined exp3_4_observability figure (produced by exp4) places partial-observation and
+sampling-density results in a 2×2 grid (rows = Param. Recovery / State Recons., columns = experiment).
 
 ---
 
@@ -187,7 +191,7 @@ Default configuration (full runs):
 
 | Experiment | Conditions | Seeds | Iterations | Total |
 |---|---|---|---|---|
-| 1 Forward vs inverse | 3 noise × fwd+inv | 3 | 5 000 | 90 000 |
+| 1 Forward vs inverse | 4 noise × fwd+inv | 3 | 5 000 | 120 000 |
 | 2 Noise sweep | 5 noise levels | 5 | 10 000 | 250 000 |
 | 3 Partial observation | 3 designs | 5 | 10 000 | 150 000 |
 | 4 Sampling density | 4 counts | 5 | 10 000 | 200 000 |
@@ -195,7 +199,7 @@ Default configuration (full runs):
 | 6 Regime comparison | 4 cases | 5 | 10 000 | 200 000 |
 | 7 Loss weight λ_f | 5 λ_f values | 5 | 5 000 | 125 000 |
 | 8 Convergence | 2 conditions | 3 | 10 000 | 60 000 |
-| **Total** | | | | **1 565 000** |
+| **Total** | | | | **1 595 000** |
 
 Approximate wall-clock time: 30–60 h on CPU, 3–6 h on GPU.
 

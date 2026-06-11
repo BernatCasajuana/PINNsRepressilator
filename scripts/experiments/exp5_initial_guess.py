@@ -53,7 +53,7 @@ results_dir = "results/exp5_initial_guess"
 figure_path = "figures/exp5_initial_guess.png"
 
 HEATMAP_CMAP = mcolors.LinearSegmentedColormap.from_list(
-    "white_to_black", ["#FFFFFF", "#222222"]
+    "white_to_blue", ["#FFFFFF", "#4C78A8"]
 )
 CONTOUR_THRESHOLD = 0.10  # 10% relative error contour
 
@@ -146,10 +146,6 @@ def main():
     plt.rcParams['axes.formatter.useoffset'] = False
 
     fig, ax = plt.subplots(1, 1, figsize=(8, 6))
-    fig.suptitle(
-        rf"Initial Guess Sensitivity ($\beta_{{true}}$={true_beta}, $n_{{true}}$={true_n}, $\sigma$={noise_level})",
-        fontsize=13,
-    )
 
     vmax = float(np.nanmax(combined_heatmap))
 
@@ -161,14 +157,14 @@ def main():
     ax.set_yticks(range(len(n_guesses)), [str(v) for v in n_guesses])
     ax.set_xlabel(r"Initial $\beta_0$")
     ax.set_ylabel(r"Initial $n_0$")
-    ax.set_title("Combined Parameter Error Over Initial Guess Grid")
+    ax.set_title("Initial Guess Sensitivity")
 
     if star_bx is not None and star_nx is not None:
         ax.plot(star_bx, star_nx, marker='+', color='white',
                 markersize=14, markeredgewidth=2.5, zorder=10, linestyle='')
 
     cbar = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
-    cbar.set_label("Combined Parameter Error  0.5(|Δβ|/β + |Δn|/n)")
+    cbar.set_label(r"Param. Error = ½(|Δβ/β|+|Δn/n|)")
 
     finalize_figure(figure_path)
 

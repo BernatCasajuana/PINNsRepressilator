@@ -11,12 +11,12 @@ Design:
   - 5 seeds per noise level (independent data realisations)
   - 10000 Adam iterations per run; initial guesses β₀ = 4.0, n₀ = 2.5
 
-Figure: 4-panel 2×2 layout
-  - (0,0): β relative error vs noise — mean ± SD + individual seed dots
-  - (0,1): n relative error vs noise — mean ± SD + individual seed dots
-  - (1,0): combined parameter error vs noise + significance brackets (vs σ = 0)
-  - (1,1): state RMSE vs noise + individual seed dots + σ reference line
-            (σ reference = noise_level × signal_amplitude, showing scale of added noise)
+Figure: 4-panel 2×2 layout (12×9), line plots with mean ± SD
+  - Panel A (0,0): β relative error vs noise + significance brackets (vs σ = 0)
+  - Panel B (0,1): n relative error vs noise + significance brackets (vs σ = 0)
+  - Panel C (1,0): combined parameter error vs noise + significance brackets (vs σ = 0)
+  - Panel D (1,1): state RMSE vs noise + horizontal σ reference line + significance brackets
+                   (σ reference = noise_level × signal_amplitude, showing scale of added noise)
 
 Significance: two-sided Mann–Whitney U, Holm–Bonferroni corrected, vs σ = 0 baseline.
 
@@ -56,8 +56,8 @@ train_iterations = 10000
 results_dir = "results/exp2_noise_sweep"
 figure_path = "figures/exp2_noise_sweep.png"
 
-BETA_COLOR = "#4C78A8"
-N_COLOR = "#F58518"
+BETA_COLOR = "#009E73"
+N_COLOR = "#D55E00"
 COMBINED_COLOR = "#222222"
 RMSE_COLOR = "#222222"
 
@@ -158,24 +158,22 @@ def main():
 
     parameter_significance = pairwise_significance(parameter_vals_by_noise, noise_comparisons)
     state_significance = pairwise_significance(state_vals_by_noise, noise_comparisons)
+    beta_significance = pairwise_significance(beta_vals_by_noise, noise_comparisons)
+    n_significance = pairwise_significance(n_vals_by_noise, noise_comparisons)
 
     plt.rcParams['axes.formatter.useoffset'] = False
 
-    fig, axes = plt.subplots(1, 3, figsize=(15, 5))
-    fig.suptitle(
-        rf"Noise Sensitivity ($\beta$={true_beta}, $n$={true_n}, {len(seeds)} seeds)",
-        fontsize=13,
-    )
+    fig, axes = plt.subplots(2, 2, figsize=(12, 9), squeeze=False)
 
     def _label(ax, letter):
         ax.text(-0.02, 1.04, letter, transform=ax.transAxes,
                 fontsize=15, fontweight='bold', va='bottom', ha='left', color='black', clip_on=False)
 
-    def _errorbar(ax, color, label, means, stds):
+    def _errorbar(ax, color, label, means, stds, marker="o"):
         ax.errorbar(
             positions, means,
             yerr=stds if show_eb else None,
-            fmt="o", linestyle="-", linewidth=1.5,
+            fmt=marker, linestyle="-", linewidth=1.0,
             capsize=4 if show_eb else 0,
             color=color, ecolor=color,
             markerfacecolor=color, markeredgecolor=color,
@@ -188,38 +186,51 @@ def main():
 
     position_by_noise = {v: i for i, v in enumerate(noise_values)}
 
-    # Panel A: β and n merged (blue=β, grey=n), no jitter
-    _errorbar(axes[0], BETA_COLOR, r"$\beta$", beta_means, beta_stds)
-    _errorbar(axes[0], N_COLOR, r"$n$", n_means, n_stds)
-    _xformat(axes[0])
-    axes[0].set_ylabel("Relative Error")
-    axes[0].set_title(r"$\beta$ and $n$ Recovery vs Noise")
-    axes[0].legend(fontsize=9)
-    _label(axes[0], 'A')
-
-    # Panel B: combined parameter error + significance
-    _errorbar(axes[1], COMBINED_COLOR, None, parameter_means, parameter_stds)
-    _xformat(axes[1])
-    axes[1].set_ylabel("Combined Parameter Error  0.5(|Δβ|/β + |Δn|/n)")
-    axes[1].set_title("Combined Parameter Recovery vs Noise")
-    parameter_tops = [m + (s if show_eb else 0.0) for m, s in zip(parameter_means, parameter_stds)]
-    parameter_top_by_noise = {v: t for v, t in zip(noise_values, parameter_tops)}
+    # Panel A: β recovery with brackets vs σ=0 baseline
+    _errorbar(axes[0, 0], BETA_COLOR, None, beta_means, beta_stds, marker="o")
+    beta_tops = {v: beta_means[i] + (beta_stds[i] if show_eb else 0.0) for i, v in enumerate(noise_values)}
     annotate_pairwise_comparisons(
-        axes[1], x_positions=position_by_noise, top_values=parameter_top_by_noise,
+        axes[0, 0], x_positions=position_by_noise, top_values=beta_tops,
+        comparisons=noise_comparisons, significance=beta_significance, use_adjusted_p_value=True)
+    _xformat(axes[0, 0])
+    axes[0, 0].set_ylabel("Relative Error")
+    axes[0, 0].set_title(r"$\beta$ Recovery")
+    _label(axes[0, 0], 'A')
+
+    # Panel B: n recovery with brackets vs σ=0 baseline
+    _errorbar(axes[0, 1], N_COLOR, None, n_means, n_stds, marker="s")
+    n_tops = {v: n_means[i] + (n_stds[i] if show_eb else 0.0) for i, v in enumerate(noise_values)}
+    annotate_pairwise_comparisons(
+        axes[0, 1], x_positions=position_by_noise, top_values=n_tops,
+        comparisons=noise_comparisons, significance=n_significance, use_adjusted_p_value=True)
+    _xformat(axes[0, 1])
+    axes[0, 1].set_ylabel("Relative Error")
+    axes[0, 1].set_title(r"$n$ Recovery")
+    _label(axes[0, 1], 'B')
+
+    # Panel C: combined parameter error + significance
+    _errorbar(axes[1, 0], COMBINED_COLOR, None, parameter_means, parameter_stds)
+    _xformat(axes[1, 0])
+    axes[1, 0].set_ylabel("Param. Error")
+    axes[1, 0].set_title("Combined Parameter Recovery")
+    parameter_tops = {v: parameter_means[i] + (parameter_stds[i] if show_eb else 0.0)
+                     for i, v in enumerate(noise_values)}
+    annotate_pairwise_comparisons(
+        axes[1, 0], x_positions=position_by_noise, top_values=parameter_tops,
         comparisons=noise_comparisons, significance=parameter_significance, use_adjusted_p_value=True)
-    _label(axes[1], 'B')
+    _label(axes[1, 0], 'C')
 
-    # Panel C: state RMSE + significance
-    _errorbar(axes[2], COMBINED_COLOR, None, state_means, state_stds)
-    _xformat(axes[2])
-    axes[2].set_ylabel("State RMSE  (vs clean trajectory)")
-    axes[2].set_title("Trajectory Reconstruction vs Noise")
-    state_tops = [m + (s if show_eb else 0.0) for m, s in zip(state_means, state_stds)]
-    state_top_by_noise = {v: t for v, t in zip(noise_values, state_tops)}
+    # Panel D: state RMSE + significance
+    _errorbar(axes[1, 1], COMBINED_COLOR, None, state_means, state_stds)
+    _xformat(axes[1, 1])
+    axes[1, 1].set_ylabel("State RMSE")
+    axes[1, 1].set_title("Trajectory Reconstruction")
+    state_tops = {v: state_means[i] + (state_stds[i] if show_eb else 0.0)
+                 for i, v in enumerate(noise_values)}
     annotate_pairwise_comparisons(
-        axes[2], x_positions=position_by_noise, top_values=state_top_by_noise,
+        axes[1, 1], x_positions=position_by_noise, top_values=state_tops,
         comparisons=noise_comparisons, significance=state_significance, use_adjusted_p_value=True)
-    _label(axes[2], 'C')
+    _label(axes[1, 1], 'D')
 
     finalize_figure(figure_path)
 

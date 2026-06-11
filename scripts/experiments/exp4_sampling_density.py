@@ -12,14 +12,16 @@ Design:
   - 5 seeds per count; 10000 Adam iterations per run
   - Initial guesses: β₀ = 4.0, n₀ = 2.5
 
-Figure: 4-panel 2×2 layout
-  - (0,0): β relative error vs observation count + seed dots
-  - (0,1): n relative error vs observation count + seed dots
-  - (1,0): combined parameter error + significance brackets (vs 100-point baseline)
-  - (1,1): state RMSE + seed dots + horizontal σ reference line
+Figure: 2-panel layout (10×5), line plot with mean ± SD
+  - Panel A: combined parameter error + significance brackets (vs highest-count baseline)
+  - Panel B: state RMSE + significance brackets (vs highest-count baseline)
 
-X-axis labels show count and % of full grid for context.
-Significance: two-sided Mann–Whitney U, Holm–Bonferroni corrected, vs 100-point baseline.
+  Also produces a combined 2×2 figure (exp3_4_observability.png) that juxtaposes
+  partial-observation (exp3) and sampling-density results side by side:
+    - (0,0)/(0,1): Parameter Recovery — observed repressors / sampling points (of 1000)
+    - (1,0)/(1,1): Trajectory Reconstruction — observed repressors / sampling points (of 1000)
+
+Significance: two-sided Mann–Whitney U, Holm–Bonferroni corrected, vs highest-count baseline.
 
 Key finding expected: sparse sampling (<25 points) removes complete oscillatory phases,
 costing critical phase information for identifying n.  State RMSE degrades more gracefully
@@ -59,8 +61,8 @@ train_iterations = 10000
 results_dir = "results/exp4_sampling_density"
 figure_path = "figures/exp4_sampling_density.png"
 
-BETA_COLOR = "#4C78A8"
-N_COLOR = "#F58518"
+BETA_COLOR = "#009E73"
+N_COLOR = "#D55E00"
 COMBINED_COLOR = "#222222"
 RMSE_COLOR = "#222222"
 
@@ -165,24 +167,22 @@ def main():
 
     parameter_significance = pairwise_significance(parameter_vals_by_count, count_comparisons)
     state_significance = pairwise_significance(state_vals_by_count, count_comparisons)
+    beta_significance = pairwise_significance(beta_vals_by_count, count_comparisons)
+    n_significance = pairwise_significance(n_vals_by_count, count_comparisons)
 
     plt.rcParams['axes.formatter.useoffset'] = False
 
-    fig, axes = plt.subplots(1, 3, figsize=(15, 5))
-    fig.suptitle(
-        rf"Sampling Density ($\beta$={true_beta}, $n$={true_n}, $\sigma$={noise_level}, {len(seeds)} seeds)",
-        fontsize=13,
-    )
+    fig, axes = plt.subplots(1, 2, figsize=(10, 5))
 
     def _label(ax, letter):
-        ax.text(-0.02, 1.10, letter, transform=ax.transAxes,
+        ax.text(-0.02, 1.04, letter, transform=ax.transAxes,
                 fontsize=15, fontweight='bold', va='bottom', ha='left', color='black', clip_on=False)
 
     def _errorbar(ax, color, label, means, stds):
         ax.errorbar(
             positions, means,
             yerr=stds if show_eb else None,
-            fmt="o", linestyle="-", linewidth=1.5,
+            fmt="o", linestyle="-", linewidth=1.0,
             capsize=4 if show_eb else 0,
             color=color, ecolor=color,
             markerfacecolor=color, markeredgecolor=color,
@@ -195,40 +195,145 @@ def main():
 
     position_by_count = {c: i for i, c in enumerate(count_values)}
 
-    # Panel A: β and n merged (blue=β, grey=n), no jitter
-    _errorbar(axes[0], BETA_COLOR, r"$\beta$", beta_means, beta_stds)
-    _errorbar(axes[0], N_COLOR, r"$n$", n_means, n_stds)
+    # Panel A: combined parameter error + significance
+    _errorbar(axes[0], COMBINED_COLOR, None, parameter_means, parameter_stds)
     _xformat(axes[0])
-    axes[0].set_ylabel("Relative Error")
-    axes[0].set_title(r"$\beta$ and $n$ Recovery vs Sampling Density")
-    axes[0].legend(fontsize=9)
+    axes[0].set_ylabel("Param. Error")
+    axes[0].set_title("Combined Parameter Recovery")
+    parameter_tops = {c: parameter_means[i] + (parameter_stds[i] if show_eb else 0.0)
+                     for i, c in enumerate(count_values)}
+    annotate_pairwise_comparisons(
+        axes[0], x_positions=position_by_count, top_values=parameter_tops,
+        comparisons=count_comparisons, significance=parameter_significance, use_adjusted_p_value=True)
     _label(axes[0], 'A')
 
-    # Panel B: combined error + significance
-    _errorbar(axes[1], COMBINED_COLOR, None, parameter_means, parameter_stds)
+    # Panel B: state RMSE + significance
+    _errorbar(axes[1], COMBINED_COLOR, None, state_means, state_stds)
     _xformat(axes[1])
-    axes[1].set_ylabel("Combined Parameter Error  0.5(|Δβ|/β + |Δn|/n)")
-    axes[1].set_title("Combined Parameter Recovery vs Sampling Density")
-    parameter_tops = [m + (s if show_eb else 0.0) for m, s in zip(parameter_means, parameter_stds)]
-    parameter_top_by_count = {c: t for c, t in zip(count_values, parameter_tops)}
+    axes[1].set_ylabel("State RMSE")
+    axes[1].set_title("Trajectory Reconstruction")
+    state_tops = {c: state_means[i] + (state_stds[i] if show_eb else 0.0)
+                 for i, c in enumerate(count_values)}
     annotate_pairwise_comparisons(
-        axes[1], x_positions=position_by_count, top_values=parameter_top_by_count,
-        comparisons=count_comparisons, significance=parameter_significance, use_adjusted_p_value=True)
+        axes[1], x_positions=position_by_count, top_values=state_tops,
+        comparisons=count_comparisons, significance=state_significance, use_adjusted_p_value=True)
     _label(axes[1], 'B')
 
-    # Panel C: state RMSE + significance
-    _errorbar(axes[2], COMBINED_COLOR, None, state_means, state_stds)
-    _xformat(axes[2])
-    axes[2].set_ylabel("State RMSE  (vs clean trajectory)")
-    axes[2].set_title("Trajectory Reconstruction vs Sampling Density")
-    state_tops = [m + (s if show_eb else 0.0) for m, s in zip(state_means, state_stds)]
-    state_top_by_count = {c: t for c, t in zip(count_values, state_tops)}
-    annotate_pairwise_comparisons(
-        axes[2], x_positions=position_by_count, top_values=state_top_by_count,
-        comparisons=count_comparisons, significance=state_significance, use_adjusted_p_value=True)
-    _label(axes[2], 'C')
-
     finalize_figure(figure_path)
+
+    # Combined observability figure (exp3 + exp4) if exp3 results are available
+    exp3_results_base = os.path.join(
+        os.path.dirname(os.path.abspath(results_dir)),
+        "exp3_partial_observation",
+    )
+    exp3_summary_path = os.path.join(exp3_results_base, "exp3_partial_observation_summary.csv")
+    exp3_raw_path = os.path.join(exp3_results_base, "exp3_partial_observation_raw.csv")
+
+    if os.path.exists(exp3_summary_path) and os.path.exists(exp3_raw_path):
+        import csv as _csv
+
+        def _load_csv_dicts(path, numeric_keys):
+            rows = []
+            with open(path) as f:
+                for row in _csv.DictReader(f):
+                    parsed = dict(row)
+                    for k in numeric_keys:
+                        if k in parsed and parsed[k]:
+                            try:
+                                parsed[k] = float(parsed[k])
+                            except ValueError:
+                                pass
+                    rows.append(parsed)
+            return rows
+
+        exp3_summary = _load_csv_dicts(exp3_summary_path, [
+            "parameter_rel_error_mean", "parameter_rel_error_std",
+            "state_rmse_mean", "state_rmse_std",
+        ])
+        exp3_raw = _load_csv_dicts(exp3_raw_path, ["parameter_rel_error", "state_rmse"])
+
+        exp3_design_order = ["1/3", "2/3", "3/3"]
+        exp3_summary = [r for r in exp3_summary if r.get("design") in exp3_design_order]
+        exp3_summary.sort(key=lambda r: exp3_design_order.index(r["design"]))
+
+        if exp3_summary:
+            exp3_param_means = [r["parameter_rel_error_mean"] for r in exp3_summary]
+            exp3_param_stds = [r["parameter_rel_error_std"] for r in exp3_summary]
+            exp3_state_means = [r["state_rmse_mean"] for r in exp3_summary]
+            exp3_state_stds = [r["state_rmse_std"] for r in exp3_summary]
+            exp3_designs = [r["design"] for r in exp3_summary]
+            exp3_positions = list(range(len(exp3_designs)))
+            exp3_pos_by_design = {d: i for i, d in enumerate(exp3_designs)}
+
+            exp3_baseline = "3/3"
+            exp3_comparisons = [(exp3_baseline, d) for d in exp3_design_order if d != exp3_baseline]
+            exp3_param_vals = metric_values_by_group(exp3_raw, "design", "parameter_rel_error")
+            exp3_state_vals = metric_values_by_group(exp3_raw, "design", "state_rmse")
+            exp3_param_sig = pairwise_significance(exp3_param_vals, exp3_comparisons)
+            exp3_state_sig = pairwise_significance(exp3_state_vals, exp3_comparisons)
+
+            combined_figure_path = figure_path.replace("exp4_sampling_density", "exp3_4_observability")
+            fig2, ax2 = plt.subplots(2, 2, figsize=(12, 9), squeeze=False)
+
+            def _label2(ax, letter):
+                ax.text(-0.02, 1.04, letter, transform=ax.transAxes,
+                        fontsize=15, fontweight='bold', va='bottom', ha='left', color='black', clip_on=False)
+
+            def _eb2(ax, xpos, means, stds, color):
+                ax.errorbar(
+                    xpos, means, yerr=stds if show_eb else None,
+                    fmt="o", linestyle="-", linewidth=1.0,
+                    capsize=4 if show_eb else 0,
+                    color=color, ecolor=color,
+                    markerfacecolor=color, markeredgecolor=color,
+                    zorder=4,
+                )
+
+            _eb2(ax2[0, 0], exp3_positions, exp3_param_means, exp3_param_stds, COMBINED_COLOR)
+            exp3_param_tops = {d: exp3_param_means[i] + (exp3_param_stds[i] if show_eb else 0.0)
+                              for i, d in enumerate(exp3_designs)}
+            annotate_pairwise_comparisons(
+                ax2[0, 0], x_positions=exp3_pos_by_design, top_values=exp3_param_tops,
+                comparisons=exp3_comparisons, significance=exp3_param_sig, use_adjusted_p_value=True)
+            ax2[0, 0].set_xticks(exp3_positions, exp3_designs)
+            ax2[0, 0].set_xlabel("Observed Repressors")
+            ax2[0, 0].set_ylabel("Param. Error")
+            ax2[0, 0].set_title("Parameter Recovery")
+            _label2(ax2[0, 0], 'A')
+
+            _eb2(ax2[0, 1], positions, parameter_means, parameter_stds, COMBINED_COLOR)
+            annotate_pairwise_comparisons(
+                ax2[0, 1], x_positions=position_by_count, top_values=parameter_tops,
+                comparisons=count_comparisons, significance=parameter_significance, use_adjusted_p_value=True)
+            ax2[0, 1].set_xticks(positions, count_labels)
+            ax2[0, 1].set_xlabel("Sampling Points (of 1000)")
+            ax2[0, 1].set_ylabel("Param. Error")
+            ax2[0, 1].set_title("Parameter Recovery")
+            _label2(ax2[0, 1], 'B')
+
+            _eb2(ax2[1, 0], exp3_positions, exp3_state_means, exp3_state_stds, COMBINED_COLOR)
+            exp3_state_tops = {d: exp3_state_means[i] + (exp3_state_stds[i] if show_eb else 0.0)
+                              for i, d in enumerate(exp3_designs)}
+            annotate_pairwise_comparisons(
+                ax2[1, 0], x_positions=exp3_pos_by_design, top_values=exp3_state_tops,
+                comparisons=exp3_comparisons, significance=exp3_state_sig, use_adjusted_p_value=True)
+            ax2[1, 0].set_xticks(exp3_positions, exp3_designs)
+            ax2[1, 0].set_xlabel("Observed Repressors")
+            ax2[1, 0].set_ylabel("State RMSE")
+            ax2[1, 0].set_title("Trajectory Reconstruction")
+            _label2(ax2[1, 0], 'C')
+
+            _eb2(ax2[1, 1], positions, state_means, state_stds, COMBINED_COLOR)
+            annotate_pairwise_comparisons(
+                ax2[1, 1], x_positions=position_by_count, top_values=state_tops,
+                comparisons=count_comparisons, significance=state_significance, use_adjusted_p_value=True)
+            ax2[1, 1].set_xticks(positions, count_labels)
+            ax2[1, 1].set_xlabel("Sampling Points (of 1000)")
+            ax2[1, 1].set_ylabel("State RMSE")
+            ax2[1, 1].set_title("Trajectory Reconstruction")
+            _label2(ax2[1, 1], 'D')
+
+            finalize_figure(combined_figure_path)
 
 
 if __name__ == "__main__":

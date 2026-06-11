@@ -71,9 +71,9 @@ def _build_loss_component_names(observed_components, actual_count):
 
 def _build_loss_component_styles(actual_count):
     category_colors = {
-        "eq": PREDICTION_COLORS[0],
-        "ic": PREDICTION_COLORS[1],
-        "obs": PREDICTION_COLORS[2],
+        "eq": "#C62828",
+        "ic": "#00897B",
+        "obs": "#8C564B",
     }
     term_linestyles = ["-", "--", ":"]
 

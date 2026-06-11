@@ -1,0 +1,33 @@
+#!/bin/bash
+#SBATCH --job-name=test_exp_fwd_inv        # Nom del job
+#SBATCH --output=/home/10040984@uvic.local/projects/pinns-repressilator/jobs/test_exp_fwd_inv_output.txt # Fitxer de sortida
+#SBATCH --error=/home/10040984@uvic.local/projects/pinns-repressilator/jobs/test_exp_fwd_inv_error.txt # Fitxer d'error
+#SBATCH --time=01:00:00                    # Temps maxim (hh:mm:ss)
+#SBATCH --cpus-per-task=4                  # Nombre de CPUs per tasca
+#SBATCH --mem=8GB                          # Memoria assignada
+
+# Load conda module and activate environment
+source /opt/software/miniconda3/bin/activate pinns-repressilator-venv
+
+# Working directory
+cd /home/10040984@uvic.local/projects/pinns-repressilator
+
+# Set PYTHONPATH to include the current directory
+export PYTHONPATH=/home/10040984@uvic.local/projects/pinns-repressilator:$PYTHONPATH
+
+# Execute a lightweight test run for Experiment 1 (forward vs inverse gap)
+python -u <<'PY'
+from scripts.experiments import exp1_forward_vs_inverse as exp
+
+exp.train_iterations = 100
+exp.seeds = [0]
+
+ROOT = "/home/10040984@uvic.local/projects/pinns-repressilator"
+
+exp.results_dir = ROOT + "/results/test_exp1_forward_vs_inverse"
+exp.figure_path = ROOT + "/figures/test_exp1_forward_vs_inverse.png"
+
+print("=== Running quick test: exp1_forward_vs_inverse ===")
+print(f"train_iterations={exp.train_iterations}, seeds={exp.seeds}")
+exp.main()
+PY

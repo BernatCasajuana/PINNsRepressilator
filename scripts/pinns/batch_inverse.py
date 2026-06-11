@@ -33,9 +33,9 @@ def main():
     for file in os.listdir(dataset_folder):
         if file.endswith(".npz"):
             dataset_path = os.path.join(dataset_folder, file)
-            C1_guess, C2_guess = guesses.get(file, (5.0, 2.0))  # default guesses
-            print(f"\n=== Running Inverse PINN for {dataset_path} with guesses C1 = {C1_guess}, C2 = {C2_guess} ===")
-            run_inverse(dataset_path, outdir_base=outdir_base, C1_guess=C1_guess, C2_guess=C2_guess)
+            beta_guess, n_guess = guesses.get(file, (5.0, 2.0))  # default guesses
+            print(f"\n=== Running Inverse PINN for {dataset_path} with guesses beta={beta_guess}, n={n_guess} ===")
+            run_inverse(dataset_path, outdir_base=outdir_base, beta_guess=beta_guess, n_guess=n_guess)
 
 
 if __name__ == "__main__":

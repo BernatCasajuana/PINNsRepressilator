@@ -36,8 +36,8 @@ print(f"=== Running inverse test on {dataset_path} ===")
 inverse_result = run_inverse(
     dataset_path,
     outdir_base = "results/test_cluster/inverse",
-    C1_guess = 4.0,
-    C2_guess = 2.5,
+    beta_guess = 4.0,
+    n_guess = 2.5,
     observation_stride = 10,
     observed_components = [0, 1, 2],
     train_iterations = 1000,

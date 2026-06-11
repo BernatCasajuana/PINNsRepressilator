@@ -141,7 +141,8 @@ def run_forward(
     if len(t) != len(x_obs):
         raise ValueError(f"t and y must have the same number of rows. Got {len(t)} and {len(x_obs)}.")
 
-    x0 = x_obs[0]                                           
+    x0 = x_obs[0]
+    y_true = np.asarray(data_npz["y_clean"] if "y_clean" in data_npz else data_npz["y"], dtype=float)
     beta, n = float(data_npz["beta"]), float(data_npz["n"])
     noise_sigma = float(np.asarray(data_npz["noise"]).squeeze())
     noise_text = _format_noise_for_plot(noise_sigma)
@@ -257,6 +258,8 @@ def run_forward(
     plt.savefig(os.path.join(outdir, "forward_prediction.png")) # save plot
     plt.close()
 
+    state_rmse = float(np.sqrt(np.mean((y_pred - y_true) ** 2)))
+
     print(f"Saved forward results in {outdir}") # print path to results
     return {
         "dataset_path": dataset_path,
@@ -265,5 +268,8 @@ def run_forward(
         "noise": float(noise_sigma),
         "observed_components": list(observed_components),
         "observation_stride": observation_stride,
+        "state_rmse": state_rmse,
+        "y_true": y_true,
+        "y_pred": y_pred,
         "outdir": outdir,
     }

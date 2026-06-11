@@ -1,5 +1,5 @@
 """
-Experiment 6 — Forward vs inverse PINN gap.
+Experiment 1 — Forward vs inverse PINN gap.
 
 Question: How much does knowing the true parameters help? What is the performance gap
 between a forward PINN (β and n known, trajectory fitting only) and an inverse PINN
@@ -41,7 +41,10 @@ if scripts_dir not in sys.path:
 from experiments.experiment_utils import (
     ensure_project_directories,
     finalize_figure,
+    holm_bonferroni_adjust,
     make_synthetic_dataset,
+    mann_whitney_p_value,
+    p_value_to_stars,
     write_csv,
     write_run_manifest,
 )
@@ -53,13 +56,13 @@ true_n = 3.0
 noise_levels = [0.01, 0.05, 0.10]
 seeds = [0, 1, 2]
 train_iterations = 5000
-results_dir = "results/exp6_forward_vs_inverse"
-figure_path = "figures/exp6_forward_vs_inverse.png"
+results_dir = "results/exp1_forward_vs_inverse"
+figure_path = "figures/exp1_forward_vs_inverse.png"
 
-FORWARD_COLOR = "#009E73"
-INVERSE_COLOR = "#0072B2"
-BETA_COLOR = "#0072B2"
-N_COLOR = "#E69F00"
+FORWARD_COLOR = "#55A868"
+INVERSE_COLOR = "#C44E52"
+BETA_COLOR = "#4C78A8"
+N_COLOR = "#F58518"
 
 
 def _save_synthetic_dataset_as_npz(dataset: dict, path: str) -> None:
@@ -82,7 +85,7 @@ def main():
     write_run_manifest(
         os.path.join(results_dir, "run_manifest.json"),
         {
-            "experiment_name": "exp6_forward_vs_inverse",
+            "experiment_name": "exp1_forward_vs_inverse",
             "script_path": __file__,
             "results_dir": results_dir,
             "figure_path": figure_path,
@@ -151,7 +154,7 @@ def main():
             )
 
     write_csv(
-        os.path.join(results_dir, "exp6_forward_vs_inverse_raw.csv"),
+        os.path.join(results_dir, "exp1_forward_vs_inverse_raw.csv"),
         raw_rows,
         [
             "noise_level", "seed",
@@ -185,78 +188,82 @@ def main():
     rng = np.random.default_rng(42)
     jw = 0.07
 
-    fig, axes = plt.subplots(1, 3, figsize=(16, 5))
+    plt.rcParams['axes.formatter.useoffset'] = False
+
+    fig, axes = plt.subplots(1, 2, figsize=(11, 5))
     fig.suptitle(
-        rf"Exp 6 — Forward vs inverse PINN gap ($\beta$={true_beta}, $n$={true_n}, {len(seeds)} seeds)",
+        rf"Forward vs Inverse PINN gap ($\beta$={true_beta}, $n$={true_n}, {len(seeds)} seeds)",
         fontsize=13,
     )
 
-    # Panel (0): RMSE comparison — grouped bars
-    axes[0].bar(
-        x - bar_w / 2, fwd_rmse_means,
-        width=bar_w,
-        yerr=fwd_rmse_stds if show_eb else None,
-        capsize=4 if show_eb else 0,
-        color=FORWARD_COLOR, edgecolor="white", linewidth=0.5,
-        label="Forward (known params)", zorder=3,
-    )
-    axes[0].bar(
-        x + bar_w / 2, inv_rmse_means,
-        width=bar_w,
-        yerr=inv_rmse_stds if show_eb else None,
-        capsize=4 if show_eb else 0,
-        color=INVERSE_COLOR, edgecolor="white", linewidth=0.5,
-        label="Inverse (estimated params)", zorder=3,
-    )
+    def _label(ax, letter):
+        ax.text(-0.02, 1.04, letter, transform=ax.transAxes,
+                fontsize=15, fontweight='bold', va='bottom', ha='left', color='black', clip_on=False)
+
+    # Panel A: RMSE grouped bars (grey=forward, blue=inverse)
+    axes[0].bar(x - bar_w / 2, fwd_rmse_means,
+                width=bar_w, yerr=fwd_rmse_stds if show_eb else None,
+                capsize=4 if show_eb else 0,
+                color=FORWARD_COLOR, edgecolor="white", linewidth=0.5,
+                label="Forward (Known params)", zorder=3)
+    axes[0].bar(x + bar_w / 2, inv_rmse_means,
+                width=bar_w, yerr=inv_rmse_stds if show_eb else None,
+                capsize=4 if show_eb else 0,
+                color=INVERSE_COLOR, edgecolor="white", linewidth=0.5,
+                label="Inverse (Estimated params)", zorder=3)
     for i, nv in enumerate(noise_values):
         fwd_sv = [row["forward_state_rmse"] for row in raw_rows if row["noise_level"] == nv]
         inv_sv = [row["inverse_state_rmse"] for row in raw_rows if row["noise_level"] == nv]
         j = rng.uniform(-jw, jw, len(fwd_sv))
         axes[0].scatter(i - bar_w / 2 + j, fwd_sv, color="black", s=18, alpha=0.7, zorder=5, linewidths=0)
         axes[0].scatter(i + bar_w / 2 + j, inv_sv, color="black", s=18, alpha=0.7, zorder=5, linewidths=0)
+    # Significance: Forward vs Inverse per noise level (Holm-Bonferroni adjusted)
+    if show_eb:
+        raw_ps = []
+        for nv in noise_values:
+            fwd_v = [row["forward_state_rmse"] for row in raw_rows if row["noise_level"] == nv]
+            inv_v = [row["inverse_state_rmse"] for row in raw_rows if row["noise_level"] == nv]
+            raw_ps.append(mann_whitney_p_value(fwd_v, inv_v))
+        adj_ps = holm_bonferroni_adjust(raw_ps)
+        for i, adj_p in enumerate(adj_ps):
+            stars = p_value_to_stars(adj_p)
+            if stars:
+                fwd_top = fwd_rmse_means[i] + (fwd_rmse_stds[i] if show_eb else 0.0)
+                inv_top = inv_rmse_means[i] + (inv_rmse_stds[i] if show_eb else 0.0)
+                y_top = max(fwd_top, inv_top)
+                y_line = y_top * 1.08
+                x_a, x_b = i - bar_w / 2, i + bar_w / 2
+                axes[0].plot([x_a, x_a, x_b, x_b],
+                             [y_line * 0.96, y_line, y_line, y_line * 0.96],
+                             color="black", linewidth=0.9)
+                axes[0].text((x_a + x_b) / 2, y_line, stars,
+                             ha='center', va='bottom', fontsize=9)
     axes[0].set_xticks(x, noise_labels)
-    axes[0].set_xlabel("Relative noise level")
+    axes[0].set_xlabel("Relative Noise Level")
     axes[0].set_ylabel("State RMSE  (vs clean trajectory)")
-    axes[0].set_title("RMSE: forward vs inverse")
+    axes[0].set_title("RMSE: Forward vs Inverse")
     axes[0].legend(fontsize=8)
+    _label(axes[0], 'A')
 
-    # Panel (1): β recovery (inverse only)
-    axes[1].errorbar(
-        x, beta_means,
-        yerr=beta_stds if show_eb else None,
-        fmt="o", linestyle="-", linewidth=1.5,
-        capsize=4 if show_eb else 0,
-        color=BETA_COLOR, ecolor=BETA_COLOR,
-        markerfacecolor=BETA_COLOR, markeredgecolor=BETA_COLOR,
-        zorder=4,
-    )
-    for i, nv in enumerate(noise_values):
-        sv = [row["beta_rel_error"] for row in raw_rows if row["noise_level"] == nv]
-        j = rng.uniform(-jw * 2, jw * 2, len(sv))
-        axes[1].scatter(i + j, sv, alpha=0.5, s=20, color=BETA_COLOR, zorder=5, linewidths=0)
+    # Panel B: β and n recovery merged — 2 lines (blue=β, grey=n), no jitter
+    axes[1].errorbar(x, beta_means, yerr=beta_stds if show_eb else None,
+                     fmt="o", linestyle="-", linewidth=1.5,
+                     capsize=4 if show_eb else 0,
+                     color=BETA_COLOR, ecolor=BETA_COLOR,
+                     markerfacecolor=BETA_COLOR, markeredgecolor=BETA_COLOR,
+                     zorder=4, label=r"$\beta$")
+    axes[1].errorbar(x, n_means, yerr=n_stds if show_eb else None,
+                     fmt="s", linestyle="-", linewidth=1.5,
+                     capsize=4 if show_eb else 0,
+                     color=N_COLOR, ecolor=N_COLOR,
+                     markerfacecolor=N_COLOR, markeredgecolor=N_COLOR,
+                     zorder=4, label=r"$n$")
     axes[1].set_xticks(x, noise_labels)
-    axes[1].set_xlabel("Relative noise level")
-    axes[1].set_ylabel(r"$\hat{\beta}$ relative error")
-    axes[1].set_title(r"$\beta$ recovery (inverse)")
-
-    # Panel (2): n recovery (inverse only)
-    axes[2].errorbar(
-        x, n_means,
-        yerr=n_stds if show_eb else None,
-        fmt="o", linestyle="-", linewidth=1.5,
-        capsize=4 if show_eb else 0,
-        color=N_COLOR, ecolor=N_COLOR,
-        markerfacecolor=N_COLOR, markeredgecolor=N_COLOR,
-        zorder=4,
-    )
-    for i, nv in enumerate(noise_values):
-        sv = [row["n_rel_error"] for row in raw_rows if row["noise_level"] == nv]
-        j = rng.uniform(-jw * 2, jw * 2, len(sv))
-        axes[2].scatter(i + j, sv, alpha=0.5, s=20, color=N_COLOR, zorder=5, linewidths=0)
-    axes[2].set_xticks(x, noise_labels)
-    axes[2].set_xlabel("Relative noise level")
-    axes[2].set_ylabel(r"$\hat{n}$ relative error")
-    axes[2].set_title(r"$n$ recovery (inverse)")
+    axes[1].set_xlabel("Relative Noise Level")
+    axes[1].set_ylabel("Relative Error")
+    axes[1].set_title(r"$\beta$ and $n$ Recovery (inverse)")
+    axes[1].legend(fontsize=9)
+    _label(axes[1], 'B')
 
     finalize_figure(figure_path)
 

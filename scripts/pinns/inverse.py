@@ -19,8 +19,8 @@ import csv
 
 PREDICTION_COLORS = ("#0072B2", "#E69F00", "#009E73")
 LOSS_COMPONENT_COLORS = {
-    "eq": "#C51B7D",
-    "ic": "#1B9E77",
+    "eq": "#C62828",
+    "ic": "#00897B",
     "obs": "#8C564B",
 }
 
@@ -193,8 +193,8 @@ def _format_noise_for_plot(data_npz, noise_sigma):
 def run_inverse(
     dataset_path,
     outdir_base="results/inverse",
-    C1_guess=5.0,
-    C2_guess=2.0,
+    beta_guess=5.0,
+    n_guess=2.0,
     loss_weights=None,
     observation_stride=10,
     observed_components=None,
@@ -272,12 +272,12 @@ def run_inverse(
         observe_bc.append(bc)
 
     # Trainable parameters
-    C1 = dde.Variable(C1_guess) # initial guess for beta
-    C2 = dde.Variable(C2_guess) # initial guess for n
+    beta_var = dde.Variable(beta_guess)
+    n_var = dde.Variable(n_guess)
 
     # Define function with parameters
     def ode_func(x, y):
-        return ode_system(x, y, C1, C2)
+        return ode_system(x, y, beta_var, n_var)
 
     # Define data object for DeepXDE
     data_ode = dde.data.PDE(
@@ -309,10 +309,10 @@ def run_inverse(
             vals = [_variable_to_scalar(variable) for variable in self.var]
             self.estimated_params.append(vals)
 
-    variable_callback = SaveVariablesCallback([C1, C2], period=100)
+    variable_callback = SaveVariablesCallback([beta_var, n_var], period=100)
 
     # Compile and train the model
-    model.compile("adam", lr=0.001, external_trainable_variables=[C1, C2], loss_weights=loss_weights)
+    model.compile("adam", lr=0.001, external_trainable_variables=[beta_var, n_var], loss_weights=loss_weights)
     model.train(iterations=train_iterations, callbacks=[variable_callback])
 
     # Predictions
@@ -322,7 +322,7 @@ def run_inverse(
         model.save(os.path.join(outdir, "model_checkpoint"), protocol="backend", verbose=0)
 
     # Save estimated parameters
-    est_beta, est_n = _variable_to_scalar(C1), _variable_to_scalar(C2)
+    est_beta, est_n = _variable_to_scalar(beta_var), _variable_to_scalar(n_var)
     beta_abs_error = abs(est_beta - beta_true)
     n_abs_error = abs(est_n - n_true)
     beta_rel_error = beta_abs_error / abs(beta_true)
@@ -355,12 +355,14 @@ def run_inverse(
         writer.writerow(["train_iterations", train_iterations])
         writer.writerow(["random_seed", random_seed])
 
-    # np.savetxt(os.path.join(outdir, "parameters_evolution.dat"), np.array(variable_callback.estimated_params)) # save parameter evolution
-
     # Plot training loss
     loss_history = model.losshistory
     loss_train = np.array(loss_history.loss_train) # loss history per component
     iteration_axis = np.linspace(0.0, float(train_iterations), loss_train.shape[0], dtype=float)
+
+    param_evo = np.array(variable_callback.estimated_params) if variable_callback.estimated_params else np.empty((0, 2))
+    period = 100
+    param_evo_iterations = np.arange(1, len(param_evo) + 1, dtype=float) * period
     loss_components = loss_train.T
     component_names = _build_loss_component_names(observed_components, actual_count=loss_components.shape[0])
     component_styles = _build_loss_component_styles(loss_components.shape[0])
@@ -417,5 +419,9 @@ def run_inverse(
         "random_seed": random_seed,
         "y_true": y_true,
         "y_pred": y_pred,
+        "parameter_evolution": param_evo,           # shape (N_checkpoints, 2): [beta_hat, n_hat] every 100 iters
+        "param_evo_iterations": param_evo_iterations,
+        "loss_train": loss_train,                   # shape (N_steps, N_loss_components)
+        "iteration_axis": iteration_axis,
         "outdir": outdir,
     }

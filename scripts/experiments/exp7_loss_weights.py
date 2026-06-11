@@ -64,10 +64,10 @@ train_iterations = 5000
 results_dir = "results/exp7_loss_weights"
 figure_path = "figures/exp7_loss_weights.png"
 
-BETA_COLOR = "#0072B2"
-N_COLOR = "#E69F00"
-COMBINED_COLOR = "#0072B2"
-RMSE_COLOR = "#555555"
+BETA_COLOR = "#4C78A8"
+N_COLOR = "#F58518"
+COMBINED_COLOR = "#222222"
+RMSE_COLOR = "#222222"
 
 
 def _build_loss_weights(lf: float) -> list:
@@ -176,16 +176,19 @@ def main():
     parameter_significance = pairwise_significance(parameter_vals_by_lf, lf_comparisons)
     state_significance = pairwise_significance(state_vals_by_lf, lf_comparisons)
 
-    rng = np.random.default_rng(42)
-    jw = 0.12
+    plt.rcParams['axes.formatter.useoffset'] = False
 
-    fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+    fig, axes = plt.subplots(1, 3, figsize=(15, 5))
     fig.suptitle(
-        rf"Exp 7 — Physics loss weight $\lambda_f$ sweep ($\beta$={true_beta}, $n$={true_n}, noise={noise_level}, {len(seeds)} seeds)",
+        rf"Physics Loss Weight $\lambda_f$ Sweep ($\beta$={true_beta}, $n$={true_n}, $\sigma$={noise_level}, {len(seeds)} seeds)",
         fontsize=13,
     )
 
-    def _errorbar(ax, color, means, stds):
+    def _label(ax, letter):
+        ax.text(-0.02, 1.04, letter, transform=ax.transAxes,
+                fontsize=15, fontweight='bold', va='bottom', ha='left', color='black', clip_on=False)
+
+    def _errorbar(ax, color, label, means, stds):
         ax.errorbar(
             positions, means,
             yerr=stds if show_eb else None,
@@ -193,78 +196,55 @@ def main():
             capsize=4 if show_eb else 0,
             color=color, ecolor=color,
             markerfacecolor=color, markeredgecolor=color,
-            zorder=4,
+            zorder=4, label=label,
         )
-
-    def _seed_dots(ax, color, vals_by_lf):
-        for i, lf in enumerate(lf_values):
-            sv = vals_by_lf.get(lf, [])
-            j = rng.uniform(-jw, jw, len(sv))
-            ax.scatter(i + j, sv, alpha=0.5, s=20, color=color, zorder=5, linewidths=0)
 
     def _xformat(ax):
         ax.set_xticks(positions, lf_labels)
-        ax.set_xlabel(r"Physics loss weight $\lambda_f$  ($\lambda_0 = \lambda_y = 1$)")
+        ax.set_xlabel(r"Physics Loss Weight $\lambda_f$  ($\lambda_0 = \lambda_y = 1$)")
 
     def _highlight_baseline(ax):
         if baseline_lf in lf_values:
             bi = lf_values.index(baseline_lf)
             ax.axvspan(bi - 0.4, bi + 0.4, alpha=0.07, color="gray", zorder=0)
 
-    # Panel (0,0): β error
-    _errorbar(axes[0, 0], BETA_COLOR, beta_means, beta_stds)
-    _seed_dots(axes[0, 0], BETA_COLOR, beta_vals_by_lf)
-    _highlight_baseline(axes[0, 0])
-    _xformat(axes[0, 0])
-    axes[0, 0].set_ylabel(r"$\hat{\beta}$ relative error")
-    axes[0, 0].set_title(r"$\beta$ recovery vs $\lambda_f$")
-
-    # Panel (0,1): n error
-    _errorbar(axes[0, 1], N_COLOR, n_means, n_stds)
-    _seed_dots(axes[0, 1], N_COLOR, n_vals_by_lf)
-    _highlight_baseline(axes[0, 1])
-    _xformat(axes[0, 1])
-    axes[0, 1].set_ylabel(r"$\hat{n}$ relative error")
-    axes[0, 1].set_title(r"$n$ recovery vs $\lambda_f$")
-
-    # Panel (1,0): combined error + significance
-    _errorbar(axes[1, 0], COMBINED_COLOR, parameter_means, parameter_stds)
-    _seed_dots(axes[1, 0], COMBINED_COLOR, parameter_vals_by_lf)
-    _highlight_baseline(axes[1, 0])
-    _xformat(axes[1, 0])
-    axes[1, 0].set_ylabel("Combined parameter error")
-    axes[1, 0].set_title(r"Combined parameter recovery vs $\lambda_f$")
-
     position_by_lf = {lf: i for i, lf in enumerate(lf_values)}
+
+    # Panel A: β and n merged (blue=β, grey=n), no jitter, baseline highlight
+    _errorbar(axes[0], BETA_COLOR, r"$\beta$", beta_means, beta_stds)
+    _errorbar(axes[0], N_COLOR, r"$n$", n_means, n_stds)
+    _highlight_baseline(axes[0])
+    _xformat(axes[0])
+    axes[0].set_ylabel("Relative Error")
+    axes[0].set_title(r"$\beta$ and $n$ Recovery vs $\lambda_f$")
+    axes[0].legend(fontsize=9)
+    _label(axes[0], 'A')
+
+    # Panel B: combined error + significance + baseline
+    _errorbar(axes[1], COMBINED_COLOR, None, parameter_means, parameter_stds)
+    _highlight_baseline(axes[1])
+    _xformat(axes[1])
+    axes[1].set_ylabel("Combined Parameter Error  0.5(|Δβ|/β + |Δn|/n)")
+    axes[1].set_title(r"Combined Parameter Recovery vs $\lambda_f$")
     parameter_tops = [m + (s if show_eb else 0.0) for m, s in zip(parameter_means, parameter_stds)]
     parameter_top_by_lf = {lf: t for lf, t in zip(lf_values, parameter_tops)}
     annotate_pairwise_comparisons(
-        axes[1, 0],
-        x_positions=position_by_lf,
-        top_values=parameter_top_by_lf,
-        comparisons=lf_comparisons,
-        significance=parameter_significance,
-        use_adjusted_p_value=True,
-    )
+        axes[1], x_positions=position_by_lf, top_values=parameter_top_by_lf,
+        comparisons=lf_comparisons, significance=parameter_significance, use_adjusted_p_value=True)
+    _label(axes[1], 'B')
 
-    # Panel (1,1): state RMSE + significance
-    _errorbar(axes[1, 1], RMSE_COLOR, state_means, state_stds)
-    _seed_dots(axes[1, 1], RMSE_COLOR, state_vals_by_lf)
-    _highlight_baseline(axes[1, 1])
-    _xformat(axes[1, 1])
-    axes[1, 1].set_ylabel("State RMSE  (vs clean trajectory)")
-    axes[1, 1].set_title(r"Trajectory reconstruction vs $\lambda_f$")
-
+    # Panel C: state RMSE + significance + baseline
+    _errorbar(axes[2], COMBINED_COLOR, None, state_means, state_stds)
+    _highlight_baseline(axes[2])
+    _xformat(axes[2])
+    axes[2].set_ylabel("State RMSE  (vs clean trajectory)")
+    axes[2].set_title(r"Trajectory Reconstruction vs $\lambda_f$")
     state_tops = [m + (s if show_eb else 0.0) for m, s in zip(state_means, state_stds)]
     state_top_by_lf = {lf: t for lf, t in zip(lf_values, state_tops)}
     annotate_pairwise_comparisons(
-        axes[1, 1],
-        x_positions=position_by_lf,
-        top_values=state_top_by_lf,
-        comparisons=lf_comparisons,
-        significance=state_significance,
-        use_adjusted_p_value=True,
-    )
+        axes[2], x_positions=position_by_lf, top_values=state_top_by_lf,
+        comparisons=lf_comparisons, significance=state_significance, use_adjusted_p_value=True)
+    _label(axes[2], 'C')
 
     finalize_figure(figure_path)
 

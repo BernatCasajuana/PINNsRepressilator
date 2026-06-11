@@ -17,16 +17,16 @@ export PYTHONPATH=/home/10040984@uvic.local/projects/pinns-repressilator:$PYTHON
 
 # Execute a lightweight test run for Experiment 2
 python -u <<'PY'
-from scripts.experiments import exp_partial_observation as exp
+from scripts.experiments import exp3_partial_observation as exp
 
 exp.train_iterations = 100
 
 ROOT = "/home/10040984@uvic.local/projects/pinns-repressilator"
 
-exp.results_dir = ROOT + "/results/test_exp_partial_observation"
-exp.figure_path = ROOT + "/figures/test_exp_partial_observation.png"
+exp.results_dir = ROOT + "/results/test_exp3_partial_observation"
+exp.figure_path = ROOT + "/figures/test_exp3_partial_observation.png"
 
-print("=== Running quick test: exp_partial_observation ===")
+print("=== Running quick test: exp3_partial_observation ===")
 print(f"train_iterations={exp.train_iterations} (default experiment setup)")
 exp.main()
 PY

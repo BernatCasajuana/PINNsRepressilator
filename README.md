@@ -1,111 +1,84 @@
-# Empirical Characterization of Physics-Informed Neural Networks for Parameter Estimation on the Repressilator
+# Physics-Informed Neural Networks for Parameter Recovery in the Repressilator
 
-This project studies the reverse engineering performance of Physics-Informed Neural Networks (PINNs) in ODE-based models, using the repressilator, a synthetic gene regulatory network that exhibits oscillatory behavior, as a toy example.
+Companion code for the paper:
 
-The goal is to characterize how reliably PINNs can recover the system parameters and reconstruct the trajectories when the observation conditions become harder. 
+> **Physics-Informed Neural Networks for Parameter Recovery in the Repressilator Oscillatory Model**  
+> B. Casajuana, R. Casals-Franch, A. López García de Lomana, P. Martí-Puig, J. Villà-Freixa  
+> Universitat de Vic – Universitat Central de Catalunya (UVic-UCC)
 
-Five experimental factors are considered:
+---
 
-1. observation noise,
-2. partial observation of the repressors,
-3. sampling density over time,
-4. sensitivity to the initial parameter guesses,
-5. stable versus oscillatory dynamical regimes.
+## What this project does
 
-For all five experiments, the main outputs are parameter recovery and state reconstruction errors.
+The repressilator is a synthetic gene oscillator built from three cyclically repressing proteins. Its dynamics are governed by a three-equation ODE system with two parameters: the maximal production rate β and the Hill coefficient n (Eq. 1 of the paper). Inferring these parameters from noisy, sparse, or partially observed time-series is a difficult inverse problem because the objective landscape is non-convex and the system is oscillatory.
 
-## Repository Organization
+This repository trains **inverse Physics-Informed Neural Networks (PINNs)** to recover β and n from synthetic protein-concentration time-series. Instead of calling an ODE solver repeatedly, a neural network represents the full trajectory and the ODE residual enters directly into the training loss:
 
-- `datasets/`: synthetic datasets of repressors over time.
-- `scripts/`: main Python scripts for data generation, PINN training, and experiment drivers.
-- `results/`: experiment outputs, CSV summaries and trained model checkpoints.
-- `figures/`: generated plots.
-- `jobs/`: SLURM launch scripts for running the experiments on a cluster.
+```
+L = λ_f · L_eq  +  λ_0 · L_IC  +  λ_y · L_obs
+```
 
-Inside `jobs/`, the repository currently includes both full runs and quick validation runs:
+where `L_eq` penalises violations of the repressilator equations, `L_IC` enforces initial conditions, and `L_obs` fits sparse, possibly noisy observations. β and n are optimised jointly with the network weights.
 
-- `jobs/experiments_job.sh`: runs all experiment drivers sequentially.
-- `jobs/test_exp_*.sh`: lightweight smoke tests for each individual experiment.
+Eight experiments characterise when and how this approach succeeds or fails:
 
-Inside `scripts/`, the code is organized into three main folders:
+| # | Experiment | Factor varied | Key finding |
+|---|---|---|---|
+| 1 | Forward vs inverse | RMSE with/without parameter estimation | Low RMSE does not guarantee accurate parameter recovery |
+| 2 | Noise sweep | Relative observation noise (0%–20%) | Parameter error is stable; trajectory RMSE degrades faster |
+| 3 | Partial observation | Observed repressors (1/3, 2/3, 3/3) | Losing phase-coupled repressors inflates variance sharply |
+| 4 | Sampling density | Observation count (10–100 points) | Sparse sampling removes informative oscillatory phases |
+| 5 | Initial guesses | Starting (β₀, n₀) on 7×7 grid | Non-convex landscape reveals failure basins |
+| 6 | Regime comparison | Stable (n=1.5) vs oscillatory (n=3.0) | Oscillatory is harder to reconstruct but more informative |
+| 7 | Loss weight λ_f | Physics loss weight {0.01, 0.1, 1, 10, 100} | λ_f ≈ 1 balances physics and data constraints |
+| 8 | Convergence | Training curves over 10000 iterations | β̂ converges faster than n̂; 10k iters is typically sufficient |
 
-- `scripts/data/`: dataset generation scripts.
-- `scripts/experiments/`: experiment setups and shared utilities.
-- `scripts/pinns/`: PINN definitions and training for forward and inverse problems.
+The central finding is that **a low trajectory RMSE does not guarantee accurate parameter recovery**. PINNs reconstruct trajectories reliably but parameter identification is more fragile — a distinction that matters for reverse-engineering biological circuits.
 
-## Datasets
+---
 
-The datasets are stored as `.npz` files with names such as:
+## Repository layout
 
-- `beta5.0_n3.0_noise0.1.npz`
+```
+pinns-repressilator/
+├── datasets/               # 100 pre-generated .npz datasets (β × n × noise grid)
+├── scripts/
+│   ├── data/               # ODE definition and dataset generation
+│   │   ├── generate_data.py
+│   │   └── generate_all_data.py
+│   ├── pinns/              # PINN training modules (reusable)
+│   │   ├── forward.py      # Forward problem: known β, n → predict trajectory
+│   │   ├── inverse.py      # Inverse problem: estimate β, n from observations
+│   │   ├── validate_ode.py # Sanity-check ODE formulation against scipy
+│   │   ├── batch_forward.py
+│   │   └── batch_inverse.py
+│   ├── experiments/        # Experiment drivers (one file per experiment)
+│   │   ├── experiment_utils.py         # Shared: seeding, noise model, statistics, plotting
+│   │   ├── exp1_forward_vs_inverse.py  # ★ Core finding: forward–inverse PINN gap
+│   │   ├── exp2_noise_sweep.py         # Noise sensitivity (σ sweep)
+│   │   ├── exp3_partial_observation.py # Partial observation (1/2/3 repressors)
+│   │   ├── exp4_sampling_density.py    # Sampling density (10–100 points)
+│   │   ├── exp5_initial_guess.py       # Initial guess sensitivity (7×7 grid)
+│   │   ├── exp6_regime_comparison.py   # Stable vs oscillatory regime
+│   │   ├── exp7_loss_weights.py        # Physics loss weight λ_f sensitivity
+│   │   ├── exp8_convergence.py         # Convergence curves (β̂, n̂, losses)
+│   │   └── all_experiments.py          # Run all eight sequentially
+│   └── plots/              # Standalone visualisation scripts
+│       ├── plot_limit_cycle_3d.py  # 3D phase-space limit cycle
+│       └── plot_pinn_schematic.py  # PINN architecture diagram
+├── results/                # Output CSVs and per-run plots (generated at runtime)
+├── figures/                # Summary figures (generated at runtime)
+├── jobs/                   # SLURM scripts for cluster execution
+│   ├── experiments_job.sh
+│   ├── smoke_test.sh
+│   └── pilot_exp*.sh
+├── run_pilot.py            # Quick preview run with reduced iterations
+└── requirements.txt
+```
 
-Each dataset stores:
+---
 
-- `t`: time grid,
-- `y`: noisy observations,
-- `y_clean`: clean simulated trajectory,
-- `beta`: true value of $\beta$,
-- `n`: true value of the Hill coefficient,
-- `noise`: observation noise level.
-
-## Experiment Drivers
-
-Each experiment script runs one study, sweeps the relevant condition across seeds, writes CSV summaries under `results/`, and saves the generated plot under `figures/`.
-
-- `scripts/experiments/exp_noise_sweep.py`: Experiment 1, sensitivity to observation noise.
-- `scripts/experiments/exp_partial_observation.py`: Experiment 2, sensitivity to partial repressor measurements.
-- `scripts/experiments/exp_sampling_density.py`: Experiment 3, sensitivity to varying sampling density over time.
-- `scripts/experiments/exp_initial_guess.py`: Experiment 4, sensitivity to initial parameter guesses.
-- `scripts/experiments/exp_regime_comparison.py`: Experiment 5, comparison between stable and oscillatory regimes.
-
-All non-initial-guess experiment drivers use repeated seeds per configuration and report:
-
-- relative error on $\beta$,
-- relative error on $n$,
-- an aggregate parameter recovery error,
-- RMSE on the reconstructed trajectory.
-
-The initial-guess experiment uses one seed by default and reports the same metrics on an initial-guess grid.
-
-A dedicated script `scripts/experiments/all_experiments.py` runs all five experiments sequentially.
-
-## Statistical Significance in Plots
-
-For the non-initial-guess experiments, statistical comparisons in plots are computed and visualized as pairwise brackets with `p` value plus significance stars.
-
-1. Test family: two-sided Mann-Whitney U test on per-seed metric samples.
-2. Multiple testing: Holm-Bonferroni correction is applied within each panel.
-3. Reported `p` in the figure labels: adjusted `p` values (not raw `p` values).
-4. Star thresholds on adjusted `p`: `*` for `< 0.05`, `**` for `< 0.01`, `***` for `< 0.001`.
-5. Baselines by experiment: noise sweep compares each noise level against `0.00`; sampling density compares each sparse setting against `100`; partial observation compares `x1,x2` and `x1` against `x1,x2,x3`; regime comparison pairs oscillatory vs stable at the same `beta`.
-
-## Current Default Experimental Setup
-
-The default configuration in the experiment scripts is currently:
-
-- Experiment 1 (`exp_noise_sweep.py`): noise levels `0.00, 0.01, 0.05, 0.10, 0.20`; seeds `0, 1, 2, 3, 4`; `10000` training iterations per run.
-- Experiment 2 (`exp_partial_observation.py`): observation designs `x1,x2,x3`, `x1,x2`, and `x1`; seeds `0, 1, 2, 3, 4`; `10000` training iterations per run.
-- Experiment 3 (`exp_sampling_density.py`): observation counts `10, 25, 50, 100`; seeds `0, 1, 2, 3, 4`; `10000` training iterations per run.
-- Experiment 4 (`exp_initial_guess.py`): initial-guess grid `beta0 in {2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0}` and `n0 in {1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5}`; seed `0`; `10000` training iterations per run.
-- Experiment 5 (`exp_regime_comparison.py`): four regime cases (`stable/oscillatory` crossed with `beta=5.0/8.0`, fixed `n` per regime), noise `0.05`, seeds `0, 1, 2, 3, 4`; `10000` training iterations per run.
-
-## Current Default Compute Load
-
-Using the defaults above, the total training-iteration budget is:
-
-- Experiment 1: `5 x 5 x 10000 = 250000`
-- Experiment 2: `3 x 5 x 10000 = 150000`
-- Experiment 3: `4 x 5 x 10000 = 200000`
-- Experiment 4: `7 x 7 x 1 x 10000 = 490000`
-- Experiment 5: `4 x 5 x 10000 = 200000`
-
-Total default budget across all experiments: `1290000` training iterations.
-
-## Dependencies
-
-Dependencies are listed in `requirements.txt`. The main libraries are DeepXDE, TensorFlow, NumPy, SciPy, and Matplotlib.
-
-Typical setup:
+## Quickstart
 
 ```bash
 python -m venv venv
@@ -113,8 +86,172 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-## Notes on Execution
+**Run a single experiment (fast preview, ~5 min on CPU):**
+```bash
+python run_pilot.py
+```
 
-Each script defines its configuration near the top of the file and can be run directly as a Python script.
+**Run one full experiment:**
+```bash
+cd scripts/experiments
+python exp2_noise_sweep.py
+```
 
-The reusable training code lives in `scripts/pinns/forward.py` and `scripts/pinns/inverse.py`, while the experiment drivers in `scripts/experiments/` call those functions and organize outputs under `results/` and `figures/`.
+**Run all eight experiments (full budget, ~30–60 h on CPU):**
+```bash
+python scripts/experiments/all_experiments.py
+```
+
+**Standalone plots (no training needed):**
+```bash
+python scripts/plots/plot_limit_cycle_3d.py   # 3D limit cycle, β=8, n=3
+python scripts/plots/plot_pinn_schematic.py   # PINN architecture diagram
+```
+
+---
+
+## Datasets
+
+Stored as `.npz` files under `datasets/`. File names encode the parameters, e.g. `beta5.0_n3.0_noise0.05.npz`.
+
+The full grid: β ∈ {1.0, 5.0, 10.0, 20.0} × n ∈ {1.5, 2.0, 2.5, 3.0, 3.5} × noise ∈ {0.0, 0.01, 0.05, 0.1, 0.2} = 100 datasets.
+
+Each file contains:
+
+| Key | Description |
+|---|---|
+| `t` | Time grid, shape (1000, 1) |
+| `y` | Noisy observations, shape (1000, 3) |
+| `y_clean` | Clean ODE trajectory, shape (1000, 3) |
+| `beta`, `n` | True parameter values |
+| `noise` | Noise level (fraction of peak-to-peak amplitude) |
+
+The experiment drivers generate datasets **in memory** using the same code path, so files in `datasets/` are not required to run the experiments.
+
+---
+
+## ODE model
+
+```
+dx₁/dt = β / (1 + x₃ⁿ) − x₁
+dx₂/dt = β / (1 + x₁ⁿ) − x₂
+dx₃/dt = β / (1 + x₂ⁿ) − x₃
+```
+
+Initial condition: (1.0, 1.0, 1.2). Integration span: t ∈ [0, 20], 1000 points.  
+Main oscillatory setting: β = 5.0, n = 3.0. Stable comparison: β = 5.0, n = 1.5.
+
+Noise is additive Gaussian: σ = noise_level × mean peak-to-peak signal amplitude.
+
+---
+
+## PINN architecture
+
+All inverse PINNs use the same architecture (Section 2.3 of the paper):
+
+- Input: scalar time t
+- 5 hidden layers × 100 neurons, sinusoidal activation
+- Output: (x̂₁, x̂₂, x̂₃) with softplus transform to enforce positivity
+- Trainable scalars: β̂, n̂ (initial guesses configurable per experiment)
+- Optimizer: Adam, lr = 10⁻³
+
+Experiments 1–2 and 5 use **5 000 iterations**. Experiments 3–4 use **3 000 iterations** (per the paper's Table 1).
+
+---
+
+## Experiment drivers
+
+Each driver in `scripts/experiments/` follows the same pattern:
+
+1. Define sweep configuration at the top of the file
+2. For each condition × seed: call `run_inverse()` with an in-memory dataset
+3. Write per-run metrics to `results/<exp_name>/runs/`
+4. Aggregate into `results/<exp_name>/<exp_name>_raw.csv` and `<exp_name>_summary.csv`
+5. Save summary figure to `figures/<exp_name>.png`
+6. Write `results/<exp_name>/run_manifest.json` (parameters + UTC timestamp)
+
+### Statistical testing in figures
+
+Pairwise comparisons use the two-sided Mann–Whitney U test (non-parametric, appropriate for small n=5 seeds). Multiple testing is corrected with Holm–Bonferroni within each panel. Brackets show adjusted p-values; stars indicate `*` p<0.05, `**` p<0.01, `***` p<0.001. Baseline comparisons:
+
+- Noise sweep: each level vs σ=0
+- Sampling density: each count vs 100 points
+- Partial observation: each design vs full (3/3) observation
+- Regime comparison: oscillatory vs stable at matching β
+
+---
+
+## Computational budget
+
+Default configuration (full runs):
+
+| Experiment | Conditions | Seeds | Iterations | Total |
+|---|---|---|---|---|
+| 1 Forward vs inverse | 3 noise × fwd+inv | 3 | 5 000 | 90 000 |
+| 2 Noise sweep | 5 noise levels | 5 | 10 000 | 250 000 |
+| 3 Partial observation | 3 designs | 5 | 10 000 | 150 000 |
+| 4 Sampling density | 4 counts | 5 | 10 000 | 200 000 |
+| 5 Initial guesses | 7×7 grid | 1 | 10 000 | 490 000 |
+| 6 Regime comparison | 4 cases | 5 | 10 000 | 200 000 |
+| 7 Loss weight λ_f | 5 λ_f values | 5 | 5 000 | 125 000 |
+| 8 Convergence | 2 conditions | 3 | 10 000 | 60 000 |
+| **Total** | | | | **1 565 000** |
+
+Approximate wall-clock time: 30–60 h on CPU, 3–6 h on GPU.
+
+---
+
+## Outputs
+
+```
+results/
+└── <exp_name>/
+    ├── run_manifest.json
+    ├── <exp_name>_raw.csv       # one row per (condition, seed)
+    ├── <exp_name>_summary.csv   # mean ± std per condition
+    └── runs/
+        └── <config>/
+            └── seed-N/
+                ├── inverse_metrics.csv
+                ├── inverse_estimated_parameters.csv
+                ├── inverse_loss.png
+                └── inverse_prediction.png
+
+figures/
+├── exp2_noise_sweep.png
+├── exp3_partial_observation.png
+├── exp4_sampling_density.png
+├── exp5_initial_guess.png
+├── exp6_regime_comparison.png
+├── exp1_forward_vs_inverse.png
+├── exp7_loss_weights.png
+└── exp8_convergence.png
+```
+
+---
+
+## Dependencies
+
+Key libraries: `deepxde==1.15.0`, `tensorflow==2.16.2`, `numpy`, `scipy`, `matplotlib`.  
+Full list: `requirements.txt`. For cluster use: `requirements_cluster.txt`.
+
+---
+
+## Status of results
+
+> **Current results are pilot / preview runs** (reduced iterations, seeds 0–1). They are used to validate the pipeline and check figure layout — they are **not** the final results reported in the paper. The full-budget runs (5 seeds × 10 000 iterations per condition) are required to reproduce the paper figures and numbers.
+
+```bash
+# Quick pilot run to validate the pipeline (~5 min):
+python run_pilot.py
+
+# Full experiment suite to reproduce paper results (~20–40 h on CPU):
+python scripts/data/generate_all_data.py      # generate datasets
+python scripts/experiments/all_experiments.py  # run all five experiments
+
+# Standalone figures (no training required):
+python scripts/plots/plot_limit_cycle_3d.py
+python scripts/plots/plot_pinn_schematic.py
+```
+
+All random seeds are fixed per run; results are deterministic given the same hardware and library versions.

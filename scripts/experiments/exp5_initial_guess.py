@@ -1,11 +1,27 @@
 """
-Experiment 4: inverse sensitivity to initial parameter guesses. 
-Question: how sensitive is inverse-PINN training to the initial guesses for $\beta$ and $n$?
-Design: the inverse problem is run over a 7x7 grid of initial guesses, spanning broad offsets around the true pair: $\beta_0 \in \{2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0\}$ and $n_0 \in \{1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5\}$.
-Output: one heatmap of the combined relative parameter recovery error over the initial-guess grid.
+Experiment 5 — Initial parameter guesses.
+
+Question: How sensitive is inverse-PINN training to the initial guesses for β and n?
+
+Design:
+  - True parameters: β = 5.0, n = 3.0
+  - Fixed noise level: 0.05; all three repressors observed; stride = 1 (dense)
+  - 7×7 grid of initial guesses:
+      β₀ ∈ {2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0}  (true β = 5.0 included)
+      n₀ ∈ {1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5}  (true n  = 3.0 included)
+  - 1 seed per grid cell (49 total runs); 10000 iterations each
+  - The grid covers broad offsets to reveal attraction basins and failure modes
+
+Figure: single heatmap showing combined parameter error over the (β₀, n₀) grid
+  - Combined error: 0.5 × (|Δβ|/β + |Δn|/n) per grid cell
+  - Star marker (★) at the true parameter location (β=5.0, n=3.0)
+  - Dashed contour at the 10% combined error threshold
+
+Key finding expected: the loss landscape is non-convex — some (β₀, n₀) combinations
+trap the optimiser far from the true parameters. The contour reveals the reliable-recovery
+basin, which may be surprisingly narrow or irregular.
 """
 
-# Import necessary libraries, utilities, and set up paths
 import os
 import sys
 import matplotlib.pyplot as plt
@@ -26,7 +42,6 @@ from experiments.experiment_utils import (
 )
 from scripts.pinns.inverse import run_inverse
 
-# Experiment parameters and output paths
 true_beta = 5.0
 true_n = 3.0
 noise_level = 0.05
@@ -34,21 +49,22 @@ beta_guesses = [2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]
 n_guesses = [1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5]
 seeds = [0]
 train_iterations = 10000
-results_dir = "results/exp_initial_guess"
-figure_path = "figures/exp_initial_guess.png"
-heatmap_cmap = mcolors.LinearSegmentedColormap.from_list(
-    "paper_white_to_blue",
-    ["#FFFFFF", "#0072B2"],
-)
+results_dir = "results/exp5_initial_guess"
+figure_path = "figures/exp5_initial_guess.png"
 
-# Main experiment loop
+HEATMAP_CMAP = mcolors.LinearSegmentedColormap.from_list(
+    "white_to_black", ["#FFFFFF", "#222222"]
+)
+CONTOUR_THRESHOLD = 0.10  # 10% relative error contour
+
+
 def main():
     ensure_project_directories()
     expected_runs = len(beta_guesses) * len(n_guesses) * len(seeds)
     write_run_manifest(
         os.path.join(results_dir, "run_manifest.json"),
         {
-            "experiment_name": "exp_initial_guess",
+            "experiment_name": "exp5_initial_guess",
             "script_path": __file__,
             "results_dir": results_dir,
             "figure_path": figure_path,
@@ -65,25 +81,25 @@ def main():
     )
     raw_rows = []
 
-    for beta_guess in beta_guesses:
-        for n_guess in n_guesses:
+    for bg in beta_guesses:
+        for ng in n_guesses:
             for seed in seeds:
-                dataset = make_synthetic_dataset(true_beta, true_n, noise_level = noise_level, seed = seed)
+                dataset = make_synthetic_dataset(true_beta, true_n, noise_level=noise_level, seed=seed)
                 result = run_inverse(
-                    dataset_path = dataset,
-                    outdir_base = os.path.join(results_dir, "runs"),
-                    C1_guess = beta_guess,
-                    C2_guess = n_guess,
-                    observation_stride = 1,
-                    observed_components = [0, 1, 2],
-                    train_iterations = train_iterations,
-                    random_seed = seed,
-                    save_checkpoint = True,
+                    dataset_path=dataset,
+                    outdir_base=os.path.join(results_dir, "runs"),
+                    beta_guess=bg,
+                    n_guess=ng,
+                    observation_stride=1,
+                    observed_components=[0, 1, 2],
+                    train_iterations=train_iterations,
+                    random_seed=seed,
+                    save_checkpoint=True,
                 )
                 raw_rows.append(
                     {
-                        "beta_guess": beta_guess,
-                        "n_guess": n_guess,
+                        "beta_guess": bg,
+                        "n_guess": ng,
                         "seed": seed,
                         "beta_rel_error": result["beta_rel_error"],
                         "n_rel_error": result["n_rel_error"],
@@ -95,50 +111,64 @@ def main():
 
     summary_rows = aggregate_metrics(
         raw_rows,
-        group_keys = ["beta_guess", "n_guess"],
-        metric_keys = ["beta_rel_error", "n_rel_error", "parameter_rel_error", "state_rmse"],
+        group_keys=["beta_guess", "n_guess"],
+        metric_keys=["beta_rel_error", "n_rel_error", "parameter_rel_error", "state_rmse"],
     )
-    summary_rows.sort(key = lambda row: (row["beta_guess"], row["n_guess"]))
+    summary_rows.sort(key=lambda row: (row["beta_guess"], row["n_guess"]))
 
     write_csv(
-        os.path.join(results_dir, "initial_guess_raw.csv"),
+        os.path.join(results_dir, "exp5_initial_guess_raw.csv"),
         raw_rows,
         ["beta_guess", "n_guess", "seed", "beta_rel_error", "n_rel_error", "parameter_rel_error", "state_rmse", "outdir"],
     )
     write_csv(
-        os.path.join(results_dir, "initial_guess_summary.csv"),
+        os.path.join(results_dir, "exp5_initial_guess_summary.csv"),
         summary_rows,
         [
-            "beta_guess",
-            "n_guess",
-            "num_runs",
-            "beta_rel_error_mean",
-            "beta_rel_error_std",
-            "n_rel_error_mean",
-            "n_rel_error_std",
-            "parameter_rel_error_mean",
-            "parameter_rel_error_std",
-            "state_rmse_mean",
-            "state_rmse_std",
+            "beta_guess", "n_guess", "num_runs",
+            "beta_rel_error_mean", "beta_rel_error_std",
+            "n_rel_error_mean", "n_rel_error_std",
+            "parameter_rel_error_mean", "parameter_rel_error_std",
+            "state_rmse_mean", "state_rmse_std",
         ],
     )
 
-    parameter_heatmap = np.zeros((len(n_guesses), len(beta_guesses)))
+    combined_heatmap = np.full((len(n_guesses), len(beta_guesses)), np.nan)
     for row in summary_rows:
-        beta_index = beta_guesses.index(row["beta_guess"])
-        n_index = n_guesses.index(row["n_guess"])
-        parameter_heatmap[n_index, beta_index] = row["parameter_rel_error_mean"]
+        bi = beta_guesses.index(row["beta_guess"])
+        ni = n_guesses.index(row["n_guess"])
+        combined_heatmap[ni, bi] = row["parameter_rel_error_mean"]
 
-    fig, ax = plt.subplots(figsize = (7, 5.5))
-    parameter_image = ax.imshow(parameter_heatmap, origin = "lower", aspect = "auto", cmap = heatmap_cmap)
-    ax.set_xticks(range(len(beta_guesses)), [str(value) for value in beta_guesses])
-    ax.set_yticks(range(len(n_guesses)), [str(value) for value in n_guesses])
-    ax.set_xlabel(r"Initial $\beta$")
-    ax.set_ylabel(r"Initial $n$")
-    ax.set_title("Combined Relative Parameter Error")
+    # Star position in grid coordinates
+    star_bx = beta_guesses.index(true_beta) if true_beta in beta_guesses else None
+    star_nx = n_guesses.index(true_n) if true_n in n_guesses else None
 
-    colorbar = fig.colorbar(parameter_image, ax = ax)
-    colorbar.set_label("Relative Error")
+    plt.rcParams['axes.formatter.useoffset'] = False
+
+    fig, ax = plt.subplots(1, 1, figsize=(8, 6))
+    fig.suptitle(
+        rf"Initial Guess Sensitivity ($\beta_{{true}}$={true_beta}, $n_{{true}}$={true_n}, $\sigma$={noise_level})",
+        fontsize=13,
+    )
+
+    vmax = float(np.nanmax(combined_heatmap))
+
+    im = ax.imshow(
+        combined_heatmap, origin="lower", aspect="auto",
+        cmap=HEATMAP_CMAP, vmin=0.0, vmax=vmax,
+    )
+    ax.set_xticks(range(len(beta_guesses)), [str(v) for v in beta_guesses])
+    ax.set_yticks(range(len(n_guesses)), [str(v) for v in n_guesses])
+    ax.set_xlabel(r"Initial $\beta_0$")
+    ax.set_ylabel(r"Initial $n_0$")
+    ax.set_title("Combined Parameter Error Over Initial Guess Grid")
+
+    if star_bx is not None and star_nx is not None:
+        ax.plot(star_bx, star_nx, marker='+', color='white',
+                markersize=14, markeredgewidth=2.5, zorder=10, linestyle='')
+
+    cbar = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+    cbar.set_label("Combined Parameter Error  0.5(|Δβ|/β + |Δn|/n)")
 
     finalize_figure(figure_path)
 

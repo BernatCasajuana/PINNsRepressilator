@@ -1,12 +1,18 @@
 #!/usr/bin/env python3
 """
-Generate lightweight preview figures for all experiments.
+Generate lightweight pilot figures for all experiments.
 
 This script is intended for visual checks (palette/style/layout) before long runs.
 It overrides a small subset of experiment globals at runtime:
-- seeds -> one seed
-- train_iterations -> reduced iterations
-- results_dir / figure_path -> preview-specific outputs
+  - train_iterations → reduced (default 100)
+  - results_dir    → results/pilot/<exp_name>
+  - figure_path    → figures/pilot_<exp_name>.png
+  Seeds are kept at the experiment's own default (same as full runs).
+
+Usage:
+  python run_pilot.py                          # all experiments, 100 iters, full seed set
+  python run_pilot.py --train-iterations 500   # slightly more converged check
+  python run_pilot.py --only exp1_forward_vs_inverse exp5_initial_guess
 """
 
 from __future__ import annotations
@@ -25,11 +31,8 @@ if ROOT not in sys.path:
 
 
 def configure_runtime_environment() -> None:
-    # Use canonical environment variable names expected by TensorFlow/DeepXDE.
     os.environ.setdefault("TF_USE_LEGACY_KERAS", "1")
     os.environ.setdefault("DDE_BACKEND", "tensorflow")
-
-    # Keep lowercase compatibility because some local scripts still use these keys.
     os.environ.setdefault("tf_use_legacy_keras", os.environ["TF_USE_LEGACY_KERAS"])
     os.environ.setdefault("dde_backend", os.environ["DDE_BACKEND"])
 
@@ -38,41 +41,18 @@ def configure_runtime_environment() -> None:
 class PreviewSpec:
     name: str
     module_path: str
-    figure_filename: str
-    results_subdir: str
 
 
+# Ordered by scientific priority (1 = most central to paper thesis)
 SPECS = [
-    PreviewSpec(
-        name="exp_noise_sweep",
-        module_path="scripts.experiments.exp_noise_sweep",
-        figure_filename="preview_exp_noise_sweep.png",
-        results_subdir="exp_noise_sweep",
-    ),
-    PreviewSpec(
-        name="exp_partial_observation",
-        module_path="scripts.experiments.exp_partial_observation",
-        figure_filename="preview_exp_partial_observation.png",
-        results_subdir="exp_partial_observation",
-    ),
-    PreviewSpec(
-        name="exp_sampling_density",
-        module_path="scripts.experiments.exp_sampling_density",
-        figure_filename="preview_exp_sampling_density.png",
-        results_subdir="exp_sampling_density",
-    ),
-    PreviewSpec(
-        name="exp_initial_guess",
-        module_path="scripts.experiments.exp_initial_guess",
-        figure_filename="preview_exp_initial_guess.png",
-        results_subdir="exp_initial_guess",
-    ),
-    PreviewSpec(
-        name="exp_regime_comparison",
-        module_path="scripts.experiments.exp_regime_comparison",
-        figure_filename="preview_exp_regime_comparison.png",
-        results_subdir="exp_regime_comparison",
-    ),
+    PreviewSpec(name="exp1_forward_vs_inverse",  module_path="scripts.experiments.exp1_forward_vs_inverse"),
+    PreviewSpec(name="exp2_noise_sweep",         module_path="scripts.experiments.exp2_noise_sweep"),
+    PreviewSpec(name="exp3_partial_observation", module_path="scripts.experiments.exp3_partial_observation"),
+    PreviewSpec(name="exp4_sampling_density",    module_path="scripts.experiments.exp4_sampling_density"),
+    PreviewSpec(name="exp5_initial_guess",       module_path="scripts.experiments.exp5_initial_guess"),
+    PreviewSpec(name="exp6_regime_comparison",   module_path="scripts.experiments.exp6_regime_comparison"),
+    PreviewSpec(name="exp7_loss_weights",        module_path="scripts.experiments.exp7_loss_weights"),
+    PreviewSpec(name="exp8_convergence",         module_path="scripts.experiments.exp8_convergence"),
 ]
 
 
@@ -81,32 +61,30 @@ def apply_overrides(module: Any, overrides: Dict[str, Any]) -> None:
         if not hasattr(module, attribute):
             raise AttributeError(
                 f"Module {module.__name__} has no attribute '{attribute}'. "
-                "Update this preview script to match the experiment module."
+                "Update this pilot script to match the experiment module."
             )
         setattr(module, attribute, value)
 
 
-def run_preview(spec: PreviewSpec, train_iterations: int, seed: int) -> None:
-    print(f"\nPreparing module import for {spec.name} ({spec.module_path})...")
-    print("TensorFlow/DeepXDE backend initialization may take around 20-60 seconds on first import.")
+def run_preview(spec: PreviewSpec, train_iterations: int) -> None:
+    print(f"\nLoading {spec.name} ({spec.module_path})...")
     module = importlib.import_module(spec.module_path)
 
-    preview_results_dir = os.path.join(ROOT, "results", "preview_figures", spec.results_subdir)
-    preview_figure_path = os.path.join(ROOT, "figures", spec.figure_filename)
+    pilot_results_dir = os.path.join(ROOT, "results", "pilot", spec.name)
+    pilot_figure_path = os.path.join(ROOT, "figures", f"pilot_{spec.name}.png")
 
-    overrides = {
-        "seeds": [seed],
+    overrides: Dict[str, Any] = {
         "train_iterations": train_iterations,
-        "results_dir": preview_results_dir,
-        "figure_path": preview_figure_path,
+        "results_dir": pilot_results_dir,
+        "figure_path": pilot_figure_path,
     }
-
     apply_overrides(module, overrides)
 
-    print(f"\\n=== Running {spec.name} preview ===")
-    print(f"seeds={overrides['seeds']}, train_iterations={train_iterations}")
-    print(f"results_dir={preview_results_dir}")
-    print(f"figure_path={preview_figure_path}")
+    seeds_used = getattr(module, "seeds", "?")
+    print(f"=== Running {spec.name} pilot ===")
+    print(f"  seeds={seeds_used}, train_iterations={train_iterations}")
+    print(f"  results_dir={pilot_results_dir}")
+    print(f"  figure_path={pilot_figure_path}")
 
     module.main()
 
@@ -114,36 +92,26 @@ def run_preview(spec: PreviewSpec, train_iterations: int, seed: int) -> None:
 def main() -> None:
     configure_runtime_environment()
 
-    parser = argparse.ArgumentParser(description="Run lightweight preview figures for all experiments.")
+    parser = argparse.ArgumentParser(description="Run lightweight pilot figures for all experiments.")
     parser.add_argument(
-        "--train-iterations",
-        type=int,
-        default=200,
-        help="Training iterations per inverse run for preview generation (default: 200).",
+        "--train-iterations", type=int, default=10,
+        help="Training iterations per run (default: 10).",
     )
     parser.add_argument(
-        "--seed",
-        type=int,
-        default=0,
-        help="Single random seed used for preview runs (default: 0).",
-    )
-    parser.add_argument(
-        "--only",
-        nargs="+",
+        "--only", nargs="+",
         choices=[spec.name for spec in SPECS],
-        help="Run only specific preview experiment names.",
+        help="Run only specific pilot experiment names.",
     )
     args = parser.parse_args()
 
-    selected_specs = [spec for spec in SPECS if args.only is None or spec.name in args.only]
+    selected = [spec for spec in SPECS if args.only is None or spec.name in args.only]
 
-    print("Generating preview figures for selected experiments...")
-    print(f"Selected: {[spec.name for spec in selected_specs]}")
-    for spec in selected_specs:
-        run_preview(spec, train_iterations=args.train_iterations, seed=args.seed)
+    print(f"Generating pilot figures for: {[spec.name for spec in selected]}")
+    for spec in selected:
+        run_preview(spec, train_iterations=args.train_iterations)
 
-    print("\\nAll preview experiments completed.")
-    print("Preview figures saved under figures/preview_exp_*.png")
+    print("\nAll pilot experiments completed.")
+    print("Pilot figures saved under figures/pilot_*.png")
 
 
 if __name__ == "__main__":

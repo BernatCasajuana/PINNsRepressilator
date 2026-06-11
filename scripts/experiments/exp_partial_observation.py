@@ -17,9 +17,12 @@ if scripts_dir not in sys.path:
 
 from experiments.experiment_utils import (
     aggregate_metrics,
+    annotate_pairwise_comparisons,
     ensure_project_directories,
     finalize_figure,
     make_synthetic_dataset,
+    metric_values_by_group,
+    pairwise_significance,
     write_csv,
     write_run_manifest,
 )
@@ -29,7 +32,7 @@ from scripts.pinns.inverse import run_inverse
 true_beta = 5.0
 true_n = 3.0
 noise_level = 0.05
-seeds = [0, 1, 2]
+seeds = [0, 1, 2, 3, 4]
 observation_designs = [
     ("x1,x2,x3", [0, 1, 2]),
     ("x1,x2", [0, 1]),
@@ -40,8 +43,8 @@ results_dir = "results/exp_partial_observation"
 figure_path = "figures/exp_partial_observation.png"
 design_colors = {
     "x1,x2,x3": "#0072B2",
-    "x1,x2": "#E69F00",
-    "x1": "#009E73",
+    "x1,x2": "#7F7F7F",
+    "x1": "#C7C7C7",
 }
 
 # Main experiment loop
@@ -133,11 +136,20 @@ def main():
     state_means = [row["state_rmse_mean"] for row in summary_rows]
     state_stds = [row["state_rmse_std"] for row in summary_rows]
     show_error_bars = len(seeds) > 1
+    bar_width = 0.55
+
+    baseline_design = design_order[0]
+    design_comparisons = [(baseline_design, design_name) for design_name in design_order[1:]]
+    parameter_values_by_design = metric_values_by_group(raw_rows, "design", "parameter_rel_error")
+    state_values_by_design = metric_values_by_group(raw_rows, "design", "state_rmse")
+    parameter_significance = pairwise_significance(parameter_values_by_design, design_comparisons)
+    state_significance = pairwise_significance(state_values_by_design, design_comparisons)
 
     fig, axes = plt.subplots(1, 2, figsize = (13, 5))
     axes[0].bar(
         positions,
         parameter_means,
+        width = bar_width,
         yerr = parameter_stds if show_error_bars else None,
         capsize = 4 if show_error_bars else 0,
         color = bar_colors,
@@ -152,6 +164,7 @@ def main():
     axes[1].bar(
         positions,
         state_means,
+        width = bar_width,
         yerr = state_stds if show_error_bars else None,
         capsize = 4 if show_error_bars else 0,
         color = bar_colors,
@@ -162,6 +175,34 @@ def main():
     axes[1].set_xlabel("Observation Design")
     axes[1].set_ylabel("State Reconstruction RMSE")
     axes[1].set_title("Partial Observation vs State Reconstruction")
+
+    parameter_tops = [
+        parameter_mean + (parameter_std if show_error_bars else 0.0)
+        for parameter_mean, parameter_std in zip(parameter_means, parameter_stds)
+    ]
+    state_tops = [
+        state_mean + (state_std if show_error_bars else 0.0)
+        for state_mean, state_std in zip(state_means, state_stds)
+    ]
+    position_by_design = {design_name: position for position, design_name in zip(positions, design_order)}
+    parameter_top_by_design = {design_name: top for design_name, top in zip(design_order, parameter_tops)}
+    state_top_by_design = {design_name: top for design_name, top in zip(design_order, state_tops)}
+    annotate_pairwise_comparisons(
+        axes[0],
+        x_positions=position_by_design,
+        top_values=parameter_top_by_design,
+        comparisons=design_comparisons,
+        significance=parameter_significance,
+        use_adjusted_p_value=True,
+    )
+    annotate_pairwise_comparisons(
+        axes[1],
+        x_positions=position_by_design,
+        top_values=state_top_by_design,
+        comparisons=design_comparisons,
+        significance=state_significance,
+        use_adjusted_p_value=True,
+    )
 
     finalize_figure(figure_path)
 

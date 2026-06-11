@@ -17,9 +17,12 @@ if scripts_dir not in sys.path:
 
 from experiments.experiment_utils import (
     aggregate_metrics,
+    annotate_pairwise_comparisons,
     ensure_project_directories,
     finalize_figure,
     make_synthetic_dataset,
+    metric_values_by_group,
+    pairwise_significance,
     write_csv,
     write_run_manifest,
 )
@@ -33,12 +36,12 @@ regimes = [
     ("oscillatory_beta8", {"regime": "oscillatory", "beta": 8.0, "n": 3.0}),
 ]
 noise_levels = [0.05]
-seeds = [0, 1, 2]
+seeds = [0, 1, 2, 3, 4]
 train_iterations = 10000
 results_dir = "results/exp_regime_comparison"
 figure_path = "figures/exp_regime_comparison.png"
 stable_color = "#0072B2"
-oscillatory_color = "#E69F00"
+oscillatory_color = "#7F7F7F"
 
 # Main experiment loop
 def main():
@@ -158,11 +161,13 @@ def main():
     state_means = []
     state_stds = []
     bar_colors = []
+    plotted_case_names = []
 
     for case_name, parameters in regimes:
         row = rows_by_case.get(case_name)
         if row is None:
             continue
+        plotted_case_names.append(case_name)
         case_labels.append(rf"$\beta$={parameters['beta']:.1f}, $n$={parameters['n']:.1f}")
         parameter_means.append(row["parameter_rel_error_mean"])
         parameter_stds.append(row["parameter_rel_error_std"])
@@ -172,6 +177,16 @@ def main():
 
     positions = list(range(len(case_labels)))
     show_error_bars = len(seeds) > 1
+
+    regime_comparisons = [
+        ("stable_beta5", "oscillatory_beta5"),
+        ("stable_beta8", "oscillatory_beta8"),
+    ]
+    parameter_values_by_case = metric_values_by_group(raw_rows, "case", "parameter_rel_error")
+    state_values_by_case = metric_values_by_group(raw_rows, "case", "state_rmse")
+    parameter_significance = pairwise_significance(parameter_values_by_case, regime_comparisons)
+    state_significance = pairwise_significance(state_values_by_case, regime_comparisons)
+    case_to_position = {case_name: index for index, case_name in enumerate(plotted_case_names)}
 
     fig, axes = plt.subplots(1, 2, figsize = (14, 5))
     axes[0].bar(
@@ -199,6 +214,33 @@ def main():
     axes[1].set_xticks(positions, case_labels, rotation = 20, ha = "right")
     axes[1].set_ylabel("State Reconstruction RMSE")
     axes[1].set_title("State Reconstruction")
+
+    parameter_tops = [
+        parameter_mean + (parameter_std if show_error_bars else 0.0)
+        for parameter_mean, parameter_std in zip(parameter_means, parameter_stds)
+    ]
+    state_tops = [
+        state_mean + (state_std if show_error_bars else 0.0)
+        for state_mean, state_std in zip(state_means, state_stds)
+    ]
+    parameter_top_by_case = {case_name: top for case_name, top in zip(plotted_case_names, parameter_tops)}
+    state_top_by_case = {case_name: top for case_name, top in zip(plotted_case_names, state_tops)}
+    annotate_pairwise_comparisons(
+        axes[0],
+        x_positions=case_to_position,
+        top_values=parameter_top_by_case,
+        comparisons=regime_comparisons,
+        significance=parameter_significance,
+        use_adjusted_p_value=True,
+    )
+    annotate_pairwise_comparisons(
+        axes[1],
+        x_positions=case_to_position,
+        top_values=state_top_by_case,
+        comparisons=regime_comparisons,
+        significance=state_significance,
+        use_adjusted_p_value=True,
+    )
 
     legend_handles = [
         Patch(facecolor = stable_color, edgecolor = "black", linewidth = 0.5, label = "Stable"),

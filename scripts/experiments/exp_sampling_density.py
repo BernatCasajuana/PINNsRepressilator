@@ -1,7 +1,7 @@
 """
 Experiment 3: inverse sensitivity to sampling density. 
 Question: how sparse can the measurements be before recovery fails?
-Design: noise is fixed, all three repressors are observed, and the number of observation points is varied over `10, 25, 100`.
+Design: noise is fixed, all three repressors are observed, and the number of observation points is varied over `10, 25, 50, 100`.
 Output: parameter and state errors versus the number of observation points.
 """
 
@@ -16,10 +16,13 @@ if SCRIPTS_DIR not in sys.path:
 
 from experiments.experiment_utils import (
     aggregate_metrics,
+    annotate_pairwise_comparisons,
     ensure_project_directories,
     evenly_spaced_observation_indices,
     finalize_figure,
     make_synthetic_dataset,
+    metric_values_by_group,
+    pairwise_significance,
     write_csv,
     write_run_manifest,
 )
@@ -30,12 +33,12 @@ true_beta = 5.0
 true_n = 3.0
 noise_level = 0.05
 observation_counts = [10, 25, 50, 100]
-seeds = [0, 1, 2]
+seeds = [0, 1, 2, 3, 4]
 train_iterations = 10000
 results_dir = "results/exp_sampling_density"
 figure_path = "figures/exp_sampling_density.png"
 parameter_color = "#0072B2"
-state_color = "#E69F00"
+state_color = "#7F7F7F"
 
 
 def main():
@@ -125,6 +128,21 @@ def main():
     state_stds = [row["state_rmse_std"] for row in summary_rows]
     show_error_bars = len(seeds) > 1
 
+    baseline_observation_count = observation_values[-1]
+    observation_comparisons = [
+        (baseline_observation_count, observation_count)
+        for observation_count in observation_values
+        if observation_count != baseline_observation_count
+    ]
+    parameter_values_by_observation_count = metric_values_by_group(
+        raw_rows,
+        "observation_count",
+        "parameter_rel_error",
+    )
+    state_values_by_observation_count = metric_values_by_group(raw_rows, "observation_count", "state_rmse")
+    parameter_significance = pairwise_significance(parameter_values_by_observation_count, observation_comparisons)
+    state_significance = pairwise_significance(state_values_by_observation_count, observation_comparisons)
+
     fig, axes = plt.subplots(1, 2, figsize = (12, 5))
     axes[0].bar(
         positions,
@@ -153,6 +171,43 @@ def main():
     axes[1].set_xlabel("Number of Observation Points")
     axes[1].set_ylabel("State Reconstruction RMSE")
     axes[1].set_title("Sampling Density vs State Reconstruction")
+
+    parameter_tops = [
+        parameter_mean + (parameter_std if show_error_bars else 0.0)
+        for parameter_mean, parameter_std in zip(parameter_means, parameter_stds)
+    ]
+    state_tops = [
+        state_mean + (state_std if show_error_bars else 0.0)
+        for state_mean, state_std in zip(state_means, state_stds)
+    ]
+    position_by_observation_count = {
+        observation_count: position
+        for position, observation_count in zip(positions, observation_values)
+    }
+    parameter_top_by_observation_count = {
+        observation_count: top
+        for observation_count, top in zip(observation_values, parameter_tops)
+    }
+    state_top_by_observation_count = {
+        observation_count: top
+        for observation_count, top in zip(observation_values, state_tops)
+    }
+    annotate_pairwise_comparisons(
+        axes[0],
+        x_positions=position_by_observation_count,
+        top_values=parameter_top_by_observation_count,
+        comparisons=observation_comparisons,
+        significance=parameter_significance,
+        use_adjusted_p_value=True,
+    )
+    annotate_pairwise_comparisons(
+        axes[1],
+        x_positions=position_by_observation_count,
+        top_values=state_top_by_observation_count,
+        comparisons=observation_comparisons,
+        significance=state_significance,
+        use_adjusted_p_value=True,
+    )
 
     finalize_figure(figure_path)
 

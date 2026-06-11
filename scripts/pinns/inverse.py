@@ -18,6 +18,11 @@ import tensorflow as tf
 import csv
 
 PREDICTION_COLORS = ("#0072B2", "#E69F00", "#009E73")
+LOSS_COMPONENT_COLORS = {
+    "eq": "#C51B7D",
+    "ic": "#1B9E77",
+    "obs": "#8C564B",
+}
 
 # %% Define ODE system for PINN with trainable parameters
 def ode_system(x, y, C1, C2):
@@ -126,11 +131,7 @@ def _build_loss_component_names(observed_components, actual_count):
 
 
 def _build_loss_component_styles(actual_count):
-    category_colors = {
-        "eq": PREDICTION_COLORS[0],
-        "ic": PREDICTION_COLORS[1],
-        "obs": PREDICTION_COLORS[2],
-    }
+    category_colors = LOSS_COMPONENT_COLORS
     term_linestyles = ["-", "--", ":"]
 
     styles = []

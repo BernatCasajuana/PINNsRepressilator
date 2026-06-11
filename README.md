@@ -1,4 +1,4 @@
-# Empirical Characterization of Physics-Informed Neural Networks for Parameter Estimation on the Represilator
+# Empirical Characterization of Physics-Informed Neural Networks for Parameter Estimation on the Repressilator
 
 This project studies the reverse engineering performance of Physics-Informed Neural Networks (PINNs) in ODE-based models, using the repressilator, a synthetic gene regulatory network that exhibits oscillatory behavior, as a toy example.
 
@@ -58,36 +58,48 @@ Each experiment script runs one study, sweeps the relevant condition across seed
 - `scripts/experiments/exp_initial_guess.py`: Experiment 4, sensitivity to initial parameter guesses.
 - `scripts/experiments/exp_regime_comparison.py`: Experiment 5, comparison between stable and oscillatory regimes.
 
-All experiment drivers use repeated seeds per configuration and report:
+All non-initial-guess experiment drivers use repeated seeds per configuration and report:
 
 - relative error on $\beta$,
 - relative error on $n$,
 - an aggregate parameter recovery error,
 - RMSE on the reconstructed trajectory.
 
+The initial-guess experiment uses one seed by default and reports the same metrics on an initial-guess grid.
+
 A dedicated script `scripts/experiments/all_experiments.py` runs all five experiments sequentially.
+
+## Statistical Significance in Plots
+
+For the non-initial-guess experiments, statistical comparisons in plots are computed and visualized as pairwise brackets with `p` value plus significance stars.
+
+1. Test family: two-sided Mann-Whitney U test on per-seed metric samples.
+2. Multiple testing: Holm-Bonferroni correction is applied within each panel.
+3. Reported `p` in the figure labels: adjusted `p` values (not raw `p` values).
+4. Star thresholds on adjusted `p`: `*` for `< 0.05`, `**` for `< 0.01`, `***` for `< 0.001`.
+5. Baselines by experiment: noise sweep compares each noise level against `0.00`; sampling density compares each sparse setting against `100`; partial observation compares `x1,x2` and `x1` against `x1,x2,x3`; regime comparison pairs oscillatory vs stable at the same `beta`.
 
 ## Current Default Experimental Setup
 
 The default configuration in the experiment scripts is currently:
 
-- Experiment 1 (`exp_noise_sweep.py`): noise levels `0.01, 0.05, 0.10`; seeds `0, 1`; `10000` training iterations per run.
-- Experiment 2 (`exp_partial_observation.py`): observation designs `x1,x2,x3`, `x1,x2`, and `x1`; seeds `0, 1`; `10000` training iterations per run.
-- Experiment 3 (`exp_sampling_density.py`): observation counts `10, 25, 100`; seeds `0, 1`; `10000` training iterations per run.
-- Experiment 4 (`exp_initial_guess.py`): initial-guess grid `beta0 in {5.0, 6.0}` and `n0 in {2.0, 3.0}`; seeds `0, 1`; `10000` training iterations per run.
-- Experiment 5 (`exp_regime_comparison.py`): four regime cases (`stable/oscillatory` crossed with `beta=5.0/8.0`, fixed `n` per regime), noise `0.05`, seeds `0, 1`; `10000` training iterations per run.
+- Experiment 1 (`exp_noise_sweep.py`): noise levels `0.00, 0.01, 0.05, 0.10, 0.20`; seeds `0, 1, 2, 3, 4`; `10000` training iterations per run.
+- Experiment 2 (`exp_partial_observation.py`): observation designs `x1,x2,x3`, `x1,x2`, and `x1`; seeds `0, 1, 2, 3, 4`; `10000` training iterations per run.
+- Experiment 3 (`exp_sampling_density.py`): observation counts `10, 25, 50, 100`; seeds `0, 1, 2, 3, 4`; `10000` training iterations per run.
+- Experiment 4 (`exp_initial_guess.py`): initial-guess grid `beta0 in {2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0}` and `n0 in {1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5}`; seed `0`; `10000` training iterations per run.
+- Experiment 5 (`exp_regime_comparison.py`): four regime cases (`stable/oscillatory` crossed with `beta=5.0/8.0`, fixed `n` per regime), noise `0.05`, seeds `0, 1, 2, 3, 4`; `10000` training iterations per run.
 
 ## Current Default Compute Load
 
 Using the defaults above, the total training-iteration budget is:
 
-- Experiment 1: `3 x 2 x 10000 = 60000`
-- Experiment 2: `3 x 2 x 10000 = 60000`
-- Experiment 3: `3 x 2 x 10000 = 60000`
-- Experiment 4: `2 x 2 x 2 x 10000 = 80000`
-- Experiment 5: `4 x 2 x 10000 = 80000`
+- Experiment 1: `5 x 5 x 10000 = 250000`
+- Experiment 2: `3 x 5 x 10000 = 150000`
+- Experiment 3: `4 x 5 x 10000 = 200000`
+- Experiment 4: `7 x 7 x 1 x 10000 = 490000`
+- Experiment 5: `4 x 5 x 10000 = 200000`
 
-Total default budget across all experiments: `340000` training iterations.
+Total default budget across all experiments: `1290000` training iterations.
 
 ## Dependencies
 

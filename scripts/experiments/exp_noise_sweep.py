@@ -1,7 +1,7 @@
 """
 Experiment 1: inverse sensitivity to observation noise.
 Question: how does inverse-PINN recovery degrade as observation noise increases?
-Design: all three repressors are observed, dense sampling is used, and the relative noise level is swept over `0.01, 0.05, 0.10`.
+Design: all three repressors are observed, dense sampling is used, and the relative noise level is swept over `0.0, 0.01, 0.05, 0.10, 0.20`.
 Output: a two-panel figure with parameter recovery error and state reconstruction error versus noise.
 """
 
@@ -16,9 +16,12 @@ if scripts_dir not in sys.path:
 
 from experiments.experiment_utils import (
     aggregate_metrics,
+    annotate_pairwise_comparisons,
     ensure_project_directories,
     finalize_figure,
     make_synthetic_dataset,
+    metric_values_by_group,
+    pairwise_significance,
     write_csv,
     write_run_manifest,
 )
@@ -27,14 +30,14 @@ from scripts.pinns.inverse import run_inverse
 # Experiment parameters and output paths
 true_beta = 5.0
 true_n = 3.0
-noise_levels = [0.01, 0.05, 0.10, 0.20]
-seeds = [0, 1, 2]
+noise_levels = [0.0, 0.01, 0.05, 0.10, 0.20]
+seeds = [0, 1, 2, 3, 4]
 observed_components = [0, 1, 2]
 train_iterations = 10000
 results_dir = "results/exp_noise_sweep"
 figure_path = "figures/exp_noise_sweep.png"
 parameter_color = "#0072B2"
-state_color = "#E69F00"
+state_color = "#7F7F7F"
 
 # Main experiment loop
 def main():
@@ -116,12 +119,23 @@ def main():
 
     noise_values = [row["noise_level"] for row in summary_rows]
     positions = list(range(len(noise_values)))
-    noise_labels = [f"{noise_value:.3f}" for noise_value in noise_values]
+    noise_labels = [f"{noise_value:.2f}" for noise_value in noise_values]
     parameter_means = [row["parameter_rel_error_mean"] for row in summary_rows]
     parameter_stds = [row["parameter_rel_error_std"] for row in summary_rows]
     state_means = [row["state_rmse_mean"] for row in summary_rows]
     state_stds = [row["state_rmse_std"] for row in summary_rows]
     show_error_bars = len(seeds) > 1
+
+    baseline_noise = 0.0 if 0.0 in noise_values else noise_values[0]
+    noise_comparisons = [
+        (baseline_noise, noise_value)
+        for noise_value in noise_values
+        if noise_value != baseline_noise
+    ]
+    parameter_values_by_noise = metric_values_by_group(raw_rows, "noise_level", "parameter_rel_error")
+    state_values_by_noise = metric_values_by_group(raw_rows, "noise_level", "state_rmse")
+    parameter_significance = pairwise_significance(parameter_values_by_noise, noise_comparisons)
+    state_significance = pairwise_significance(state_values_by_noise, noise_comparisons)
 
     fig, axes = plt.subplots(1, 2, figsize = (12, 5))
     axes[0].errorbar(
@@ -159,6 +173,34 @@ def main():
     axes[1].set_xlabel("Relative Noise Level")
     axes[1].set_ylabel("State Reconstruction RMSE")
     axes[1].set_title("Noise vs State Reconstruction")
+
+    parameter_tops = [
+        parameter_mean + (parameter_std if show_error_bars else 0.0)
+        for parameter_mean, parameter_std in zip(parameter_means, parameter_stds)
+    ]
+    state_tops = [
+        state_mean + (state_std if show_error_bars else 0.0)
+        for state_mean, state_std in zip(state_means, state_stds)
+    ]
+    position_by_noise = {noise_value: position for position, noise_value in zip(positions, noise_values)}
+    parameter_top_by_noise = {noise_value: top for noise_value, top in zip(noise_values, parameter_tops)}
+    state_top_by_noise = {noise_value: top for noise_value, top in zip(noise_values, state_tops)}
+    annotate_pairwise_comparisons(
+        axes[0],
+        x_positions=position_by_noise,
+        top_values=parameter_top_by_noise,
+        comparisons=noise_comparisons,
+        significance=parameter_significance,
+        use_adjusted_p_value=True,
+    )
+    annotate_pairwise_comparisons(
+        axes[1],
+        x_positions=position_by_noise,
+        top_values=state_top_by_noise,
+        comparisons=noise_comparisons,
+        significance=state_significance,
+        use_adjusted_p_value=True,
+    )
 
     for axis in axes:
         axis.xaxis.get_offset_text().set_visible(False)

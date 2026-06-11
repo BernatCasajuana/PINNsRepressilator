@@ -19,7 +19,7 @@ export PYTHONPATH=/home/10040984@uvic.local/projects/pinns-repressilator:$PYTHON
 python -u <<'PY'
 from scripts.experiments import exp_initial_guess as exp
 
-exp.train_iterations = 1000
+exp.train_iterations = 100
 
 ROOT = "/home/10040984@uvic.local/projects/pinns-repressilator"
 

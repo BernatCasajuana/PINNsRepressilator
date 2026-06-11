@@ -2,9 +2,11 @@
 # EXPERIMENT OUTPUTS
 # =========================
 results/
+# figures/
 logs/
 outputs/
 
+# *.png
 *.jpg
 *.jpeg
 *.pdf

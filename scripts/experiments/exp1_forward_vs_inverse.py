@@ -8,7 +8,7 @@ between a forward PINN (β and n known, trajectory fitting only) and an inverse 
 Design:
   - True parameters: β = 5.0, n = 3.0 (oscillatory regime)
   - Three noise levels: 0.01, 0.05, 0.10
-  - 3 seeds per condition; 5000 Adam iterations per run; dense observations (stride = 1)
+  - 5 seeds per condition; 10000 Adam iterations per run; dense observations (stride = 1)
   - For each (noise, seed) pair, two runs are compared:
       forward:  run_forward with true β, n — trajectory fit only (no parameter estimation)
       inverse:  run_inverse estimating β, n from scratch (β₀=4.0, n₀=2.5)
@@ -48,8 +48,8 @@ from scripts.pinns.inverse import run_inverse
 true_beta = 5.0
 true_n = 3.0
 noise_levels = [0.0, 0.01, 0.05, 0.10]
-seeds = [0, 1, 2]
-train_iterations = 5000
+seeds = [0, 1, 2, 3, 4]
+train_iterations = 10000
 results_dir = "results/exp1_forward_vs_inverse"
 figure_path = "figures/exp1_forward_vs_inverse.png"
 
@@ -88,7 +88,7 @@ def main():
             "true_n": true_n,
             "note": (
                 "Forward run uses known beta/n; inverse run estimates them. "
-                "Both use Adam only (run_lbfgs=False), stride=1, 5000 iterations."
+                "Both use Adam only (run_lbfgs=False), stride=1, 10000 iterations."
             ),
             "expected_runs": expected_runs,
             "expected_total_train_iterations": expected_runs * train_iterations,

@@ -146,7 +146,7 @@ All inverse PINNs use the same architecture (Section 2.3 of the paper):
 - Trainable scalars: β̂, n̂ (initial guesses configurable per experiment; defaults β₀ = 4.0, n₀ = 2.5)
 - Optimizer: Adam, lr = 10⁻³
 
-Most experiments use **10 000 iterations**. Experiments 1 and 7 use **5 000 iterations** (see Computational budget below).
+All experiments use **10 000 iterations**.
 
 ---
 
@@ -156,7 +156,7 @@ Each experiment targets a specific axis of the inverse identification problem. A
 
 ### Experiment 1 — Forward vs inverse PINN gap
 
-The most fundamental comparison in the paper: what is the cost of not knowing the parameters? A *forward* PINN receives the true β and n and fits only the trajectory, while an *inverse* PINN must estimate them jointly from observations. By sweeping four noise levels (0%, 1%, 5%, 10%) and running both modes on the same data realisations, this experiment isolates the extra optimisation difficulty imposed by the parameter identification task. The figure shows state RMSE for both modes across noise levels as a single-panel line plot, making the identifiability cost directly visible.
+The most fundamental comparison in the paper: what is the cost of not knowing the parameters? A *forward* PINN receives the true β and n and fits only the trajectory, while an *inverse* PINN must estimate them jointly from observations. By sweeping four noise levels (0%, 1%, 5%, 10%) and running both modes on the same data realisations across 5 seeds, this experiment isolates the extra optimisation difficulty imposed by the parameter identification task. The figure shows state RMSE for both modes across noise levels as a single-panel line plot, making the identifiability cost directly visible.
 
 ### Experiment 2 — Noise sensitivity
 
@@ -172,7 +172,7 @@ The repressilator is oscillatory, so the information content of a time-series is
 
 ### Experiment 5 — Initial guess sensitivity
 
-Because the joint loss landscape over (β, n, network weights) is non-convex, the initial guesses for β and n can steer the optimiser into different attraction basins. This experiment runs a 7×7 grid of initial guesses — β₀ ∈ {2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0}, n₀ ∈ {1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5} — with one seed per cell (49 total runs at 10 000 iterations each). The true parameter location (β = 5.0, n = 3.0) is included in the grid. The figure is a heatmap of combined parameter error over the initial-guess plane, with a star at the true location and a dashed contour at the 10% error threshold. The shape of the reliable-recovery basin directly informs practical guidance on how to initialise inverse PINNs for the repressilator.
+Because the joint loss landscape over (β, n, network weights) is non-convex, the initial guesses for β and n can steer the optimiser into different local optima. This experiment runs a 7×7 grid of initial guesses — β₀ ∈ {2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0}, n₀ ∈ {1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5} — with one seed per cell (49 total runs at 10 000 iterations each). The true parameter location (β = 5.0, n = 3.0) is included in the grid and marked with a star (★) in the figure legend. The figure is a heatmap of combined parameter error over the initial-guess plane, showing which starting points reliably converge to the true parameters and which trap the optimiser in a poor solution.
 
 ### Experiment 6 — Dynamical regime comparison
 
@@ -184,7 +184,7 @@ The balance between the ODE residual term (λ_f · L_eq) and the observation ter
 
 ### Experiment 8 — Training convergence
 
-This diagnostic experiment examines how the loss components and the parameter estimates evolve during training on the canonical condition (β = 5.0, n = 3.0, noise = 0.05). Three seeds are run for 10 000 iterations each, with the full loss history and parameter evolution logged every 100 steps. The 2×2 figure shows total loss (semilog), individual loss components L_eq, L_IC, and L_obs (semilog), β̂ convergence over iterations, and n̂ convergence over iterations — all seeds overlaid as transparent lines. This experiment serves as a diagnostic for understanding training dynamics and confirming that the standard 10 000-iteration budget is sufficient.
+This diagnostic experiment examines how the loss components and the parameter estimates evolve during training on the canonical condition (β = 5.0, n = 3.0, noise = 0.05). Five seeds are run for 10 000 iterations each, with the full loss history and parameter evolution logged every 100 steps. The 2×2 figure shows total loss (semilog), individual loss components L_eq, L_IC, and L_obs (semilog), β̂ convergence over iterations, and n̂ convergence over iterations — all seeds overlaid as transparent lines. This experiment serves as a diagnostic for understanding training dynamics and confirming that the standard 10 000-iteration budget is sufficient.
 
 ---
 
@@ -192,15 +192,15 @@ This diagnostic experiment examines how the loss components and the parameter es
 
 | Experiment | Conditions | Seeds | Iterations | Total |
 |---|---|---|---|---|
-| 1 Forward vs inverse | 4 noise × fwd + inv | 3 | 5 000 | 120 000 |
+| 1 Forward vs inverse | 4 noise × fwd + inv | 5 | 10 000 | 400 000 |
 | 2 Noise sweep | 5 noise levels | 5 | 10 000 | 250 000 |
 | 3 Partial observation | 3 designs | 5 | 10 000 | 150 000 |
 | 4 Sampling density | 4 counts | 5 | 10 000 | 200 000 |
 | 5 Initial guesses | 7×7 grid | 1 | 10 000 | 490 000 |
 | 6 Regime comparison | 4 cases | 5 | 10 000 | 200 000 |
-| 7 Loss weights | 5 λ_f values | 5 | 5 000 | 125 000 |
-| 8 Convergence | 1 condition | 3 | 10 000 | 30 000 |
-| **Total** | | | | **1 565 000** |
+| 7 Loss weights | 5 λ_f values | 5 | 10 000 | 250 000 |
+| 8 Convergence | 1 condition | 5 | 10 000 | 50 000 |
+| **Total** | | | | **1 990 000** |
 
 Approximate wall-clock time: 30–60 h on CPU, 3–6 h on GPU.
 

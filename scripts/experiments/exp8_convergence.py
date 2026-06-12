@@ -8,7 +8,7 @@ loss plateaus?
 Design:
   - Single canonical condition: β = 5.0, n = 3.0, noise = 0.05 (oscillatory regime,
     same noise level as all other experiments)
-  - 3 seeds; 10000 Adam iterations per run
+  - 5 seeds; 10000 Adam iterations per run
   - All three repressors observed; stride = 1; β₀ = 4.0, n₀ = 2.5
   - run_inverse returns parameter_evolution (shape (N_checkpoints, 2), one row per
     100 iterations) and loss_train (shape (N_steps, N_components))
@@ -46,7 +46,7 @@ from scripts.pinns.inverse import run_inverse
 true_beta = 5.0
 true_n = 3.0
 noise_level = 0.05
-seeds = [0, 1, 2]
+seeds = [0, 1, 2, 3, 4]
 train_iterations = 10000
 results_dir = "results/exp8_convergence"
 figure_path = "figures/exp8_convergence.png"
@@ -128,7 +128,7 @@ def main():
 
     fig, axes = plt.subplots(2, 2, figsize=(12, 9), squeeze=False)
 
-    seed_alphas = [0.8, 0.55, 0.35]
+    seed_alphas = [0.8, 0.65, 0.5, 0.35, 0.2]
 
     ax_loss = axes[0, 0]
     ax_comp = axes[0, 1]

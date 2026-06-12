@@ -12,7 +12,7 @@ Design:
   - Fixed noise level: 0.05; all three repressors observed; stride = 1 (dense)
   - λ_f sweep: {0.01, 0.1, 1.0, 10.0, 100.0} — 5 decades
   - λ_0 = λ_y = 1.0 (fixed)
-  - 5 seeds per λ_f; 5000 Adam iterations per run
+  - 5 seeds per λ_f; 10000 Adam iterations per run
   - Initial guesses: β₀ = 4.0, n₀ = 2.5
 
   loss_weights format for run_inverse (all 3 observed components):
@@ -61,7 +61,7 @@ lambda_f_values = [0.01, 0.1, 1.0, 10.0, 100.0]
 lambda_0 = 1.0
 lambda_y = 1.0
 seeds = [0, 1, 2, 3, 4]
-train_iterations = 5000
+train_iterations = 10000
 results_dir = "results/exp7_loss_weights"
 figure_path = "figures/exp7_loss_weights.png"
 

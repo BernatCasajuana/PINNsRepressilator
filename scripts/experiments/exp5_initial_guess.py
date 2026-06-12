@@ -160,8 +160,10 @@ def main():
     ax.set_title("Initial Guess Sensitivity")
 
     if star_bx is not None and star_nx is not None:
-        ax.plot(star_bx, star_nx, marker='+', color='white',
-                markersize=14, markeredgewidth=2.5, zorder=10, linestyle='')
+        ax.plot(star_bx, star_nx, marker='*', color='white',
+                markersize=16, markeredgewidth=1.5, zorder=10, linestyle='',
+                label=rf"True params ($\beta$={true_beta}, $n$={true_n})")
+        ax.legend(fontsize=9, loc="upper right", framealpha=0.7)
 
     cbar = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
     cbar.set_label(r"Param. Error = ½(|Δβ/β|+|Δn/n|)")

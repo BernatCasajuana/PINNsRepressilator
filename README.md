@@ -81,6 +81,7 @@ python run_pilot.py
 The pilot script accepts optional arguments to control the preview:
 ```bash
 python run_pilot.py --train-iterations 500         # more converged preview
+python run_pilot.py --seeds 1                      # 1 seed per experiment (fastest check)
 python run_pilot.py --only exp1_forward_vs_inverse exp5_initial_guess  # subset of experiments
 ```
 

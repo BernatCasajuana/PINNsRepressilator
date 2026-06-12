@@ -5,13 +5,14 @@ Generate lightweight pilot figures for all experiments.
 This script is intended for visual checks (palette/style/layout) before long runs.
 It overrides a small subset of experiment globals at runtime:
   - train_iterations → reduced (default 100)
+  - seeds            → reduced (default: experiment's own seed list)
   - results_dir    → results/pilot/<exp_name>
   - figure_path    → figures/pilot_<exp_name>.png
-  Seeds are kept at the experiment's own default (same as full runs).
 
 Usage:
   python run_pilot.py                          # all experiments, 100 iters, full seed set
   python run_pilot.py --train-iterations 500   # slightly more converged check
+  python run_pilot.py --seeds 1                # 1 seed per experiment
   python run_pilot.py --only exp1_forward_vs_inverse exp5_initial_guess
 """
 
@@ -66,7 +67,7 @@ def apply_overrides(module: Any, overrides: Dict[str, Any]) -> None:
         setattr(module, attribute, value)
 
 
-def run_preview(spec: PreviewSpec, train_iterations: int) -> None:
+def run_preview(spec: PreviewSpec, train_iterations: int, n_seeds: int | None) -> None:
     print(f"\nLoading {spec.name} ({spec.module_path})...")
     module = importlib.import_module(spec.module_path)
 
@@ -78,6 +79,9 @@ def run_preview(spec: PreviewSpec, train_iterations: int) -> None:
         "results_dir": pilot_results_dir,
         "figure_path": pilot_figure_path,
     }
+    if n_seeds is not None:
+        original_seeds = getattr(module, "seeds", [0])
+        overrides["seeds"] = original_seeds[:n_seeds]
     apply_overrides(module, overrides)
 
     seeds_used = getattr(module, "seeds", "?")
@@ -102,13 +106,17 @@ def main() -> None:
         choices=[spec.name for spec in SPECS],
         help="Run only specific pilot experiment names.",
     )
+    parser.add_argument(
+        "--seeds", type=int, default=None, metavar="N",
+        help="Use only the first N seeds from each experiment (default: keep all).",
+    )
     args = parser.parse_args()
 
     selected = [spec for spec in SPECS if args.only is None or spec.name in args.only]
 
     print(f"Generating pilot figures for: {[spec.name for spec in selected]}")
     for spec in selected:
-        run_preview(spec, train_iterations=args.train_iterations)
+        run_preview(spec, train_iterations=args.train_iterations, n_seeds=args.seeds)
 
     print("\nAll pilot experiments completed.")
     print("Pilot figures saved under figures/pilot_*.png")

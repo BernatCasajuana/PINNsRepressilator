@@ -26,6 +26,7 @@ import os
 import sys
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
+from matplotlib.lines import Line2D
 import numpy as np
 
 scripts_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -53,7 +54,7 @@ results_dir = "results/exp5_initial_guess"
 figure_path = "figures/exp5_initial_guess.png"
 
 HEATMAP_CMAP = mcolors.LinearSegmentedColormap.from_list(
-    "white_to_blue", ["#FFFFFF", "#4C78A8"]
+    "white_to_blue", ["#FFFFFF", "#0072B2"]
 )
 CONTOUR_THRESHOLD = 0.10  # 10% relative error contour
 
@@ -160,10 +161,13 @@ def main():
     ax.set_title("Initial Guess Sensitivity")
 
     if star_bx is not None and star_nx is not None:
-        ax.plot(star_bx, star_nx, marker='*', color='white',
-                markersize=16, markeredgewidth=1.5, zorder=10, linestyle='',
-                label=rf"True params ($\beta$={true_beta}, $n$={true_n})")
-        ax.legend(fontsize=9, loc="upper right", framealpha=0.7)
+        ax.text(star_bx, star_nx, "*", ha="center", va="center",
+                fontsize=16, fontweight="bold", color="black", zorder=10)
+        legend_handle = Line2D(
+            [], [], marker="$*$", color="black", linestyle="",
+            markersize=10, label=rf"True Params ($\beta$={true_beta}, $n$={true_n})",
+        )
+        ax.legend(handles=[legend_handle], fontsize=9, loc="upper right", framealpha=0.7)
 
     cbar = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
     cbar.set_label(r"Param. Error = ½(|Δβ/β|+|Δn/n|)")

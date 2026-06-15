@@ -13,7 +13,7 @@ Usage:
   python run_pilot.py                          # all experiments, 100 iters, full seed set
   python run_pilot.py --train-iterations 500   # slightly more converged check
   python run_pilot.py --seeds 1                # 1 seed per experiment
-  python run_pilot.py --only exp1_forward_vs_inverse exp5_initial_guess
+  python run_pilot.py --only exp1_noise_sweep exp4_initial_guess
 """
 
 from __future__ import annotations
@@ -46,14 +46,13 @@ class PreviewSpec:
 
 # Ordered by scientific priority (1 = most central to paper thesis)
 SPECS = [
-    PreviewSpec(name="exp1_forward_vs_inverse",  module_path="scripts.experiments.exp1_forward_vs_inverse"),
-    PreviewSpec(name="exp2_noise_sweep",         module_path="scripts.experiments.exp2_noise_sweep"),
-    PreviewSpec(name="exp3_partial_observation", module_path="scripts.experiments.exp3_partial_observation"),
-    PreviewSpec(name="exp4_sampling_density",    module_path="scripts.experiments.exp4_sampling_density"),
-    PreviewSpec(name="exp5_initial_guess",       module_path="scripts.experiments.exp5_initial_guess"),
-    PreviewSpec(name="exp6_regime_comparison",   module_path="scripts.experiments.exp6_regime_comparison"),
-    PreviewSpec(name="exp7_loss_weights",        module_path="scripts.experiments.exp7_loss_weights"),
-    PreviewSpec(name="exp8_convergence",         module_path="scripts.experiments.exp8_convergence"),
+    PreviewSpec(name="exp1_noise_sweep",         module_path="scripts.experiments.exp1_noise_sweep"),
+    PreviewSpec(name="exp2_partial_observation", module_path="scripts.experiments.exp2_partial_observation"),
+    PreviewSpec(name="exp3_sampling_density",    module_path="scripts.experiments.exp3_sampling_density"),
+    PreviewSpec(name="exp4_initial_guess",       module_path="scripts.experiments.exp4_initial_guess"),
+    PreviewSpec(name="exp5_regime_comparison",   module_path="scripts.experiments.exp5_regime_comparison"),
+    PreviewSpec(name="exp6_loss_weights",        module_path="scripts.experiments.exp6_loss_weights"),
+    PreviewSpec(name="exp7_convergence",         module_path="scripts.experiments.exp7_convergence"),
 ]
 
 

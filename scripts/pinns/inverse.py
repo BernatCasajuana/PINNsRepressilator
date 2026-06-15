@@ -393,7 +393,7 @@ def run_inverse(
         plt.plot(t, y_pred[:, i], "--", color=colors[i], label=f"{labels[i]} (PINN)") # PINN prediction
     plt.xlabel("Time")
     plt.ylabel("Protein Concentration")
-    plt.title(f"Inverse Repressilator Dynamics Prediction ($\\beta$={beta_true:.1f}, $n$={n_true:.1f}, $\\sigma$={noise_text})")
+    plt.title(f"Dynamics Prediction ($\\beta$={beta_true:.1f}, $n$={n_true:.1f}, $\\sigma$={noise_text})")
     plt.legend()
     plt.tight_layout()
     plt.savefig(os.path.join(outdir, "inverse_prediction.png")) # save plot

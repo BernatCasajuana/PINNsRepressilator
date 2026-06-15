@@ -1,5 +1,5 @@
 """
-Experiment 5 — Initial parameter guesses.
+Experiment 4 — Initial parameter guesses.
 
 Question: How sensitive is inverse-PINN training to the initial guesses for β and n?
 
@@ -25,8 +25,6 @@ basin, which may be surprisingly narrow or irregular.
 import os
 import sys
 import matplotlib.pyplot as plt
-import matplotlib.colors as mcolors
-from matplotlib.lines import Line2D
 import numpy as np
 
 scripts_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -50,12 +48,9 @@ beta_guesses = [2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]
 n_guesses = [1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5]
 seeds = [0]
 train_iterations = 10000
-results_dir = "results/exp5_initial_guess"
-figure_path = "figures/exp5_initial_guess.png"
+results_dir = "results/exp4_initial_guess"
+figure_path = "figures/exp4_initial_guess.png"
 
-HEATMAP_CMAP = mcolors.LinearSegmentedColormap.from_list(
-    "white_to_blue", ["#FFFFFF", "#0072B2"]
-)
 CONTOUR_THRESHOLD = 0.10  # 10% relative error contour
 
 
@@ -65,7 +60,7 @@ def main():
     write_run_manifest(
         os.path.join(results_dir, "run_manifest.json"),
         {
-            "experiment_name": "exp5_initial_guess",
+            "experiment_name": "exp4_initial_guess",
             "script_path": __file__,
             "results_dir": results_dir,
             "figure_path": figure_path,
@@ -118,12 +113,12 @@ def main():
     summary_rows.sort(key=lambda row: (row["beta_guess"], row["n_guess"]))
 
     write_csv(
-        os.path.join(results_dir, "exp5_initial_guess_raw.csv"),
+        os.path.join(results_dir, "exp4_initial_guess_raw.csv"),
         raw_rows,
         ["beta_guess", "n_guess", "seed", "beta_rel_error", "n_rel_error", "parameter_rel_error", "state_rmse", "outdir"],
     )
     write_csv(
-        os.path.join(results_dir, "exp5_initial_guess_summary.csv"),
+        os.path.join(results_dir, "exp4_initial_guess_summary.csv"),
         summary_rows,
         [
             "beta_guess", "n_guess", "num_runs",
@@ -152,25 +147,27 @@ def main():
 
     im = ax.imshow(
         combined_heatmap, origin="lower", aspect="auto",
-        cmap=HEATMAP_CMAP, vmin=0.0, vmax=vmax,
+        cmap="viridis", vmin=0.0, vmax=vmax,
+        interpolation="bicubic",
     )
     ax.set_xticks(range(len(beta_guesses)), [str(v) for v in beta_guesses])
     ax.set_yticks(range(len(n_guesses)), [str(v) for v in n_guesses])
     ax.set_xlabel(r"Initial $\beta_0$")
     ax.set_ylabel(r"Initial $n_0$")
-    ax.set_title("Initial Guess Sensitivity")
+    ax.set_title("Sensitivity to Initial Parameter Guess")
 
     if star_bx is not None and star_nx is not None:
-        ax.text(star_bx, star_nx, "*", ha="center", va="center",
-                fontsize=16, fontweight="bold", color="black", zorder=10)
-        legend_handle = Line2D(
-            [], [], marker="$*$", color="black", linestyle="",
-            markersize=10, label=rf"True Params ($\beta$={true_beta}, $n$={true_n})",
+        ax.annotate(
+            "Truth",
+            xy=(star_bx, star_nx),
+            xytext=(star_bx + 0.6, star_nx + 0.6),
+            fontsize=plt.rcParams["font.size"],
+            color="black",
+            arrowprops=dict(arrowstyle="->", color="black", lw=1.2, shrinkA=10),
         )
-        ax.legend(handles=[legend_handle], fontsize=9, loc="upper right", framealpha=0.7)
 
     cbar = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
-    cbar.set_label(r"Param. Error = ½(|Δβ/β|+|Δn/n|)")
+    cbar.set_label("Combined Error")
 
     finalize_figure(figure_path)
 

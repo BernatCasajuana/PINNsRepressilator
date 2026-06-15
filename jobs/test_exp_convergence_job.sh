@@ -17,16 +17,16 @@ export PYTHONPATH=/home/10040984@uvic.local/projects/pinns-repressilator:$PYTHON
 
 # Execute a lightweight test run for Experiment 8 (training convergence)
 python -u <<'PY'
-from scripts.experiments import exp8_convergence as exp
+from scripts.experiments import exp6_convergence as exp
 
 exp.train_iterations = 100
 
 ROOT = "/home/10040984@uvic.local/projects/pinns-repressilator"
 
-exp.results_dir = ROOT + "/results/test_exp8_convergence"
-exp.figure_path = ROOT + "/figures/test_exp8_convergence.png"
+exp.results_dir = ROOT + "/results/test_exp6_convergence"
+exp.figure_path = ROOT + "/figures/test_exp6_convergence.png"
 
-print("=== Running quick test: exp8_convergence ===")
+print("=== Running quick test: exp6_convergence ===")
 print(f"train_iterations={exp.train_iterations} (default experiment setup)")
 exp.main()
 PY

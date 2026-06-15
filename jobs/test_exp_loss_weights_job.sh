@@ -17,16 +17,16 @@ export PYTHONPATH=/home/10040984@uvic.local/projects/pinns-repressilator:$PYTHON
 
 # Execute a lightweight test run for Experiment 7 (physics loss weight sensitivity)
 python -u <<'PY'
-from scripts.experiments import exp7_loss_weights as exp
+from scripts.experiments import exp5_loss_weights as exp
 
 exp.train_iterations = 100
 
 ROOT = "/home/10040984@uvic.local/projects/pinns-repressilator"
 
-exp.results_dir = ROOT + "/results/test_exp7_loss_weights"
-exp.figure_path = ROOT + "/figures/test_exp7_loss_weights.png"
+exp.results_dir = ROOT + "/results/test_exp5_loss_weights"
+exp.figure_path = ROOT + "/figures/test_exp5_loss_weights.png"
 
-print("=== Running quick test: exp7_loss_weights ===")
+print("=== Running quick test: exp5_loss_weights ===")
 print(f"train_iterations={exp.train_iterations} (default experiment setup)")
 exp.main()
 PY

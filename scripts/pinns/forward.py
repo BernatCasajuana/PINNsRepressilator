@@ -248,11 +248,11 @@ def run_forward(
     colors = list(PREDICTION_COLORS)
 
     for i in range(3):
-        plt.plot(t, x_obs[:, i], "-", color=colors[i], label=f"{labels[i]} (data)") # obtained data
+        plt.plot(t, x_obs[:, i], "-", color=colors[i], label=f"{labels[i]} (Data)") # obtained data
         plt.plot(t, y_pred[:, i], "--", color=colors[i], label=f"{labels[i]} (PINN)") # PINN prediction
     plt.xlabel("Time")
     plt.ylabel("Protein Concentration")
-    plt.title(f"Repressilator Dynamics Prediction ($\\beta$={beta:.1f}, $n$={n:.1f}, $\\sigma$={noise_text})")
+    plt.title(f"Dynamics Prediction ($\\beta$={beta:.1f}, $n$={n:.1f}, $\\sigma$={noise_text})")
     plt.legend()
     plt.tight_layout()
     plt.savefig(os.path.join(outdir, "forward_prediction.png")) # save plot

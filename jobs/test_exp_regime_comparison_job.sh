@@ -17,16 +17,16 @@ export PYTHONPATH=/home/10040984@uvic.local/projects/pinns-repressilator:$PYTHON
 
 # Execute a lightweight test run for Experiment 5
 python -u <<'PY'
-from scripts.experiments import exp4_regime_comparison as exp
+from scripts.experiments import exp5_regime_comparison as exp
 
 exp.train_iterations = 100
 
 ROOT = "/home/10040984@uvic.local/projects/pinns-repressilator"
 
-exp.results_dir = ROOT + "/results/test_exp4_regime_comparison"
-exp.figure_path = ROOT + "/figures/test_exp4_regime_comparison.png"
+exp.results_dir = ROOT + "/results/test_exp5_regime_comparison"
+exp.table_path  = ROOT + "/tables/test_exp5_regime_comparison.tex"
 
-print("=== Running quick test: exp4_regime_comparison ===")
-print(f"train_iterations={exp.train_iterations} (default experiment setup)")
+print("=== Running quick test: exp5_regime_comparison ===")
+print(f"train_iterations={exp.train_iterations}")
 exp.main()
 PY

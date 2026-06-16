@@ -170,11 +170,11 @@ def _write_sampling_density_table(path, summary_rows, raw_rows):
         r"parameter error at each count.}" + "\n"
         r"\label{tab:exp3_sampling_density}" + "\n"
         r"\begin{tabular}{lcccccc}" + "\n"
-        r"\hline" + "\n"
-        r" & \multicolumn{2}{c}{Param.\ error} & \multicolumn{2}{c}{State RMSE} & \\" + "\n"
-        r"\cline{2-3}\cline{4-5}" + "\n"
+        r"\toprule" + "\n"
+        r" & \multicolumn{2}{c}{Parameter error} & \multicolumn{2}{c}{State RMSE} & \\" + "\n"
+        r"\cmidrule(lr){2-3}\cmidrule(lr){4-5}" + "\n"
         r"Time points & PINN & L-BFGS-B & PINN & L-BFGS-B & $p$ (PINN vs L-BFGS-B) \\" + "\n"
-        r"\hline"
+        r"\midrule"
     )
 
     body_lines = []
@@ -193,7 +193,7 @@ def _write_sampling_density_table(path, summary_rows, raw_rows):
         )
 
     footer = (
-        r"\hline" + "\n"
+        r"\bottomrule" + "\n"
         r"\end{tabular}" + "\n"
         r"\end{table}"
     )
@@ -265,11 +265,11 @@ def _write_combined_observability_table(
         r"parameter error at each condition.}" + "\n"
         r"\label{tab:observability}" + "\n"
         r"\begin{tabular}{lcccccc}" + "\n"
-        r"\hline" + "\n"
-        r" & \multicolumn{2}{c}{Param.\ error} & \multicolumn{2}{c}{State RMSE} & \\" + "\n"
-        r"\cline{2-3}\cline{4-5}" + "\n"
+        r"\toprule" + "\n"
+        r" & \multicolumn{2}{c}{Parameter error} & \multicolumn{2}{c}{State RMSE} & \\" + "\n"
+        r"\cmidrule(lr){2-3}\cmidrule(lr){4-5}" + "\n"
         r"Condition & PINN & L-BFGS-B & PINN & L-BFGS-B & $p$ (PINN vs L-BFGS-B) \\" + "\n"
-        r"\hline"
+        r"\midrule"
     )
 
     body_lines = []
@@ -296,7 +296,7 @@ def _write_combined_observability_table(
             f"{label} & {pinn_param} & {cls_param} & {pinn_rmse} & {cls_rmse} & {p_str} \\\\"
         )
 
-    body_lines.append(r"\hline")
+    body_lines.append(r"\midrule")
 
     # Section 2: observation count
     body_lines.append(
@@ -317,7 +317,7 @@ def _write_combined_observability_table(
         )
 
     footer = (
-        r"\hline" + "\n"
+        r"\bottomrule" + "\n"
         r"\end{tabular}" + "\n"
         r"\end{table}"
     )
@@ -425,7 +425,8 @@ def main():
 
     _write_sampling_density_table(table_path, summary_rows, raw_rows)
 
-    partial_obs_raw = _load_exp2_raw()
+    results_base = os.path.dirname(os.path.abspath(results_dir))
+    partial_obs_raw = _load_exp2_raw(results_base=results_base)
     if partial_obs_raw is not None:
         _write_combined_observability_table(
             observability_table_path, partial_obs_raw, summary_rows, raw_rows,

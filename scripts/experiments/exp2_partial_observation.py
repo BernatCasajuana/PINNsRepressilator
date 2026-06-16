@@ -161,11 +161,11 @@ def _write_latex_table(path, summary_rows, raw_rows):
         r"parameter error at each design.}" + "\n"
         r"\label{tab:exp2_partial_observation}" + "\n"
         r"\begin{tabular}{lcccccc}" + "\n"
-        r"\hline" + "\n"
-        r" & \multicolumn{2}{c}{Param.\ error} & \multicolumn{2}{c}{State RMSE} & \\" + "\n"
-        r"\cline{2-3}\cline{4-5}" + "\n"
+        r"\toprule" + "\n"
+        r" & \multicolumn{2}{c}{Parameter error} & \multicolumn{2}{c}{State RMSE} & \\" + "\n"
+        r"\cmidrule(lr){2-3}\cmidrule(lr){4-5}" + "\n"
         r"Repressors & PINN & L-BFGS-B & PINN & L-BFGS-B & $p$ (PINN vs L-BFGS-B) \\" + "\n"
-        r"\hline"
+        r"\midrule"
     )
 
     body_lines = []
@@ -188,7 +188,7 @@ def _write_latex_table(path, summary_rows, raw_rows):
         )
 
     footer = (
-        r"\hline" + "\n"
+        r"\bottomrule" + "\n"
         r"\end{tabular}" + "\n"
         r"\end{table}"
     )

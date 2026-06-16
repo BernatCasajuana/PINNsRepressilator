@@ -16,9 +16,9 @@ Design:
   - The stable/oscillatory boundary is ~n = 2.0 for β = 5.0 (Müller et al.)
 
 Output: LaTeX table (tables/exp5_regime_comparison.tex)
-  - Rows: grouped by β, stable then oscillatory
-  - Columns: regime, β, n, parameter error (mean ± SD), state RMSE (mean ± SD),
-             adjusted p-values (stable vs oscillatory per β)
+  - Rows: grouped by β, stable then oscillatory; β embedded in condition label
+  - Columns: condition, β error (mean ± SD), n error (mean ± SD), state RMSE (mean ± SD),
+             p(β) and p(n) — Holm–Bonferroni-adjusted Mann–Whitney U, stable vs oscillatory
 
 Key finding expected: the stable regime produces lower RMSE because trajectories are
 smoother; however, oscillatory dynamics provide richer information for n recovery —
@@ -73,7 +73,7 @@ def _fmt_p(sig_entry):
     return f"{label} {stars}".strip()
 
 
-def _write_latex_table(path, rows_by_case, parameter_significance, state_significance):
+def _write_latex_table(path, rows_by_case, beta_significance, n_significance):
     os.makedirs(os.path.dirname(path), exist_ok=True)
 
     # Table order: β=5 stable, β=5 oscillatory, β=8 stable, β=8 oscillatory
@@ -91,16 +91,17 @@ def _write_latex_table(path, rows_by_case, parameter_significance, state_signifi
     header = (
         r"\begin{table}[htbp]" + "\n"
         r"\centering" + "\n"
-        r"\caption{Regime comparison results. Parameter error and state RMSE (mean $\pm$ SD) "
-        r"for stable and oscillatory dynamics at two production rates. $p$-values "
-        r"(Holm--Bonferroni-adjusted Mann--Whitney U) compare stable vs.\ oscillatory "
-        r"at the same $\beta$.}" + "\n"
+        r"\caption{Regime comparison results. $\beta$ error, $n$ error, and state RMSE "
+        r"(mean $\pm$ SD, $n = 5$ seeds) for stable and oscillatory dynamics at two "
+        r"production rates ($\beta \in \{5, 8\}$, $n_{\text{stable}}=1.5$, "
+        r"$n_{\text{osc}}=3.0$). $p$-values (Holm--Bonferroni-adjusted Mann--Whitney U) "
+        r"compare stable vs.\ oscillatory at the same $\beta$.}" + "\n"
         r"\label{tab:exp5_regime_comparison}" + "\n"
-        r"\begin{tabular}{llcccc}" + "\n"
-        r"\hline" + "\n"
-        r"Regime & $\beta$ & Param.\ error & State RMSE"
-        r" & $p$ (param.) & $p$ (RMSE) \\" + "\n"
-        r"\hline"
+        r"\begin{tabular}{lccccc}" + "\n"
+        r"\toprule" + "\n"
+        r"Condition & $\beta$ error & $n$ error & State RMSE"
+        r" & $p$ ($\beta$) & $p$ ($n$) \\" + "\n"
+        r"\midrule"
     )
 
     body_lines = []
@@ -108,25 +109,27 @@ def _write_latex_table(path, rows_by_case, parameter_significance, state_signifi
         row = rows_by_case.get(case_name)
         if row is None:
             continue
-        param_cell = _fmt_mean_std(row["parameter_rel_error_mean"], row["parameter_rel_error_std"])
-        rmse_cell = _fmt_mean_std(row["state_rmse_mean"], row["state_rmse_std"])
+        beta_cell = _fmt_mean_std(row["beta_rel_error_mean"], row["beta_rel_error_std"])
+        n_cell    = _fmt_mean_std(row["n_rel_error_mean"],    row["n_rel_error_std"])
+        rmse_cell = _fmt_mean_std(row["state_rmse_mean"],     row["state_rmse_std"])
         if case_name in comparisons_map:
             comp = comparisons_map[case_name]
-            p_param = _fmt_p(parameter_significance.get(comp) or parameter_significance.get(comp[::-1]))
-            p_rmse = _fmt_p(state_significance.get(comp) or state_significance.get(comp[::-1]))
+            p_beta = _fmt_p(beta_significance.get(comp) or beta_significance.get(comp[::-1]))
+            p_n    = _fmt_p(n_significance.get(comp)    or n_significance.get(comp[::-1]))
         else:
-            p_param = "--"
-            p_rmse = "--"
+            p_beta = "--"
+            p_n    = "--"
+        condition = f"{regime_label} ($\\beta={beta_val:.0f}$)"
         body_lines.append(
-            f"{regime_label} & {beta_val:.0f} & {param_cell} & {rmse_cell}"
-            f" & {p_param} & {p_rmse} \\\\"
+            f"{condition} & {beta_cell} & {n_cell} & {rmse_cell}"
+            f" & {p_beta} & {p_n} \\\\"
         )
         # Add a thin separator between the β=5 and β=8 groups
         if case_name == "oscillatory_beta5":
-            body_lines.append(r"\hline")
+            body_lines.append(r"\midrule")
 
     footer = (
-        r"\hline" + "\n"
+        r"\bottomrule" + "\n"
         r"\end{tabular}" + "\n"
         r"\end{table}"
     )
@@ -225,12 +228,12 @@ def main():
         ("stable_beta5", "oscillatory_beta5"),
         ("stable_beta8", "oscillatory_beta8"),
     ]
-    parameter_vals_by_case = metric_values_by_group(raw_rows, "case", "parameter_rel_error")
-    state_vals_by_case = metric_values_by_group(raw_rows, "case", "state_rmse")
-    parameter_significance = pairwise_significance(parameter_vals_by_case, regime_comparisons)
-    state_significance = pairwise_significance(state_vals_by_case, regime_comparisons)
+    beta_vals_by_case = metric_values_by_group(raw_rows, "case", "beta_rel_error")
+    n_vals_by_case    = metric_values_by_group(raw_rows, "case", "n_rel_error")
+    beta_significance = pairwise_significance(beta_vals_by_case, regime_comparisons)
+    n_significance    = pairwise_significance(n_vals_by_case,    regime_comparisons)
 
-    _write_latex_table(table_path, rows_by_case, parameter_significance, state_significance)
+    _write_latex_table(table_path, rows_by_case, beta_significance, n_significance)
 
 
 if __name__ == "__main__":

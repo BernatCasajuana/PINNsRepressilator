@@ -14,7 +14,7 @@ Design:
 
 Figure: single heatmap showing combined parameter error over the (β₀, n₀) grid
   - Combined error: 0.5 × (|Δβ|/β + |Δn|/n) per grid cell
-  - Star marker (★) at the true parameter location (β=5.0, n=3.0)
+  - Arrow annotation marking the true parameter location (β=5.0, n=3.0)
   - Dashed contour at the 10% combined error threshold
 
 Key finding expected: the loss landscape is non-convex — some (β₀, n₀) combinations

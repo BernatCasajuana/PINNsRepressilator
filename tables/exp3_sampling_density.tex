@@ -3,15 +3,15 @@
 \caption{Sampling density results. Parameter error and state RMSE (mean $\pm$ SD, $n = 5$ seeds) for PINN and L-BFGS-B across four observation counts (evenly spaced across 1000 time points, all 3 repressors observed). L-BFGS-B integrates the full ODE trajectory but computes MSE only at the observed time points; the PINN additionally enforces the ODE residual at dense collocation points across the full domain. $p$-values (two-sided Mann--Whitney U) compare PINN vs L-BFGS-B parameter error at each count.}
 \label{tab:exp3_sampling_density}
 \begin{tabular}{lcccccc}
-\hline
- & \multicolumn{2}{c}{Param.\ error} & \multicolumn{2}{c}{State RMSE} & \\
-\cline{2-3}\cline{4-5}
+\toprule
+ & \multicolumn{2}{c}{Parameter error} & \multicolumn{2}{c}{State RMSE} & \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
 Time points & PINN & L-BFGS-B & PINN & L-BFGS-B & $p$ (PINN vs L-BFGS-B) \\
-\hline
-100 (baseline) & $0.185 \pm 0.000$ & $0.336 \pm 0.000$ & $0.398 \pm 0.000$ & $0.256 \pm 0.000$ & -- \\
-50 & $0.185 \pm 0.000$ & $0.404 \pm 0.000$ & $0.399 \pm 0.000$ & $0.256 \pm 0.000$ & -- \\
-25 & $0.185 \pm 0.000$ & $0.152 \pm 0.000$ & $0.399 \pm 0.000$ & $0.257 \pm 0.000$ & -- \\
-10 & $0.185 \pm 0.000$ & $0.636 \pm 0.000$ & $0.408 \pm 0.000$ & $0.256 \pm 0.000$ & -- \\
-\hline
+\midrule
+100 (baseline) & $0.188 \pm 0.000$ & $0.303 \pm 0.127$ & $0.264 \pm 0.001$ & $0.256 \pm 0.001$ & $p = 0.690$ \\
+50 & $0.188 \pm 0.000$ & $0.268 \pm 0.109$ & $0.264 \pm 0.001$ & $0.256 \pm 0.001$ & $p = 0.690$ \\
+25 & $0.188 \pm 0.000$ & $0.318 \pm 0.117$ & $0.264 \pm 0.001$ & $0.256 \pm 0.000$ & $p = 0.151$ \\
+10 & $0.188 \pm 0.000$ & $0.534 \pm 0.202$ & $0.267 \pm 0.001$ & $0.256 \pm 0.001$ & $p = 0.151$ \\
+\bottomrule
 \end{tabular}
 \end{table}

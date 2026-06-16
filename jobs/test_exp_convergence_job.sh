@@ -15,18 +15,18 @@ cd /home/10040984@uvic.local/projects/pinns-repressilator
 # Set PYTHONPATH to include the current directory
 export PYTHONPATH=/home/10040984@uvic.local/projects/pinns-repressilator:$PYTHONPATH
 
-# Execute a lightweight test run for Experiment 8 (training convergence)
+# Execute a lightweight test run for Experiment 7
 python -u <<'PY'
-from scripts.experiments import exp6_convergence as exp
+from scripts.experiments import exp7_convergence as exp
 
 exp.train_iterations = 100
 
 ROOT = "/home/10040984@uvic.local/projects/pinns-repressilator"
 
-exp.results_dir = ROOT + "/results/test_exp6_convergence"
-exp.figure_path = ROOT + "/figures/test_exp6_convergence.png"
+exp.results_dir = ROOT + "/results/test_exp7_convergence"
+exp.figure_path = ROOT + "/figures/test_exp7_convergence.png"
 
-print("=== Running quick test: exp6_convergence ===")
-print(f"train_iterations={exp.train_iterations} (default experiment setup)")
+print("=== Running quick test: exp7_convergence ===")
+print(f"train_iterations={exp.train_iterations}")
 exp.main()
 PY

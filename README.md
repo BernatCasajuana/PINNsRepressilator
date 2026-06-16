@@ -46,7 +46,7 @@ pinns-repressilator/
 │   │   ├── exp3_sampling_density.py    # Sampling density (10–100 points) → table + observability.tex
 │   │   ├── exp4_initial_guess.py       # Initial guess sensitivity (7×7 grid)
 │   │   ├── exp5_regime_comparison.py   # Stable vs oscillatory regime → table
-│   │   ├── exp6_loss_weights.py        # Physics loss weight λ_f sensitivity
+│   │   ├── exp6_loss_weights.py        # Physics loss weight λ_f sensitivity → table
 │   │   ├── exp7_convergence.py         # Convergence curves (β̂, n̂, losses)
 │   │   └── all_experiments.py          # Run all seven sequentially
 │   └── plots/              # Standalone visualisation scripts
@@ -161,11 +161,11 @@ How gracefully does the inverse PINN degrade as measurement noise increases, and
 
 ### Experiment 2 — Partial observation
 
-In many real experiments only a subset of molecular species can be measured. This experiment tests three designs: all three repressors (3/3), two repressors (2/3 — x₃ unobserved), and one repressor (1/3 — x₂ and x₃ unobserved). For each (design, seed), both the PINN and an L-BFGS-B baseline are run on the same data. Both methods use the full three-equation ODE — L-BFGS-B integrates it exactly but optimises MSE only on observed species; the PINN additionally enforces the ODE residual on all three equations at dense collocation points. The hypothesis is that the PINN's explicit physics constraint on unobserved species provides an advantage that grows as fewer species are measured; if L-BFGS-B matches PINN in the 1/3 setting, exact integration is sufficient. Results are a **LaTeX table** (`tables/exp2_partial_observation.tex`) showing PINN and L-BFGS-B side by side with Mann–Whitney p-values comparing the two methods at each design.
+In many real experiments only a subset of molecular species can be measured. This experiment tests three designs: all three repressors (3/3), two repressors (2/3 — x₃ unobserved), and one repressor (1/3 — x₂ and x₃ unobserved). For each (design, seed), both the PINN and an L-BFGS-B baseline are run on the same data. Both methods use the full three-equation ODE: L-BFGS-B integrates it exactly (so unobserved species are always implicitly constrained through the ODE coupling given β and n), while the PINN enforces it approximately via a residual penalty. The key question is therefore not whether the PINN "knows" more physics about unobserved species, but whether the neural-network parameterisation offers a smoother optimisation landscape than direct parameter search. Physics regularisation pays off precisely when data is incomplete — but if L-BFGS-B matches PINN in the 1/3 setting, exact ODE integration is sufficient. Results are a **LaTeX table** (`tables/exp2_partial_observation.tex`) showing PINN and L-BFGS-B side by side with Mann–Whitney p-values comparing the two methods at each design.
 
 ### Experiment 3 — Sampling density
 
-How sparse can the time-series be before parameter recovery degrades, and does the PINN's physics-guided interpolation provide an advantage over classical fitting? Observation counts of 10, 25, 50, and 100 points (1%–10% of the 1000-point grid, evenly spaced) are tested with all three repressors observed and 5% noise. For each (count, seed), both the PINN and an L-BFGS-B baseline are run on identical data. L-BFGS-B integrates the full ODE trajectory but computes MSE only at the sparse observed time points; the PINN enforces the ODE residual at dense collocation points across the full domain regardless of observation density. The hypothesis is that this collocation-based constraint fills in gradient signal between observations and yields better recovery at very low counts; if L-BFGS-B matches PINN, exact integration over the sparse subset is sufficient. Results are a **LaTeX table** (`tables/exp3_sampling_density.tex`). Running experiments 2 and 3 in sequence also produces a **combined observability table** (`tables/observability.tex`) with both dimensions and both methods side by side.
+How sparse can the time-series be before parameter recovery degrades, and does the PINN's physics-guided interpolation provide an advantage over classical fitting? Observation counts of 10, 25, 50, and 100 points (1%–10% of the 1000-point grid, evenly spaced) are tested with all three repressors observed and 5% noise. For each (count, seed), both the PINN and an L-BFGS-B baseline are run on identical data. L-BFGS-B integrates the full ODE trajectory but computes MSE only at the sparse observed time points; the PINN enforces the ODE residual at dense collocation points across the full domain regardless of observation density. Physics regularisation pays off precisely when data is incomplete — and unlike the partial-observation case, this is a genuine structural asymmetry: L-BFGS-B receives gradient signal only at observed times, while the PINN's collocation residual fills in physics everywhere between observations. If L-BFGS-B matches PINN, exact integration over the sparse subset is sufficient. Results are a **LaTeX table** (`tables/exp3_sampling_density.tex`). Running experiments 2 and 3 in sequence also produces a **combined observability table** (`tables/observability.tex`) covering both measurement design dimensions side by side.
 
 ### Experiment 4 — Initial guess sensitivity
 
@@ -173,11 +173,11 @@ Because the joint loss landscape over (β, n, network weights) is non-convex, th
 
 ### Experiment 5 — Dynamical regime comparison
 
-The Hill coefficient n controls whether the repressilator settles to a steady state (n ≈ 1.5) or sustains oscillations (n ≈ 3.0). These two regimes produce qualitatively different trajectory shapes, and it is not obvious a priori which is easier to identify from inverse PINN training. This experiment runs four cases — β ∈ {5.0, 8.0} crossed with regime ∈ {stable, oscillatory} — and compares combined parameter error and state RMSE. Results are presented as a **LaTeX table** (`tables/exp5_regime_comparison.tex`) grouped by β, with Holm–Bonferroni-adjusted p-values comparing stable vs oscillatory at each β value.
+The Hill coefficient n controls whether the repressilator settles to a steady state (n ≈ 1.5) or sustains oscillations (n ≈ 3.0). These two regimes produce qualitatively different trajectory shapes, and it is not obvious a priori which is easier to identify from inverse PINN training. This experiment runs four cases — β ∈ {5.0, 8.0} crossed with regime ∈ {stable, oscillatory} — and reports β error, n error, and state RMSE separately. Results are presented as a **LaTeX table** (`tables/exp5_regime_comparison.tex`) with β embedded in the condition label (e.g. "Stable (β=5)") and Holm–Bonferroni-adjusted p-values for β and n errors separately, comparing stable vs oscillatory at each β value.
 
 ### Experiment 6 — Physics loss weight sensitivity
 
-The balance between the ODE residual term (λ_f · L_eq) and the observation term (λ_y · L_obs) is a central hyperparameter of the PINN formulation. Too small a λ_f and the physics constraint is effectively disabled; too large and the network ignores the observations and converges to any trajectory satisfying the ODE — not necessarily the one with the correct parameters. This experiment sweeps λ_f over five decades — {0.01, 0.1, 1.0, 10.0, 100.0} — while holding λ_0 = λ_y = 1.0 fixed. The two-panel (1×2) figure shows combined parameter error (panel A) and state RMSE (panel B), each with significance brackets relative to the λ_f = 1.0 baseline.
+The balance between the ODE residual term (λ_f · L_eq) and the observation term (λ_y · L_obs) is a central hyperparameter of the PINN formulation. Too small a λ_f and the physics constraint is effectively disabled; too large and the network ignores the observations and converges to any trajectory satisfying the ODE — not necessarily the one with the correct parameters. This experiment sweeps λ_f over five decades — {0.01, 0.1, 1.0, 10.0, 100.0} — while holding λ_0 = λ_y = 1.0 fixed. Results are presented as a **LaTeX table** (`tables/exp6_loss_weights.tex`) with β error, n error, and state RMSE (mean ± SD) at each λ_f, and separate Mann–Whitney p-values for β and n comparing each value to the λ_f = 1.0 baseline.
 
 ### Experiment 7 — Training convergence
 
@@ -199,7 +199,7 @@ This diagnostic experiment examines how the loss components and parameter estima
 | **Total** | | | | **1 730 000** |
 
 Approximate wall-clock time: 25–55 h on CPU, 2–5 h on GPU.  
-L-BFGS-B fitting in exp 1 adds negligible compute (seconds per fit).
+L-BFGS-B fitting in exp 1, 2, and 3 adds negligible compute (seconds per fit).
 
 ---
 
@@ -211,7 +211,7 @@ Each driver in `scripts/experiments/` follows the same pattern:
 2. For each condition × seed: call `run_inverse()` with an in-memory dataset
 3. Write per-run metrics to `results/<exp_name>/runs/`
 4. Aggregate into `results/<exp_name>/<exp_name>_raw.csv` and `<exp_name>_summary.csv`
-5. Save output: a figure to `figures/<exp_name>.png` (exp 1, 4, 6, 7) or a LaTeX table to `tables/<exp_name>.tex` (exp 2, 3, 5); exp 3 additionally writes a combined `tables/observability.tex` merging experiments 2 and 3
+5. Save output: a figure to `figures/<exp_name>.png` (exp 1, 4, 7) or a LaTeX table to `tables/<exp_name>.tex` (exp 2, 3, 5, 6); exp 3 additionally writes a combined `tables/observability.tex` merging experiments 2 and 3
 6. Write `results/<exp_name>/run_manifest.json` (parameters + UTC timestamp)
 
 ### Statistical testing
@@ -245,15 +245,17 @@ results/
 figures/
 ├── exp1_noise_sweep.png
 ├── exp4_initial_guess.png
-├── exp6_loss_weights.png
 └── exp7_convergence.png
 
 tables/
-├── exp2_partial_observation.tex
-├── exp3_sampling_density.tex
-├── exp5_regime_comparison.tex
-└── observability.tex            # combined: exp2 + exp3
+├── observability.tex            # paper table: measurement design (exp2 + exp3 combined)
+├── exp5_regime_comparison.tex   # paper table: dynamical regime
+├── exp6_loss_weights.tex        # paper table: physics loss weight sensitivity
+├── exp2_partial_observation.tex # intermediate: partial observation detail
+└── exp3_sampling_density.tex    # intermediate: sampling density detail
 ```
+
+All `.tex` table files use the `booktabs` package (`\toprule`, `\midrule`, `\bottomrule`). Add `\usepackage{booktabs}` to your LaTeX preamble.
 
 ---
 

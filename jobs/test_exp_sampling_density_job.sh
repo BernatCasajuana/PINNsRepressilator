@@ -17,16 +17,17 @@ export PYTHONPATH=/home/10040984@uvic.local/projects/pinns-repressilator:$PYTHON
 
 # Execute a lightweight test run for Experiment 3
 python -u <<'PY'
-from scripts.experiments import exp2_sampling_density as exp
+from scripts.experiments import exp3_sampling_density as exp
 
 exp.train_iterations = 100
 
 ROOT = "/home/10040984@uvic.local/projects/pinns-repressilator"
 
-exp.results_dir = ROOT + "/results/test_exp2_sampling_density"
-exp.figure_path = ROOT + "/figures/test_exp2_sampling_density.png"
+exp.results_dir              = ROOT + "/results/test_exp3_sampling_density"
+exp.table_path               = ROOT + "/tables/test_exp3_sampling_density.tex"
+exp.observability_table_path = ROOT + "/tables/test_observability.tex"
 
-print("=== Running quick test: exp2_sampling_density ===")
-print(f"train_iterations={exp.train_iterations} (default experiment setup)")
+print("=== Running quick test: exp3_sampling_density ===")
+print(f"train_iterations={exp.train_iterations}")
 exp.main()
 PY

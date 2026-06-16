@@ -76,8 +76,9 @@ def run_preview(spec: PreviewSpec, train_iterations: int, n_seeds: int | None) -
     overrides: Dict[str, Any] = {
         "train_iterations": train_iterations,
         "results_dir": pilot_results_dir,
-        "figure_path": pilot_figure_path,
     }
+    if hasattr(module, "figure_path"):
+        overrides["figure_path"] = pilot_figure_path
     if n_seeds is not None:
         original_seeds = getattr(module, "seeds", [0])
         overrides["seeds"] = original_seeds[:n_seeds]

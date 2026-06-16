@@ -15,18 +15,18 @@ cd /home/10040984@uvic.local/projects/pinns-repressilator
 # Set PYTHONPATH to include the current directory
 export PYTHONPATH=/home/10040984@uvic.local/projects/pinns-repressilator:$PYTHONPATH
 
-# Execute a lightweight test run for Experiment 7 (physics loss weight sensitivity)
+# Execute a lightweight test run for Experiment 6
 python -u <<'PY'
-from scripts.experiments import exp5_loss_weights as exp
+from scripts.experiments import exp6_loss_weights as exp
 
 exp.train_iterations = 100
 
 ROOT = "/home/10040984@uvic.local/projects/pinns-repressilator"
 
-exp.results_dir = ROOT + "/results/test_exp5_loss_weights"
-exp.figure_path = ROOT + "/figures/test_exp5_loss_weights.png"
+exp.results_dir = ROOT + "/results/test_exp6_loss_weights"
+exp.table_path  = ROOT + "/tables/test_exp6_loss_weights.tex"
 
-print("=== Running quick test: exp5_loss_weights ===")
-print(f"train_iterations={exp.train_iterations} (default experiment setup)")
+print("=== Running quick test: exp6_loss_weights ===")
+print(f"train_iterations={exp.train_iterations}")
 exp.main()
 PY

@@ -1,0 +1,23 @@
+\begin{table}[htbp]
+\centering
+\caption{Measurement observability. Parameter error and state RMSE (mean $\pm$ SD, $n = 5$ seeds) for PINN and L-BFGS-B across two observability dimensions: number of observed repressor species (top) and number of observed time points (bottom). Both methods use the full three-equation ODE. L-BFGS-B minimises MSE only on the available measurements; the PINN additionally enforces the ODE residual at dense collocation points. $p$-values (two-sided Mann--Whitney U) compare PINN vs L-BFGS-B parameter error at each condition.}
+\label{tab:observability}
+\begin{tabular}{lcccccc}
+\toprule
+ & \multicolumn{2}{c}{Parameter error} & \multicolumn{2}{c}{State RMSE} & \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+Condition & PINN & L-BFGS-B & PINN & L-BFGS-B & $p$ (PINN vs L-BFGS-B) \\
+\midrule
+\multicolumn{6}{l}{\textit{Observed repressors (1000 time points)}} \\
+\quad 3/3 (baseline) & $0.188 \pm 0.000$ & $0.421 \pm 0.009$ & $0.264 \pm 0.001$ & $0.256 \pm 0.000$ & $p = 0.008$ ** \\
+\quad 2/3 & $0.188 \pm 0.000$ & $0.423 \pm 0.008$ & $0.266 \pm 0.001$ & $0.256 \pm 0.000$ & $p = 0.008$ ** \\
+\quad 1/3 & $0.188 \pm 0.000$ & $0.554 \pm 0.005$ & $0.267 \pm 0.001$ & $0.256 \pm 0.000$ & $p = 0.008$ ** \\
+\midrule
+\multicolumn{6}{l}{\textit{Observed time points (all 3 repressors)}} \\
+\quad 100 (baseline) & $0.188 \pm 0.000$ & $0.303 \pm 0.127$ & $0.264 \pm 0.001$ & $0.256 \pm 0.001$ & $p = 0.690$ \\
+\quad 50 & $0.188 \pm 0.000$ & $0.268 \pm 0.109$ & $0.264 \pm 0.001$ & $0.256 \pm 0.001$ & $p = 0.690$ \\
+\quad 25 & $0.188 \pm 0.000$ & $0.318 \pm 0.117$ & $0.264 \pm 0.001$ & $0.256 \pm 0.000$ & $p = 0.151$ \\
+\quad 10 & $0.188 \pm 0.000$ & $0.534 \pm 0.202$ & $0.267 \pm 0.001$ & $0.256 \pm 0.001$ & $p = 0.151$ \\
+\bottomrule
+\end{tabular}
+\end{table}

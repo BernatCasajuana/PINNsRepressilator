@@ -10,10 +10,10 @@ It overrides a small subset of experiment globals at runtime:
   - figure_path    → figures/pilot_<exp_name>.png
 
 Usage:
-  python run_pilot.py                          # all experiments, 100 iters, full seed set
-  python run_pilot.py --train-iterations 500   # slightly more converged check
-  python run_pilot.py --seeds 1                # 1 seed per experiment
-  python run_pilot.py --only exp1_noise_sweep exp4_initial_guess
+  python scripts/experiments/run_pilot.py                          # all experiments, 100 iters, full seed set
+  python scripts/experiments/run_pilot.py --train-iterations 500   # slightly more converged check
+  python scripts/experiments/run_pilot.py --seeds 1                # 1 seed per experiment
+  python scripts/experiments/run_pilot.py --only exp1_noise_sweep exp4_initial_guess
 """
 
 from __future__ import annotations
@@ -26,7 +26,8 @@ from dataclasses import dataclass
 from typing import Any, Dict
 
 
-ROOT = os.path.dirname(os.path.abspath(__file__))
+# Project root, i.e. two levels above this file (scripts/experiments/run_pilot.py)
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 

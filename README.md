@@ -39,28 +39,26 @@ pinns-repressilator/
 │   │   ├── validate_ode.py # Sanity-check ODE formulation against scipy
 │   │   ├── batch_forward.py
 │   │   └── batch_inverse.py
-│   ├── experiments/        # Experiment drivers (one file per experiment)
-│   │   ├── experiment_utils.py         # Shared: seeding, noise model, statistics, plotting
-│   │   ├── exp1_noise_sweep.py         # Noise sensitivity (σ sweep) + PINN vs classical baseline
-│   │   ├── exp2_partial_observation.py # Partial observation (1/2/3 repressors) → table
-│   │   ├── exp3_sampling_density.py    # Sampling density (10–100 points) → table + observability.tex
-│   │   ├── exp4_initial_guess.py       # Initial guess sensitivity (7×7 grid)
-│   │   ├── exp5_regime_comparison.py   # Stable vs oscillatory regime → table
-│   │   ├── exp6_loss_weights.py        # Physics loss weight λ_f sensitivity → table
-│   │   ├── exp7_convergence.py         # Convergence curves (β̂, n̂, losses)
-│   │   └── all_experiments.py          # Run all seven sequentially
-│   └── plots/              # Standalone visualisation scripts
-│       └── plot_limit_cycle_3d.py  # 3D phase-space limit cycle
+│   └── experiments/        # Experiment drivers (one file per experiment)
+│       ├── experiment_utils.py         # Shared: seeding, noise model, statistics, plotting
+│       ├── exp1_noise_sweep.py         # Noise sensitivity (σ sweep) + PINN vs classical baseline
+│       ├── exp2_partial_observation.py # Partial observation (1/2/3 repressors) → table
+│       ├── exp3_sampling_density.py    # Sampling density (10–100 points) → table + observability.tex
+│       ├── exp4_initial_guess.py       # Initial guess sensitivity (7×7 grid)
+│       ├── exp5_regime_comparison.py   # Stable vs oscillatory regime → table
+│       ├── exp6_loss_weights.py        # Physics loss weight λ_f sensitivity → table
+│       ├── exp7_convergence.py         # Convergence curves (β̂, n̂, losses)
+│       ├── all_experiments.py          # Run all seven sequentially
+│       └── run_pilot.py                # Quick preview run with reduced iterations
 ├── results/                # Output CSVs and per-run metrics (generated at runtime)
 ├── figures/                # Summary figures (generated at runtime)
 ├── tables/                 # LaTeX tables (generated at runtime)
-├── jobs/                   # SLURM scripts for cluster execution
-│   ├── experiments_job.sh  # Full suite job
-│   ├── forward_job.sh      # Single forward PINN job
-│   ├── inverse_job.sh      # Single inverse PINN job
-│   ├── test_job.sh         # General smoke test
-│   └── test_exp_*.sh       # Per-experiment test jobs (one per experiment)
-└── run_pilot.py            # Quick preview run with reduced iterations
+└── jobs/                   # SLURM scripts for cluster execution
+    ├── experiments_job.sh  # Full suite job
+    ├── forward_job.sh      # Single forward PINN job
+    ├── inverse_job.sh      # Single inverse PINN job
+    ├── test_job.sh         # General smoke test
+    └── test_exp_*.sh       # Per-experiment test jobs (one per experiment)
 ```
 
 ---
@@ -75,14 +73,14 @@ pip install -r requirements.txt
 
 **Run a quick pilot to validate the pipeline (~5 min on CPU):**
 ```bash
-python run_pilot.py
+python scripts/experiments/run_pilot.py
 ```
 
 The pilot script accepts optional arguments to control the preview:
 ```bash
-python run_pilot.py --train-iterations 500         # more converged preview
-python run_pilot.py --seeds 1                      # 1 seed per experiment (fastest check)
-python run_pilot.py --only exp1_noise_sweep exp4_initial_guess  # subset of experiments
+python scripts/experiments/run_pilot.py --train-iterations 500         # more converged preview
+python scripts/experiments/run_pilot.py --seeds 1                      # 1 seed per experiment (fastest check)
+python scripts/experiments/run_pilot.py --only exp1_noise_sweep exp4_initial_guess  # subset of experiments
 ```
 
 **Run one full experiment:**
@@ -93,11 +91,6 @@ python scripts/experiments/exp1_noise_sweep.py
 **Run all seven experiments (full budget, ~30–60 h on CPU):**
 ```bash
 python scripts/experiments/all_experiments.py
-```
-
-**Standalone plot (no training needed):**
-```bash
-python scripts/plots/plot_limit_cycle_3d.py   # 3D limit cycle, β=8, n=3
 ```
 
 ---
@@ -276,4 +269,4 @@ Full list: `requirements.txt`. For cluster use: `requirements_cluster.txt`.
 
 ## Reproducibility
 
-All random seeds are fixed per run; results are deterministic given the same hardware and library versions. The pilot script (`run_pilot.py`) is intended for pipeline validation and figure layout checks only — it uses a reduced iteration budget and results should not be interpreted as final. The full-budget configuration defined in each experiment driver is required to reproduce the paper figures and tables.
+All random seeds are fixed per run; results are deterministic given the same hardware and library versions. The pilot script (`scripts/experiments/run_pilot.py`) is intended for pipeline validation and figure layout checks only — it uses a reduced iteration budget and results should not be interpreted as final. The full-budget configuration defined in each experiment driver is required to reproduce the paper figures and tables.

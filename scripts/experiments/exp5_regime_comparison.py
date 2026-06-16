@@ -130,6 +130,7 @@ def _write_latex_table(path, rows_by_case, beta_significance, n_significance):
 
     footer = (
         r"\bottomrule" + "\n"
+        r"\multicolumn{6}{l}{\footnotesize *** $p < 0.001$, ** $p < 0.01$, * $p < 0.05$.} \\" + "\n"
         r"\end{tabular}" + "\n"
         r"\end{table}"
     )

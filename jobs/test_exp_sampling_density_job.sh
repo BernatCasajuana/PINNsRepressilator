@@ -2,9 +2,9 @@
 #SBATCH --job-name=test_exp_sampling          # Nom del job
 #SBATCH --output=/home/10040984@uvic.local/projects/pinns-repressilator/jobs/test_exp_sampling_output.txt # Fitxer de sortida
 #SBATCH --error=/home/10040984@uvic.local/projects/pinns-repressilator/jobs/test_exp_sampling_error.txt # Fitxer d'error
-#SBATCH --time=01:00:00                       # Temps maxim (hh:mm:ss)
-#SBATCH --cpus-per-task=4                     # Nombre de CPUs per tasca
-#SBATCH --mem=8GB                             # Memoria assignada
+#SBATCH --time=02:00:00                       # Temps maxim (hh:mm:ss)
+#SBATCH --cpus-per-task=1                     # Nombre de CPUs per tasca
+#SBATCH --mem=4GB                             # Memoria assignada
 
 # Load conda module and activate environment
 source /opt/software/miniconda3/bin/activate pinns-repressilator-venv
@@ -19,13 +19,14 @@ export PYTHONPATH=/home/10040984@uvic.local/projects/pinns-repressilator:$PYTHON
 python -u <<'PY'
 from scripts.experiments import exp3_sampling_density as exp
 
-exp.train_iterations = 100
+exp.train_iterations = 1000
 
 ROOT = "/home/10040984@uvic.local/projects/pinns-repressilator"
 
 exp.results_dir              = ROOT + "/results/test_exp3_sampling_density"
 exp.table_path               = ROOT + "/tables/test_exp3_sampling_density.tex"
 exp.observability_table_path = ROOT + "/tables/test_observability.tex"
+exp.exp2_results_dir         = ROOT + "/results/test_exp2_partial_observation"
 
 print("=== Running quick test: exp3_sampling_density ===")
 print(f"train_iterations={exp.train_iterations}")

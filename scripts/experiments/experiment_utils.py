@@ -30,6 +30,13 @@ import tensorflow as tf
 
 from data.generate_data import protein_repressilator_rhs # Import the ODE function
 
+# Match the paper's LaTeX typesetting (Computer Modern) without requiring a LaTeX install.
+plt.rcParams.update({
+    "font.family": "serif",
+    "font.serif": ["Computer Modern Roman", "CMU Serif", "DejaVu Serif"],
+    "mathtext.fontset": "cm",
+})
+
 # Default parameters for synthetic dataset generation
 default_x0 = [1.0, 1.0, 1.2]
 default_t_max = 20.0
@@ -224,6 +231,7 @@ def annotate_pairwise_comparisons(
     comparisons,
     significance,
     use_adjusted_p_value=True,
+    only_significant=False,
 ):
     if not comparisons:
         return
@@ -247,6 +255,8 @@ def annotate_pairwise_comparisons(
     stack_step = 0.12 * value_span
     label_offset = 0.02 * value_span
 
+    p_value_key = "adjusted_p_value" if use_adjusted_p_value else "raw_p_value"
+
     valid_comparisons = []
     for group_a, group_b in comparisons:
         if (
@@ -255,6 +265,11 @@ def annotate_pairwise_comparisons(
             and group_a in top_values
             and group_b in top_values
         ):
+            if only_significant:
+                entry = significance.get((group_a, group_b)) or significance.get((group_b, group_a))
+                p_value = float(entry.get(p_value_key, float("nan"))) if entry else float("nan")
+                if not p_value_to_stars(p_value):
+                    continue
             valid_comparisons.append((group_a, group_b))
     if not valid_comparisons:
         return

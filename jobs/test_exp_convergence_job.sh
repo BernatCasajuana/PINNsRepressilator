@@ -2,9 +2,9 @@
 #SBATCH --job-name=test_exp_convergence    # Nom del job
 #SBATCH --output=/home/10040984@uvic.local/projects/pinns-repressilator/jobs/test_exp_convergence_output.txt # Fitxer de sortida
 #SBATCH --error=/home/10040984@uvic.local/projects/pinns-repressilator/jobs/test_exp_convergence_error.txt # Fitxer d'error
-#SBATCH --time=01:00:00                    # Temps maxim (hh:mm:ss)
-#SBATCH --cpus-per-task=4                  # Nombre de CPUs per tasca
-#SBATCH --mem=8GB                          # Memoria assignada
+#SBATCH --time=02:00:00                    # Temps maxim (hh:mm:ss)
+#SBATCH --cpus-per-task=1                  # Nombre de CPUs per tasca
+#SBATCH --mem=4GB                          # Memoria assignada
 
 # Load conda module and activate environment
 source /opt/software/miniconda3/bin/activate pinns-repressilator-venv
@@ -19,7 +19,7 @@ export PYTHONPATH=/home/10040984@uvic.local/projects/pinns-repressilator:$PYTHON
 python -u <<'PY'
 from scripts.experiments import exp7_convergence as exp
 
-exp.train_iterations = 100
+exp.train_iterations = 2000
 
 ROOT = "/home/10040984@uvic.local/projects/pinns-repressilator"
 

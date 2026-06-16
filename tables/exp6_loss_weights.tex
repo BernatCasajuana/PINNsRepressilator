@@ -1,6 +1,6 @@
 \begin{table}[htbp]
 \centering
-\caption{Physics loss weight sensitivity. Parameter error and state RMSE (mean $\pm$ SD, $n = 5$ seeds) for PINN across five values of the physics loss weight $\lambda_f$ ($\lambda_0 = \lambda_y = 1$ fixed). $p$-values (two-sided Mann--Whitney U) compare each $\lambda_f$ to the baseline $\lambda_f = 1$.}
+\caption{Physics loss weight sensitivity. $\beta$ error, $n$ error, and state RMSE (mean $\pm$ SD, $n = 5$ seeds) for PINN across five values of the physics loss weight $\lambda_f$ ($\lambda_0 = \lambda_y = 1$ fixed). $p$-values (two-sided Mann--Whitney U) compare each $\lambda_f$ to the baseline $\lambda_f = 1$.}
 \label{tab:exp6_loss_weights}
 \begin{tabular}{lccccc}
 \toprule
@@ -12,5 +12,6 @@ $1.0$ (baseline) & $0.201 \pm 0.000$ & $0.176 \pm 0.000$ & $0.264 \pm 0.001$ & -
 $10.0$ & $0.202 \pm 0.000$ & $0.174 \pm 0.000$ & $0.270 \pm 0.000$ & $p = 0.008$ ** & $p = 0.008$ ** \\
 $100.0$ & $0.202 \pm 0.000$ & $0.174 \pm 0.000$ & $0.271 \pm 0.000$ & $p = 0.008$ ** & $p = 0.011$ * \\
 \bottomrule
+\multicolumn{6}{l}{\footnotesize *** $p < 0.001$, ** $p < 0.01$, * $p < 0.05$.} \\
 \end{tabular}
 \end{table}

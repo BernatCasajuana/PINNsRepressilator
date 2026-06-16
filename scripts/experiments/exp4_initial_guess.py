@@ -141,7 +141,7 @@ def main():
 
     plt.rcParams['axes.formatter.useoffset'] = False
 
-    fig, ax = plt.subplots(1, 1, figsize=(8, 6))
+    fig, ax = plt.subplots(1, 1, figsize=(5, 4.2))
 
     vmax = float(np.nanmax(combined_heatmap))
 
@@ -152,8 +152,8 @@ def main():
     )
     ax.set_xticks(range(len(beta_guesses)), [str(v) for v in beta_guesses])
     ax.set_yticks(range(len(n_guesses)), [str(v) for v in n_guesses])
-    ax.set_xlabel(r"Initial $\beta_0$")
-    ax.set_ylabel(r"Initial $n_0$")
+    ax.set_xlabel(r"Initial $\beta_0$", fontsize=11)
+    ax.set_ylabel(r"Initial $n_0$", fontsize=11)
     ax.set_title("Sensitivity to Initial Parameter Guess")
 
     if star_bx is not None and star_nx is not None:

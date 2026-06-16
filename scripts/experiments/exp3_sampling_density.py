@@ -86,6 +86,7 @@ results_dir = "results/exp3_sampling_density"
 figure_path = "figures/exp3_sampling_density.png"  # kept for pilot compatibility
 table_path = "tables/exp3_sampling_density.tex"
 observability_table_path = "tables/observability.tex"
+exp2_results_dir = "results/exp2_partial_observation"
 
 _X0 = [1.0, 1.0, 1.2]
 
@@ -194,6 +195,7 @@ def _write_sampling_density_table(path, summary_rows, raw_rows):
 
     footer = (
         r"\bottomrule" + "\n"
+        r"\multicolumn{6}{l}{\footnotesize *** $p < 0.001$, ** $p < 0.01$, * $p < 0.05$.} \\" + "\n"
         r"\end{tabular}" + "\n"
         r"\end{table}"
     )
@@ -207,10 +209,8 @@ def _write_sampling_density_table(path, summary_rows, raw_rows):
     print(f"LaTeX table written to {path}")
 
 
-def _load_exp2_raw(results_base="results"):
-    csv_path = os.path.join(
-        results_base, "exp2_partial_observation", "exp2_partial_observation_raw.csv"
-    )
+def _load_exp2_raw(exp2_results_dir):
+    csv_path = os.path.join(exp2_results_dir, "exp2_partial_observation_raw.csv")
     if not os.path.exists(csv_path):
         return None
     rows = []
@@ -318,6 +318,7 @@ def _write_combined_observability_table(
 
     footer = (
         r"\bottomrule" + "\n"
+        r"\multicolumn{6}{l}{\footnotesize *** $p < 0.001$, ** $p < 0.01$, * $p < 0.05$.} \\" + "\n"
         r"\end{tabular}" + "\n"
         r"\end{table}"
     )
@@ -425,8 +426,7 @@ def main():
 
     _write_sampling_density_table(table_path, summary_rows, raw_rows)
 
-    results_base = os.path.dirname(os.path.abspath(results_dir))
-    partial_obs_raw = _load_exp2_raw(results_base=results_base)
+    partial_obs_raw = _load_exp2_raw(exp2_results_dir)
     if partial_obs_raw is not None:
         _write_combined_observability_table(
             observability_table_path, partial_obs_raw, summary_rows, raw_rows,

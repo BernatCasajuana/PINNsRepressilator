@@ -21,7 +21,13 @@ Figure: 4-panel 2×2 layout (12×9), line plots with mean ± SD
   - Panel D (1,1): state RMSE — PINN vs L-BFGS-B
 
 Significance: two-sided Mann–Whitney U, Holm–Bonferroni corrected, vs σ = 0 baseline.
-Applied to PINN results in panels A and B only.
+Applied to PINN results in panels A and B only; only significant comparisons
+(p < 0.05) are drawn as brackets — non-significant ones are omitted from the
+figure and reported in the text/results instead.
+Panels C and D instead compare PINN vs L-BFGS-B at each noise level (uncorrected
+two-sided Mann–Whitney U, same convention as the PINN-vs-classical comparisons in
+exp2/exp3/exp6); the curves never overlap, so significance is not marked on the
+figure and is reported in the text/results instead.
 
 Key finding expected: parameter recovery is relatively stable across this noise range;
 trajectory RMSE grows faster because the observation loss directly penalises trajectory
@@ -47,7 +53,9 @@ from experiments.experiment_utils import (
     ensure_project_directories,
     finalize_figure,
     make_synthetic_dataset,
+    mann_whitney_p_value,
     metric_values_by_group,
+    p_value_to_stars,
     pairwise_significance,
     write_csv,
     write_run_manifest,
@@ -225,11 +233,58 @@ def main():
     n_vals_by_noise = metric_values_by_group(raw_rows, "noise_level", "n_rel_error")
     parameter_vals_by_noise = metric_values_by_group(raw_rows, "noise_level", "parameter_rel_error")
     state_vals_by_noise = metric_values_by_group(raw_rows, "noise_level", "state_rmse")
+    cls_parameter_vals_by_noise = metric_values_by_group(raw_rows, "noise_level", "classical_parameter_rel_error")
+    cls_state_vals_by_noise = metric_values_by_group(raw_rows, "noise_level", "classical_state_rmse")
 
     beta_significance = pairwise_significance(beta_vals_by_noise, noise_comparisons)
     n_significance = pairwise_significance(n_vals_by_noise, noise_comparisons)
-    parameter_significance = pairwise_significance(parameter_vals_by_noise, noise_comparisons)
-    state_significance = pairwise_significance(state_vals_by_noise, noise_comparisons)
+
+    # PINN vs L-BFGS-B at each noise level (panels C/D), not vs the σ = 0 baseline.
+    parameter_pinn_vs_classical_p = {
+        v: mann_whitney_p_value(parameter_vals_by_noise[v], cls_parameter_vals_by_noise[v])
+        for v in noise_values
+    }
+    state_pinn_vs_classical_p = {
+        v: mann_whitney_p_value(state_vals_by_noise[v], cls_state_vals_by_noise[v])
+        for v in noise_values
+    }
+
+    # Significance is not fully shown on the figure (only-significant brackets in A/B,
+    # no markers at all in C/D) — exact p-values for the results text live here instead.
+    significance_rows = []
+    for v in noise_values:
+        if v == baseline_noise:
+            continue
+        for comparison_name, significance in (("beta_vs_sigma0", beta_significance), ("n_vs_sigma0", n_significance)):
+            entry = significance.get((baseline_noise, v)) or significance.get((v, baseline_noise))
+            significance_rows.append(
+                {
+                    "comparison": comparison_name,
+                    "noise_level": v,
+                    "raw_p_value": entry["raw_p_value"],
+                    "adjusted_p_value": entry["adjusted_p_value"],
+                    "stars": entry["stars"],
+                }
+            )
+    for v in noise_values:
+        for comparison_name, p_value in (
+            ("parameter_pinn_vs_classical", parameter_pinn_vs_classical_p[v]),
+            ("state_pinn_vs_classical", state_pinn_vs_classical_p[v]),
+        ):
+            significance_rows.append(
+                {
+                    "comparison": comparison_name,
+                    "noise_level": v,
+                    "raw_p_value": p_value,
+                    "adjusted_p_value": "",
+                    "stars": p_value_to_stars(p_value),
+                }
+            )
+    write_csv(
+        os.path.join(results_dir, "exp1_noise_sweep_significance.csv"),
+        significance_rows,
+        ["comparison", "noise_level", "raw_p_value", "adjusted_p_value", "stars"],
+    )
 
     plt.rcParams['axes.formatter.useoffset'] = False
 
@@ -258,7 +313,8 @@ def main():
     beta_tops = {v: beta_means[i] + (beta_stds[i] if show_eb else 0.0) for i, v in enumerate(noise_values)}
     annotate_pairwise_comparisons(
         axes[0, 0], x_positions=position_by_noise, top_values=beta_tops,
-        comparisons=noise_comparisons, significance=beta_significance, use_adjusted_p_value=True)
+        comparisons=noise_comparisons, significance=beta_significance, use_adjusted_p_value=True,
+        only_significant=True)
     _xformat(axes[0, 0])
     axes[0, 0].set_ylabel("Relative Error")
     axes[0, 0].set_title(r"$\beta$ Recovery")
@@ -269,7 +325,8 @@ def main():
     n_tops = {v: n_means[i] + (n_stds[i] if show_eb else 0.0) for i, v in enumerate(noise_values)}
     annotate_pairwise_comparisons(
         axes[0, 1], x_positions=position_by_noise, top_values=n_tops,
-        comparisons=noise_comparisons, significance=n_significance, use_adjusted_p_value=True)
+        comparisons=noise_comparisons, significance=n_significance, use_adjusted_p_value=True,
+        only_significant=True)
     _xformat(axes[0, 1])
     axes[0, 1].set_ylabel("Relative Error")
     axes[0, 1].set_title(r"$n$ Recovery")

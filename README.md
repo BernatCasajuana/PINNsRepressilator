@@ -31,14 +31,10 @@ pinns-repressilator/
 ├── datasets/               # 100 pre-generated .npz datasets (β × n × noise grid)
 ├── scripts/
 │   ├── data/               # ODE definition and dataset generation
-│   │   ├── generate_data.py
-│   │   └── generate_all_data.py
-│   ├── pinns/              # PINN training modules (reusable)
+│   │   └── data.py           # ODE, generate_dataset(); run directly to regenerate datasets/
+│   ├── pinns/              # PINN training modules
 │   │   ├── forward.py      # Forward problem: known β, n → predict trajectory
-│   │   ├── inverse.py      # Inverse problem: estimate β, n from observations
-│   │   ├── validate_ode.py # Sanity-check ODE formulation against scipy
-│   │   ├── batch_forward.py
-│   │   └── batch_inverse.py
+│   │   └── inverse.py      # Inverse problem: estimate β, n from observations
 │   └── experiments/        # Experiment drivers (one file per experiment)
 │       ├── experiment_utils.py         # Shared: seeding, noise model, statistics, plotting
 │       ├── exp1_noise_sweep.py         # Noise sensitivity (σ sweep) + PINN vs classical baseline
@@ -48,17 +44,20 @@ pinns-repressilator/
 │       ├── exp5_regime_comparison.py   # Stable vs oscillatory regime → table
 │       ├── exp6_loss_weights.py        # Physics loss weight λ_f sensitivity → table
 │       ├── exp7_convergence.py         # Convergence curves (β̂, n̂, losses)
-│       ├── all_experiments.py          # Run all seven sequentially
-│       └── run_pilot.py                # Quick preview run with reduced iterations
+│       └── run_pilot.py                # Quick preview run with reduced iterations (local use)
 ├── results/                # Output CSVs and per-run metrics (generated at runtime)
 ├── figures/                # Summary figures (generated at runtime)
 ├── tables/                 # LaTeX tables (generated at runtime)
 └── jobs/                   # SLURM scripts for cluster execution
-    ├── experiments_job.sh  # Full suite job
-    ├── forward_job.sh      # Single forward PINN job
-    ├── inverse_job.sh      # Single inverse PINN job
-    ├── test_job.sh         # General smoke test
-    └── test_exp_*.sh       # Per-experiment test jobs (one per experiment)
+    ├── exp1_noise_sweep_job.sh
+    ├── exp2_partial_observation_job.sh
+    ├── exp3_sampling_density_job.sh
+    ├── exp4_initial_guess_job.sh
+    ├── exp5_regime_comparison_job.sh
+    ├── exp6_loss_weights_job.sh
+    ├── exp7_convergence_job.sh
+    ├── pilot_job.sh        # 10-iteration sanity check across all experiments
+    └── test_job.sh         # Cluster environment check (imports, TF, GPU)
 ```
 
 ---
@@ -68,30 +67,27 @@ pinns-repressilator/
 ```bash
 python -m venv venv
 source venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements_mac.txt        # macOS
+# pip install -r requirements_linux.txt  # Linux / cluster
 ```
 
-**Run a quick pilot to validate the pipeline (~5 min on CPU):**
+**Run a quick pilot to validate the pipeline locally (~5 min on CPU):**
 ```bash
 python scripts/experiments/run_pilot.py
 ```
 
-The pilot script accepts optional arguments to control the preview:
+The pilot script accepts optional arguments:
 ```bash
 python scripts/experiments/run_pilot.py --train-iterations 500         # more converged preview
-python scripts/experiments/run_pilot.py --seeds 1                      # 1 seed per experiment (fastest check)
-python scripts/experiments/run_pilot.py --only exp1_noise_sweep exp4_initial_guess  # subset of experiments
+python scripts/experiments/run_pilot.py --seeds 1                      # fastest check (1 seed)
+python scripts/experiments/run_pilot.py --only exp1_noise_sweep exp4_initial_guess
 ```
 
-**Run one full experiment:**
+**Run one full experiment locally:**
 ```bash
 python scripts/experiments/exp1_noise_sweep.py
 ```
 
-**Run all seven experiments (full budget, ~30–60 h on CPU):**
-```bash
-python scripts/experiments/all_experiments.py
-```
 
 ---
 
@@ -254,16 +250,36 @@ All `.tex` table files use the `booktabs` package (`\toprule`, `\midrule`, `\bot
 
 ## Cluster execution
 
-The `jobs/` directory contains SLURM scripts for running the experiments on a computing cluster. `experiments_job.sh` submits the full seven-experiment suite as a single job. `test_job.sh` runs a lightweight general smoke test, and `test_exp_<name>_job.sh` provides a dedicated test job for each individual experiment — useful for debugging or re-running a single experiment independently. `forward_job.sh` and `inverse_job.sh` target the underlying PINN modules directly for isolated testing.
+The `jobs/` directory contains SLURM scripts for the cluster. Each experiment has its own job script (`exp{N}_<name>_job.sh`) configured for 12 h wall time and 8 GB memory. Submit each independently so they run in parallel:
 
-All SLURM scripts set `PYTHONPATH` to the project root and activate the `pinns-repressilator-venv` conda environment.
+```bash
+sbatch jobs/exp1_noise_sweep_job.sh
+sbatch jobs/exp2_partial_observation_job.sh
+# ... etc.
+```
+
+**Before submitting full jobs**, run the pilot to verify the environment end-to-end (10 iterations across all experiments, ~10 min):
+
+```bash
+sbatch jobs/pilot_job.sh
+```
+
+**To check the cluster environment only** (imports, TensorFlow, GPU detection — under 1 min):
+
+```bash
+sbatch jobs/test_job.sh
+```
+
+All job scripts write stdout/stderr to `jobs/exp{N}_<name>_output.txt` / `_error.txt` on the cluster. Figures, tables, and results land in `figures/`, `tables/`, and `results/` under the project root on the cluster; sync them back with `rsync` or `scp`.
+
+All SLURM scripts activate the `pinns-repressilator-venv` conda environment and set `PYTHONPATH` to the project root.
 
 ---
 
 ## Dependencies
 
 Key libraries: `deepxde==1.15.0`, `tensorflow==2.16.2`, `numpy`, `scipy`, `matplotlib`.  
-Full list: `requirements.txt`. For cluster use: `requirements_cluster.txt`.
+Full macOS list: `requirements_mac.txt`. For cluster (Linux): `requirements_linux.txt`.
 
 ---
 

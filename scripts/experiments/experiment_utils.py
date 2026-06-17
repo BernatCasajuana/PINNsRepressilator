@@ -28,7 +28,7 @@ import scipy.integrate
 import scipy.stats
 import tensorflow as tf
 
-from data.generate_data import protein_repressilator_rhs # Import the ODE function
+from data.data import protein_repressilator_rhs
 
 # Match the paper's LaTeX typesetting (Computer Modern) without requiring a LaTeX install.
 plt.rcParams.update({

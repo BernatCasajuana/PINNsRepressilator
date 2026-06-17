@@ -72,7 +72,7 @@ from experiments.experiment_utils import (
     write_csv,
     write_run_manifest,
 )
-from data.generate_data import protein_repressilator_rhs
+from data.data import protein_repressilator_rhs
 from scripts.pinns.inverse import run_inverse
 
 true_beta = 5.0

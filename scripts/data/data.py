@@ -1,10 +1,9 @@
 """
-generate_data.py
+Repressilator ODE definition and dataset generation.
 
-Defines the Repressilator equations and generates datasets with simulated protein concentrations over time.
-Noise can be added to emulate experimental conditions.
-The main function, `generate_dataset`, solves the ODE system and saves the results as a .npz file.
-An example block at the end shows how to manually generate a particulat dataset.
+Defines the three-equation repressilator ODE (`protein_repressilator_rhs`) and
+`generate_dataset`, which solves the system and saves results as a .npz file.
+Run directly to regenerate the full 100-dataset grid (β × n × noise).
 """
 
 # %% Import necessary libraries
@@ -46,7 +45,12 @@ def generate_dataset(beta, n, x0, t_max, n_points, noise_sigma=0.0, outdir="data
 # Path to saved file
     print(f"Saved dataset: {fpath}")
 
-# %% Custom combination, only executed when running this script directly
+# %% Generate all datasets for the full parameter grid when run directly
 if __name__ == "__main__":
-    # Example usage
-    generate_dataset(beta=10, n=3.0, x0=[1, 1, 1.2], t_max=20, n_points=1000, noise_sigma=0.0)
+    betas = [1.0, 5.0, 10.0, 20.0]
+    ns = [1.5, 2.0, 2.5, 3.0, 3.5]
+    noise_levels = [0.0, 0.01, 0.05, 0.1, 0.2]
+    for beta in betas:
+        for n in ns:
+            for noise_sigma in noise_levels:
+                generate_dataset(beta=beta, n=n, x0=[1, 1, 1.2], t_max=20, n_points=1000, noise_sigma=noise_sigma)

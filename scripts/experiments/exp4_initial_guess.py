@@ -54,6 +54,31 @@ figure_path = "figures/exp4_initial_guess.png"
 CONTOUR_THRESHOLD = 0.10  # 10% relative error contour
 
 
+RAW_CSV_FIELDNAMES = ["beta_guess", "n_guess", "seed", "beta_rel_error", "n_rel_error", "parameter_rel_error", "state_rmse", "outdir"]
+
+
+def _load_completed_runs(csv_path):
+    """Return a set of (bg, ng, seed) tuples already present in the raw CSV."""
+    completed = set()
+    if not os.path.exists(csv_path):
+        return completed
+    import csv as _csv
+    with open(csv_path, newline="") as f:
+        for row in _csv.DictReader(f):
+            completed.add((float(row["beta_guess"]), float(row["n_guess"]), int(row["seed"])))
+    return completed
+
+
+def _append_raw_row(csv_path, row):
+    import csv as _csv
+    write_header = not os.path.exists(csv_path)
+    with open(csv_path, "a", newline="") as f:
+        writer = _csv.DictWriter(f, fieldnames=RAW_CSV_FIELDNAMES)
+        if write_header:
+            writer.writeheader()
+        writer.writerow(row)
+
+
 def main():
     ensure_project_directories()
     expected_runs = len(beta_guesses) * len(n_guesses) * len(seeds)
@@ -75,15 +100,37 @@ def main():
             "expected_total_train_iterations": expected_runs * train_iterations,
         },
     )
+
+    raw_csv_path = os.path.join(results_dir, "exp4_initial_guess_raw.csv")
+    completed = _load_completed_runs(raw_csv_path)
     raw_rows = []
+
+    # Reload already-completed rows so the summary/figure is correct on resume
+    if completed:
+        import csv as _csv
+        with open(raw_csv_path, newline="") as f:
+            for row in _csv.DictReader(f):
+                raw_rows.append({
+                    "beta_guess": float(row["beta_guess"]),
+                    "n_guess": float(row["n_guess"]),
+                    "seed": int(row["seed"]),
+                    "beta_rel_error": float(row["beta_rel_error"]),
+                    "n_rel_error": float(row["n_rel_error"]),
+                    "parameter_rel_error": float(row["parameter_rel_error"]),
+                    "state_rmse": float(row["state_rmse"]),
+                    "outdir": row["outdir"],
+                })
 
     for bg in beta_guesses:
         for ng in n_guesses:
             for seed in seeds:
+                if (bg, ng, seed) in completed:
+                    print(f"Skipping already-completed run: bg={bg}, ng={ng}, seed={seed}")
+                    continue
                 dataset = make_synthetic_dataset(true_beta, true_n, noise_level=noise_level, seed=seed)
                 result = run_inverse(
                     dataset_path=dataset,
-                    outdir_base=os.path.join(results_dir, "runs"),
+                    outdir_base=os.path.join(results_dir, "runs", f"bg{bg}_ng{ng}"),
                     beta_guess=bg,
                     n_guess=ng,
                     observation_stride=1,
@@ -92,18 +139,18 @@ def main():
                     random_seed=seed,
                     save_checkpoint=True,
                 )
-                raw_rows.append(
-                    {
-                        "beta_guess": bg,
-                        "n_guess": ng,
-                        "seed": seed,
-                        "beta_rel_error": result["beta_rel_error"],
-                        "n_rel_error": result["n_rel_error"],
-                        "parameter_rel_error": result["parameter_rel_error"],
-                        "state_rmse": result["state_rmse"],
-                        "outdir": result["outdir"],
-                    }
-                )
+                row = {
+                    "beta_guess": bg,
+                    "n_guess": ng,
+                    "seed": seed,
+                    "beta_rel_error": result["beta_rel_error"],
+                    "n_rel_error": result["n_rel_error"],
+                    "parameter_rel_error": result["parameter_rel_error"],
+                    "state_rmse": result["state_rmse"],
+                    "outdir": result["outdir"],
+                }
+                raw_rows.append(row)
+                _append_raw_row(raw_csv_path, row)
 
     summary_rows = aggregate_metrics(
         raw_rows,
@@ -112,11 +159,6 @@ def main():
     )
     summary_rows.sort(key=lambda row: (row["beta_guess"], row["n_guess"]))
 
-    write_csv(
-        os.path.join(results_dir, "exp4_initial_guess_raw.csv"),
-        raw_rows,
-        ["beta_guess", "n_guess", "seed", "beta_rel_error", "n_rel_error", "parameter_rel_error", "state_rmse", "outdir"],
-    )
     write_csv(
         os.path.join(results_dir, "exp4_initial_guess_summary.csv"),
         summary_rows,

@@ -133,7 +133,7 @@ def main():
     for bg in beta_guess_range:
         res = run_inverse(
             dataset_path=fixed_dataset,
-            outdir_base=os.path.join(results_dir, "runs_guess_beta"),
+            outdir_base=os.path.join(results_dir, "runs_guess_beta", f"bg{bg}"),
             beta_guess=bg,
             n_guess=2.5,
             observation_stride=1,
@@ -148,7 +148,7 @@ def main():
     for ng in n_guess_range:
         res = run_inverse(
             dataset_path=fixed_dataset,
-            outdir_base=os.path.join(results_dir, "runs_guess_n"),
+            outdir_base=os.path.join(results_dir, "runs_guess_n", f"ng{ng}"),
             beta_guess=4.0,
             n_guess=ng,
             observation_stride=1,

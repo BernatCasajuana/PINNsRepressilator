@@ -142,6 +142,30 @@ def _write_latex_table(path, summary_rows, raw_rows):
     print(f"LaTeX table written to {path}")
 
 
+RAW_CSV_FIELDNAMES = ["lambda_f", "seed", "beta_rel_error", "n_rel_error", "parameter_rel_error", "state_rmse", "outdir"]
+
+
+def _load_completed_runs(csv_path):
+    completed = set()
+    if not os.path.exists(csv_path):
+        return completed
+    import csv as _csv
+    with open(csv_path, newline="") as f:
+        for row in _csv.DictReader(f):
+            completed.add((float(row["lambda_f"]), int(row["seed"])))
+    return completed
+
+
+def _append_raw_row(csv_path, row):
+    import csv as _csv
+    write_header = not os.path.exists(csv_path)
+    with open(csv_path, "a", newline="") as f:
+        writer = _csv.DictWriter(f, fieldnames=RAW_CSV_FIELDNAMES)
+        if write_header:
+            writer.writeheader()
+        writer.writerow(row)
+
+
 def main():
     ensure_project_directories()
     os.makedirs("tables", exist_ok=True)
@@ -165,15 +189,35 @@ def main():
             "expected_total_train_iterations": expected_runs * train_iterations,
         },
     )
+
+    raw_csv_path = os.path.join(results_dir, "exp6_loss_weights_raw.csv")
+    completed = _load_completed_runs(raw_csv_path)
     raw_rows = []
+
+    if completed:
+        import csv as _csv
+        with open(raw_csv_path, newline="") as f:
+            for r in _csv.DictReader(f):
+                raw_rows.append({
+                    "lambda_f": float(r["lambda_f"]),
+                    "seed": int(r["seed"]),
+                    "beta_rel_error": float(r["beta_rel_error"]),
+                    "n_rel_error": float(r["n_rel_error"]),
+                    "parameter_rel_error": float(r["parameter_rel_error"]),
+                    "state_rmse": float(r["state_rmse"]),
+                    "outdir": r["outdir"],
+                })
 
     for lf in lambda_f_values:
         loss_weights = _build_loss_weights(lf)
         for seed in seeds:
+            if (lf, seed) in completed:
+                print(f"Skipping already-completed run: lf={lf}, seed={seed}")
+                continue
             dataset = make_synthetic_dataset(true_beta, true_n, noise_level=noise_level, seed=seed)
             result = run_inverse(
                 dataset_path=dataset,
-                outdir_base=os.path.join(results_dir, "runs"),
+                outdir_base=os.path.join(results_dir, "runs", f"lf{lf}"),
                 beta_guess=4.0,
                 n_guess=2.5,
                 observation_stride=1,
@@ -183,17 +227,17 @@ def main():
                 random_seed=seed,
                 save_checkpoint=False,
             )
-            raw_rows.append(
-                {
-                    "lambda_f": lf,
-                    "seed": seed,
-                    "beta_rel_error": result["beta_rel_error"],
-                    "n_rel_error": result["n_rel_error"],
-                    "parameter_rel_error": result["parameter_rel_error"],
-                    "state_rmse": result["state_rmse"],
-                    "outdir": result["outdir"],
-                }
-            )
+            row = {
+                "lambda_f": lf,
+                "seed": seed,
+                "beta_rel_error": result["beta_rel_error"],
+                "n_rel_error": result["n_rel_error"],
+                "parameter_rel_error": result["parameter_rel_error"],
+                "state_rmse": result["state_rmse"],
+                "outdir": result["outdir"],
+            }
+            raw_rows.append(row)
+            _append_raw_row(raw_csv_path, row)
 
     summary_rows = aggregate_metrics(
         raw_rows,
@@ -202,11 +246,6 @@ def main():
     )
     summary_rows.sort(key=lambda row: row["lambda_f"])
 
-    write_csv(
-        os.path.join(results_dir, "exp6_loss_weights_raw.csv"),
-        raw_rows,
-        ["lambda_f", "seed", "beta_rel_error", "n_rel_error", "parameter_rel_error", "state_rmse", "outdir"],
-    )
     write_csv(
         os.path.join(results_dir, "exp6_loss_weights_summary.csv"),
         summary_rows,

@@ -5,6 +5,7 @@ results/
 # figures/
 logs/
 outputs/
+tests/
 
 # *.png
 *.jpg

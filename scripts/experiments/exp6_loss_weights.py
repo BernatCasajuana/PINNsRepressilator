@@ -94,10 +94,11 @@ def _write_latex_table(path, summary_rows, raw_rows):
         r"$p$-values (two-sided Mann--Whitney U) compare each $\lambda_f$ to the "
         r"baseline $\lambda_f = 1$.}" + "\n"
         r"\label{tab:exp6_loss_weights}" + "\n"
-        r"\begin{tabular}{lccccc}" + "\n"
+        r"\small" + "\n"
+        r"\begin{tabular}{lcccccc}" + "\n"
         r"\toprule" + "\n"
         r"$\lambda_f$ & $\beta$ error & $n$ error & State RMSE"
-        r" & $p$ ($\beta$ vs $\lambda_f = 1$) & $p$ ($n$ vs $\lambda_f = 1$) \\" + "\n"
+        r" & $p$ ($\beta$ vs $\lambda_f = 1$) & $p$ ($n$ vs $\lambda_f = 1$) & $p$ (RMSE vs $\lambda_f = 1$) \\" + "\n"
         r"\midrule"
     )
 
@@ -110,25 +111,28 @@ def _write_latex_table(path, summary_rows, raw_rows):
         n_str    = _fmt(row["n_rel_error_mean"],    row["n_rel_error_std"])
         rmse_str = _fmt(row["state_rmse_mean"],     row["state_rmse_std"])
         if lf == baseline_lf:
-            p_beta_str = p_n_str = "--"
+            p_beta_str = p_n_str = p_rmse_str = "--"
         else:
             beta_lf   = [r["beta_rel_error"] for r in raw_rows if r["lambda_f"] == lf]
             beta_base = [r["beta_rel_error"] for r in raw_rows if r["lambda_f"] == baseline_lf]
             n_lf      = [r["n_rel_error"]    for r in raw_rows if r["lambda_f"] == lf]
             n_base    = [r["n_rel_error"]    for r in raw_rows if r["lambda_f"] == baseline_lf]
-            p_beta = None
-            p_n    = None
+            rmse_lf   = [r["state_rmse"]     for r in raw_rows if r["lambda_f"] == lf]
+            rmse_base = [r["state_rmse"]     for r in raw_rows if r["lambda_f"] == baseline_lf]
+            p_beta = p_n = p_rmse = None
             if len(beta_lf) >= 2:
-                _, p_beta = mannwhitneyu(beta_lf, beta_base, alternative="two-sided")
-                _, p_n    = mannwhitneyu(n_lf,    n_base,    alternative="two-sided")
+                _, p_beta = mannwhitneyu(beta_lf,  beta_base,  alternative="two-sided")
+                _, p_n    = mannwhitneyu(n_lf,     n_base,     alternative="two-sided")
+                _, p_rmse = mannwhitneyu(rmse_lf,  rmse_base,  alternative="two-sided")
             p_beta_str = _fmt_p(p_beta)
             p_n_str    = _fmt_p(p_n)
+            p_rmse_str = _fmt_p(p_rmse)
         label = r"$1.0$ (baseline)" if lf == baseline_lf else f"${lf}$"
-        body_lines.append(f"{label} & {beta_str} & {n_str} & {rmse_str} & {p_beta_str} & {p_n_str} \\\\")
+        body_lines.append(f"{label} & {beta_str} & {n_str} & {rmse_str} & {p_beta_str} & {p_n_str} & {p_rmse_str} \\\\")
 
     footer = (
         r"\bottomrule" + "\n"
-        r"\multicolumn{6}{l}{\footnotesize *** $p < 0.001$, ** $p < 0.01$, * $p < 0.05$.} \\" + "\n"
+        r"\multicolumn{7}{l}{\footnotesize *** $p < 0.001$, ** $p < 0.01$, * $p < 0.05$.} \\" + "\n"
         r"\end{tabular}" + "\n"
         r"\end{table}"
     )

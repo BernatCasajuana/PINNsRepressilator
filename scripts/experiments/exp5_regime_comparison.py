@@ -73,7 +73,7 @@ def _fmt_p(sig_entry):
     return f"{label} {stars}".strip()
 
 
-def _write_latex_table(path, rows_by_case, beta_significance, n_significance):
+def _write_latex_table(path, rows_by_case, beta_significance, n_significance, rmse_significance):
     os.makedirs(os.path.dirname(path), exist_ok=True)
 
     # Table order: β=5 stable, β=5 oscillatory, β=8 stable, β=8 oscillatory
@@ -97,10 +97,11 @@ def _write_latex_table(path, rows_by_case, beta_significance, n_significance):
         r"$n_{\text{osc}}=3.0$). $p$-values (Holm--Bonferroni-adjusted Mann--Whitney U) "
         r"compare stable vs.\ oscillatory at the same $\beta$.}" + "\n"
         r"\label{tab:exp5_regime_comparison}" + "\n"
-        r"\begin{tabular}{lccccc}" + "\n"
+        r"\small" + "\n"
+        r"\begin{tabular}{lcccccc}" + "\n"
         r"\toprule" + "\n"
         r"Condition & $\beta$ error & $n$ error & State RMSE"
-        r" & $p$ ($\beta$) & $p$ ($n$) \\" + "\n"
+        r" & $p$ ($\beta$) & $p$ ($n$) & $p$ (RMSE) \\" + "\n"
         r"\midrule"
     )
 
@@ -116,13 +117,15 @@ def _write_latex_table(path, rows_by_case, beta_significance, n_significance):
             comp = comparisons_map[case_name]
             p_beta = _fmt_p(beta_significance.get(comp) or beta_significance.get(comp[::-1]))
             p_n    = _fmt_p(n_significance.get(comp)    or n_significance.get(comp[::-1]))
+            p_rmse = _fmt_p(rmse_significance.get(comp) or rmse_significance.get(comp[::-1]))
         else:
             p_beta = "--"
             p_n    = "--"
+            p_rmse = "--"
         condition = f"{regime_label} ($\\beta={beta_val:.0f}$)"
         body_lines.append(
             f"{condition} & {beta_cell} & {n_cell} & {rmse_cell}"
-            f" & {p_beta} & {p_n} \\\\"
+            f" & {p_beta} & {p_n} & {p_rmse} \\\\"
         )
         # Add a thin separator between the β=5 and β=8 groups
         if case_name == "oscillatory_beta5":
@@ -130,7 +133,7 @@ def _write_latex_table(path, rows_by_case, beta_significance, n_significance):
 
     footer = (
         r"\bottomrule" + "\n"
-        r"\multicolumn{6}{l}{\footnotesize *** $p < 0.001$, ** $p < 0.01$, * $p < 0.05$.} \\" + "\n"
+        r"\multicolumn{7}{l}{\footnotesize *** $p < 0.001$, ** $p < 0.01$, * $p < 0.05$.} \\" + "\n"
         r"\end{tabular}" + "\n"
         r"\end{table}"
     )
@@ -231,10 +234,12 @@ def main():
     ]
     beta_vals_by_case = metric_values_by_group(raw_rows, "case", "beta_rel_error")
     n_vals_by_case    = metric_values_by_group(raw_rows, "case", "n_rel_error")
+    rmse_vals_by_case = metric_values_by_group(raw_rows, "case", "state_rmse")
     beta_significance = pairwise_significance(beta_vals_by_case, regime_comparisons)
     n_significance    = pairwise_significance(n_vals_by_case,    regime_comparisons)
+    rmse_significance = pairwise_significance(rmse_vals_by_case, regime_comparisons)
 
-    _write_latex_table(table_path, rows_by_case, beta_significance, n_significance)
+    _write_latex_table(table_path, rows_by_case, beta_significance, n_significance, rmse_significance)
 
 
 if __name__ == "__main__":

@@ -150,11 +150,11 @@ How gracefully does the inverse PINN degrade as measurement noise increases, and
 
 ### Experiment 2 — Partial observation
 
-In many real experiments only a subset of molecular species can be measured. This experiment tests three designs: all three repressors (3/3), two repressors (2/3 — x₃ unobserved), and one repressor (1/3 — x₂ and x₃ unobserved). For each (design, seed), both the PINN and an L-BFGS-B baseline are run on the same data. Both methods use the full three-equation ODE: L-BFGS-B integrates it exactly (so unobserved species are always implicitly constrained through the ODE coupling given β and n), while the PINN enforces it approximately via a residual penalty. The key question is therefore not whether the PINN "knows" more physics about unobserved species, but whether the neural-network parameterisation offers a smoother optimisation landscape than direct parameter search. Physics regularisation pays off precisely when data is incomplete — but if L-BFGS-B matches PINN in the 1/3 setting, exact ODE integration is sufficient. Results are a **LaTeX table** (`tables/exp2_partial_observation.tex`) showing PINN and L-BFGS-B side by side with: (i) Mann–Whitney p-values comparing the two methods at each design, and (ii) Holm–Bonferroni-adjusted within-PINN p-values comparing the 3/3 baseline against 2/3 and 1/3.
+In many real experiments only a subset of molecular species can be measured. This experiment tests three designs: all three repressors (3/3), two repressors (2/3 — x₃ unobserved), and one repressor (1/3 — x₂ and x₃ unobserved). For each (design, seed), both the PINN and an L-BFGS-B baseline are run on the same data. Both methods use the full three-equation ODE: L-BFGS-B integrates it exactly (so unobserved species are always implicitly constrained through the ODE coupling given β and n), while the PINN enforces it approximately via a residual penalty. The key question is therefore not whether the PINN "knows" more physics about unobserved species, but whether the neural-network parameterisation offers a smoother optimisation landscape than direct parameter search. Physics regularisation pays off precisely when data is incomplete — but if L-BFGS-B matches PINN in the 1/3 setting, exact ODE integration is sufficient. Results are a **LaTeX table** (`tables/exp2_partial_observation.tex`) showing PINN and L-BFGS-B side by side with Mann–Whitney p-values comparing the two methods at each design. A Jonckheere–Terpstra trend test (3/3 → 1/3) is reported in the table caption.
 
 ### Experiment 3 — Sampling density
 
-How sparse can the time-series be before parameter recovery degrades, and does the PINN's physics-guided interpolation provide an advantage over classical fitting? Observation counts of 10, 25, 50, and 100 points (1%–10% of the 1000-point grid, evenly spaced) are tested with all three repressors observed and 5% noise. For each (count, seed), both the PINN and an L-BFGS-B baseline are run on identical data. L-BFGS-B integrates the full ODE trajectory but computes MSE only at the sparse observed time points; the PINN enforces the ODE residual at dense collocation points across the full domain regardless of observation density. Physics regularisation pays off precisely when data is incomplete — and unlike the partial-observation case, this is a genuine structural asymmetry: L-BFGS-B receives gradient signal only at observed times, while the PINN's collocation residual fills in physics everywhere between observations. If L-BFGS-B matches PINN, exact integration over the sparse subset is sufficient. Results are a **LaTeX table** (`tables/exp3_sampling_density.tex`) with: (i) Mann–Whitney p-values comparing PINN vs L-BFGS-B at each count, and (ii) Holm–Bonferroni-adjusted within-PINN p-values comparing the 100-point baseline against 50, 25, and 10 points. Running experiments 2 and 3 in sequence also produces a **combined observability table** (`tables/observability.tex`) covering both measurement design dimensions side by side.
+How sparse can the time-series be before parameter recovery degrades, and does the PINN's physics-guided interpolation provide an advantage over classical fitting? Observation counts of 10, 25, 50, and 100 points (1%–10% of the 1000-point grid, evenly spaced) are tested with all three repressors observed and 5% noise. For each (count, seed), both the PINN and an L-BFGS-B baseline are run on identical data. L-BFGS-B integrates the full ODE trajectory but computes MSE only at the sparse observed time points; the PINN enforces the ODE residual at dense collocation points across the full domain regardless of observation density. Physics regularisation pays off precisely when data is incomplete — and unlike the partial-observation case, this is a genuine structural asymmetry: L-BFGS-B receives gradient signal only at observed times, while the PINN's collocation residual fills in physics everywhere between observations. If L-BFGS-B matches PINN, exact integration over the sparse subset is sufficient. Results are a **LaTeX table** (`tables/exp3_sampling_density.tex`) with Mann–Whitney p-values comparing PINN vs L-BFGS-B at each count. A Jonckheere–Terpstra trend test (100 → 10 points) is reported in the table caption. Running experiments 2 and 3 in sequence also produces a **combined observability table** (`tables/observability.tex`) covering both measurement design dimensions side by side.
 
 ### Experiment 4 — Initial guess sensitivity
 
@@ -162,7 +162,7 @@ Because the joint loss landscape over (β, n, network weights) is non-convex, th
 
 ### Experiment 5 — Dynamical regime comparison
 
-The Hill coefficient n controls whether the repressilator settles to a steady state (n ≈ 1.5) or sustains oscillations (n ≈ 3.0). These two regimes produce qualitatively different trajectory shapes, and it is not obvious a priori which is easier to identify from inverse PINN training. This experiment runs four cases — β ∈ {5.0, 8.0} crossed with regime ∈ {stable, oscillatory} — and reports β error, n error, and state RMSE separately. Results are presented as a **LaTeX table** (`tables/exp5_regime_comparison.tex`) with β embedded in the condition label (e.g. "Stable (β=5)") and Holm–Bonferroni-adjusted p-values for β error, n error, and state RMSE separately, comparing stable vs oscillatory at each β value.
+The Hill coefficient n controls whether the repressilator settles to a steady state (n ≈ 1.5) or sustains oscillations (n ≈ 3.0). These two regimes produce qualitatively different trajectory shapes, and it is not obvious a priori which is easier to identify from inverse PINN training. This experiment runs four cases — β ∈ {5.0, 8.0} crossed with regime ∈ {stable, oscillatory} — and reports β error, n error, and state RMSE separately. Results are presented as a **LaTeX table** (`tables/exp5_regime_comparison.tex`) with both β and n embedded in the condition label (e.g. "Stable (β=5, n=1.5)") and Holm–Bonferroni-adjusted p-values for β error, n error, and state RMSE separately, comparing stable vs oscillatory at each β value.
 
 ### Experiment 6 — Physics loss weight sensitivity
 
@@ -205,13 +205,19 @@ Each driver in `scripts/experiments/` follows the same pattern:
 
 ### Statistical testing
 
-Pairwise comparisons use the two-sided Mann–Whitney U test (non-parametric, appropriate for small n = 5 seeds). Multiple testing is corrected with Holm–Bonferroni within each panel. Brackets/table cells show adjusted p-values; stars indicate `*` p < 0.05, `**` p < 0.01, `***` p < 0.001. Baseline comparisons:
+Two test families are used depending on whether conditions are ordered:
 
-- Noise sweep (exp 1): each noise level vs σ = 0 (PINN panels A/B); PINN vs L-BFGS-B visually in panels C/D
-- Partial observation (exp 2): PINN vs L-BFGS-B at each design (Mann–Whitney U); within-PINN: 2/3 and 1/3 vs 3/3 baseline (Holm–Bonferroni)
-- Sampling density (exp 3): PINN vs L-BFGS-B at each count (Mann–Whitney U); within-PINN: 50, 25, 10 pts vs 100-pt baseline (Holm–Bonferroni)
-- Regime comparison (exp 5): oscillatory vs stable at matching β, for β error, n error, and state RMSE (Holm–Bonferroni)
-- Loss weight (exp 6): each λ_f vs λ_f = 1 baseline, for β error, n error, and state RMSE (Mann–Whitney U)
+**Jonckheere–Terpstra (JT) — ordered conditions.** Tests for a monotonic trend across ordered groups (one p-value per metric). Used where the question is "does performance degrade as condition X increases?":
+- Noise sweep (exp 1): does PINN β/n error increase monotonically with noise? Single JT p shown as a text annotation in panels A/B.
+- Partial observation (exp 2): does PINN error increase monotonically as fewer repressors are observed (3/3 → 1/3)? JT p in table caption.
+- Sampling density (exp 3): does PINN error increase monotonically as fewer time points are used (100 → 10)? JT p in table caption.
+
+**Mann–Whitney U (two-sided) — two-group comparisons.** Used for unordered pairwise tests:
+- PINN vs L-BFGS-B at each condition in exp 1 (panels C/D, results text), exp 2, exp 3.
+- Regime comparison (exp 5): oscillatory vs stable at matching β; Holm–Bonferroni adjusted across three metrics.
+- Loss weight (exp 6): each λ_f vs λ_f = 1 baseline; Holm–Bonferroni adjusted. (λ_f effect is U-shaped, not monotonic — JT not applicable.)
+
+Stars: `*` p < 0.05, `**` p < 0.01, `***` p < 0.001.
 
 ---
 

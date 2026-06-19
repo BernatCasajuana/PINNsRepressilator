@@ -67,9 +67,9 @@ if scripts_dir not in sys.path:
 from experiments.experiment_utils import (
     aggregate_metrics,
     ensure_project_directories,
+    jonckheere_terpstra_p_value,
     make_synthetic_dataset,
     metric_values_by_group,
-    pairwise_significance,
     write_csv,
     write_run_manifest,
 )
@@ -146,10 +146,12 @@ def _fmt_p(p):
     return f"$p = {p:.3f}$ {stars}".strip()
 
 
-def _write_latex_table(path, summary_rows, raw_rows, pinn_condition_significance):
+def _write_latex_table(path, summary_rows, raw_rows, jt_p_pinn):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     table_order = ["3/3", "2/3", "1/3"]
     rows_by_design = {r["design"]: r for r in summary_rows}
+
+    jt_label = _fmt_p(jt_p_pinn) if jt_p_pinn is not None else "--"
 
     header = (
         r"\begin{table}[htbp]" + "\n"
@@ -159,15 +161,17 @@ def _write_latex_table(path, summary_rows, raw_rows, pinn_condition_significance
         r"observation designs. Both methods use the full three-equation ODE; "
         r"L-BFGS-B minimises MSE only on the observed species while the PINN "
         r"additionally enforces the ODE residual on all species at collocation points. "
-        r"$p$-values: PINN vs L-BFGS-B (two-sided Mann--Whitney U); "
-        r"PINN within-condition vs 3/3 baseline (Holm--Bonferroni-adjusted Mann--Whitney U).}" + "\n"
+        r"$p$ (PINN vs L-BFGS-B): two-sided Mann--Whitney U at each design. "
+        r"JT (PINN trend 3/3$\to$1/3): Jonckheere--Terpstra test for monotonic "
+        r"degradation as fewer repressors are observed; "
+        r"$p = " + jt_label.replace("$", "") + r"$.}" + "\n"
         r"\label{tab:exp2_partial_observation}" + "\n"
         r"\small" + "\n"
-        r"\begin{tabular}{lccccccc}" + "\n"
+        r"\begin{tabular}{lccccc}" + "\n"
         r"\toprule" + "\n"
-        r" & \multicolumn{2}{c}{Parameter error} & \multicolumn{2}{c}{State RMSE} & & \\" + "\n"
+        r" & \multicolumn{2}{c}{Parameter error} & \multicolumn{2}{c}{State RMSE} & \\" + "\n"
         r"\cmidrule(lr){2-3}\cmidrule(lr){4-5}" + "\n"
-        r"Repressors & PINN & L-BFGS-B & PINN & L-BFGS-B & $p$ (PINN vs L-BFGS-B) & $p$ (PINN: vs 3/3) \\" + "\n"
+        r"Repressors & PINN & L-BFGS-B & PINN & L-BFGS-B & $p$ (PINN vs L-BFGS-B) \\" + "\n"
         r"\midrule"
     )
 
@@ -185,19 +189,14 @@ def _write_latex_table(path, summary_rows, raw_rows, pinn_condition_significance
         p = None
         if len(pinn_vals) >= 2 and len(cls_vals) >= 2:
             _, p = mannwhitneyu(pinn_vals, cls_vals, alternative="two-sided")
-        if design == "3/3":
-            p_within = "--"
-        else:
-            sig = pinn_condition_significance.get(("3/3", design))
-            p_within = _fmt_p(sig["adjusted_p_value"]) if sig is not None else "--"
         label = f"{design} (baseline)" if design == "3/3" else design
         body_lines.append(
-            f"{label} & {pinn_param} & {cls_param} & {pinn_rmse} & {cls_rmse} & {_fmt_p(p)} & {p_within} \\\\"
+            f"{label} & {pinn_param} & {cls_param} & {pinn_rmse} & {cls_rmse} & {_fmt_p(p)} \\\\"
         )
 
     footer = (
         r"\bottomrule" + "\n"
-        r"\multicolumn{7}{l}{\footnotesize *** $p < 0.001$, ** $p < 0.01$, * $p < 0.05$.} \\" + "\n"
+        r"\multicolumn{6}{l}{\footnotesize *** $p < 0.001$, ** $p < 0.01$, * $p < 0.05$.} \\" + "\n"
         r"\end{tabular}" + "\n"
         r"\end{table}"
     )
@@ -243,7 +242,7 @@ def main():
             dataset = make_synthetic_dataset(true_beta, true_n, noise_level=noise_level, seed=seed)
             result = run_inverse(
                 dataset_path=dataset,
-                outdir_base=os.path.join(results_dir, "runs"),
+                outdir_base=os.path.join(results_dir, "runs", design_label.replace("/", "-")),
                 beta_guess=4.0,
                 n_guess=2.5,
                 observation_stride=1,
@@ -303,10 +302,12 @@ def main():
     )
 
     pinn_vals_by_design = metric_values_by_group(raw_rows, "design", "parameter_rel_error")
-    pinn_comparisons = [("3/3", "2/3"), ("3/3", "1/3")]
-    pinn_condition_significance = pairwise_significance(pinn_vals_by_design, pinn_comparisons)
+    design_order = ["3/3", "2/3", "1/3"]
+    jt_p_pinn = jonckheere_terpstra_p_value(
+        [pinn_vals_by_design.get(d, []) for d in design_order]
+    )
 
-    _write_latex_table(table_path, summary_rows, raw_rows, pinn_condition_significance)
+    _write_latex_table(table_path, summary_rows, raw_rows, jt_p_pinn)
 
 
 if __name__ == "__main__":

@@ -122,7 +122,7 @@ def _write_latex_table(path, rows_by_case, beta_significance, n_significance, rm
             p_beta = "--"
             p_n    = "--"
             p_rmse = "--"
-        condition = f"{regime_label} ($\\beta={beta_val:.0f}$)"
+        condition = f"{regime_label} ($\\beta={beta_val:.0f}$, $n={n_val}$)"
         body_lines.append(
             f"{condition} & {beta_cell} & {n_cell} & {rmse_cell}"
             f" & {p_beta} & {p_n} & {p_rmse} \\\\"
@@ -178,7 +178,7 @@ def main():
             )
             result = run_inverse(
                 dataset_path=dataset,
-                outdir_base=os.path.join(results_dir, "runs"),
+                outdir_base=os.path.join(results_dir, "runs", case_name),
                 beta_guess=4.0,
                 n_guess=2.5,
                 observation_stride=1,

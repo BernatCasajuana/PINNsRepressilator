@@ -152,6 +152,33 @@ def mann_whitney_p_value(sample_a, sample_b):
     return float(result.pvalue)
 
 
+def jonckheere_terpstra_p_value(groups_in_order):
+    """Two-sided Jonckheere-Terpstra test for monotonic trend across ordered groups.
+
+    groups_in_order: list of array-like, ordered from the group expected to have the
+    smallest values to the group expected to have the largest values.
+    Uses a normal approximation (appropriate for n >= 5 per group).
+    Returns two-sided p-value.
+    """
+    groups = [np.asarray(g, dtype=float) for g in groups_in_order]
+    n_i = [len(g) for g in groups]
+    k = len(groups)
+    N = sum(n_i)
+    if k < 2 or any(ni < 1 for ni in n_i):
+        return float("nan")
+    jt_stat = 0.0
+    for i in range(k):
+        for j in range(i + 1, k):
+            result = scipy.stats.mannwhitneyu(groups[i], groups[j], alternative="less", method="asymptotic")
+            jt_stat += float(result.statistic)
+    e_j = (N ** 2 - sum(ni ** 2 for ni in n_i)) / 4.0
+    var_j = (N ** 2 * (2 * N + 3) - sum(ni ** 2 * (2 * ni + 3) for ni in n_i)) / 72.0
+    if var_j <= 0:
+        return float("nan")
+    z = (jt_stat - e_j) / np.sqrt(var_j)
+    return 2.0 * float(scipy.stats.norm.sf(abs(z)))
+
+
 def holm_bonferroni_adjust(p_values):
     adjusted_p_values = [float("nan")] * len(p_values)
     valid_indexed_p_values = [

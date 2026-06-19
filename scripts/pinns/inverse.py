@@ -240,7 +240,12 @@ def run_inverse(
     )
 
     observation_count = len(observation_indices)
-    dataset_tag = _sanitize_label(os.path.splitext(os.path.basename(dataset_label))[0])
+    # For file paths, strip the extension; for in-memory dataset names don't use splitext
+    # (splitext treats e.g. ".05_seed0" in "noise0.05_seed0" as an extension).
+    if isinstance(dataset_path, str):
+        dataset_tag = _sanitize_label(os.path.splitext(os.path.basename(dataset_label))[0])
+    else:
+        dataset_tag = _sanitize_label(dataset_label)
     seed_tag = f"seed-{random_seed}" if random_seed is not None else "seed-none"
 
     # Create results directory
@@ -388,9 +393,11 @@ def run_inverse(
     labels = ["Repressor 1", "Repressor 2", "Repressor 3"]
     colors = list(PREDICTION_COLORS)
 
+    # Per-repressor order: data (if observed) then PINN prediction, keeping legend consistent.
     for i in range(3):
-        plt.plot(t, x_obs[:, i], "-", color=colors[i], label=f"{labels[i]} (Data)") # obtained data
-        plt.plot(t, y_pred[:, i], "--", color=colors[i], label=f"{labels[i]} (PINN)") # PINN prediction
+        if i in observed_components:
+            plt.plot(t, x_obs[:, i], "-", color=colors[i], label=f"{labels[i]} (Data)")
+        plt.plot(t, y_pred[:, i], "--", color=colors[i], label=f"{labels[i]} (PINN)")
     plt.xlabel("Time")
     plt.ylabel("Protein Concentration")
     plt.title(f"Dynamics Prediction ($\\beta$={beta_true:.1f}, $n$={n_true:.1f}, $\\sigma$={noise_text})")

@@ -15,19 +15,18 @@ Design:
     scipy.optimize.minimize (L-BFGS-B) + scipy.integrate.odeint, same initial guess
 
 Figure: 4-panel 2×2 layout (12×9), line plots with mean ± SD
-  - Panel A (0,0): β relative error vs noise (PINN) + significance brackets (vs σ = 0)
-  - Panel B (0,1): n relative error vs noise (PINN) + significance brackets (vs σ = 0)
+  - Panel A (0,0): β relative error vs noise (PINN) + JT trend annotation
+  - Panel B (0,1): n relative error vs noise (PINN) + JT trend annotation
   - Panel C (1,0): combined parameter error — PINN vs L-BFGS-B
   - Panel D (1,1): state RMSE — PINN vs L-BFGS-B
 
-Significance: two-sided Mann–Whitney U, Holm–Bonferroni corrected, vs σ = 0 baseline.
-Applied to PINN results in panels A and B only; only significant comparisons
-(p < 0.05) are drawn as brackets — non-significant ones are omitted from the
-figure and reported in the text/results instead.
-Panels C and D instead compare PINN vs L-BFGS-B at each noise level (uncorrected
-two-sided Mann–Whitney U, same convention as the PINN-vs-classical comparisons in
-exp2/exp3/exp6); the curves never overlap, so significance is not marked on the
-figure and is reported in the text/results instead.
+Significance (panels A/B): Jonckheere-Terpstra (JT) test for monotonic trend across
+ordered noise levels (0 → 0.20). JT is preferred over pairwise Mann–Whitney here
+because the noise levels form an ordered sequence and the scientific question is
+whether degradation is monotonic, not which specific pairs differ. A single two-sided
+p-value is shown as a text annotation in each panel. Panels C/D compare PINN vs
+L-BFGS-B at each noise level (uncorrected two-sided Mann–Whitney U); significance is
+not marked on the figure and is reported in the text/results instead.
 
 Key finding expected: parameter recovery is relatively stable across this noise range;
 trajectory RMSE grows faster because the observation loss directly penalises trajectory
@@ -49,14 +48,14 @@ if scripts_dir not in sys.path:
 
 from experiments.experiment_utils import (
     aggregate_metrics,
-    annotate_pairwise_comparisons,
     ensure_project_directories,
     finalize_figure,
+    format_p_value_label,
+    jonckheere_terpstra_p_value,
     make_synthetic_dataset,
     mann_whitney_p_value,
     metric_values_by_group,
     p_value_to_stars,
-    pairwise_significance,
     write_csv,
     write_run_manifest,
 )
@@ -150,7 +149,7 @@ def main():
             dataset = make_synthetic_dataset(true_beta, true_n, noise_level=noise_level, seed=seed)
             result = run_inverse(
                 dataset_path=dataset,
-                outdir_base=os.path.join(results_dir, "runs"),
+                outdir_base=os.path.join(results_dir, "runs", f"noise{noise_level}"),
                 beta_guess=4.0,
                 n_guess=2.5,
                 observation_stride=1,
@@ -226,9 +225,6 @@ def main():
     cls_state_stds = [row["classical_state_rmse_std"] for row in summary_rows]
     show_eb = len(seeds) > 1
 
-    baseline_noise = 0.0 if 0.0 in noise_values else noise_values[0]
-    noise_comparisons = [(baseline_noise, v) for v in noise_values if v != baseline_noise]
-
     beta_vals_by_noise = metric_values_by_group(raw_rows, "noise_level", "beta_rel_error")
     n_vals_by_noise = metric_values_by_group(raw_rows, "noise_level", "n_rel_error")
     parameter_vals_by_noise = metric_values_by_group(raw_rows, "noise_level", "parameter_rel_error")
@@ -236,10 +232,11 @@ def main():
     cls_parameter_vals_by_noise = metric_values_by_group(raw_rows, "noise_level", "classical_parameter_rel_error")
     cls_state_vals_by_noise = metric_values_by_group(raw_rows, "noise_level", "classical_state_rmse")
 
-    beta_significance = pairwise_significance(beta_vals_by_noise, noise_comparisons)
-    n_significance = pairwise_significance(n_vals_by_noise, noise_comparisons)
+    # JT trend test for panels A/B: do β/n errors monotonically increase with noise?
+    jt_p_beta = jonckheere_terpstra_p_value([beta_vals_by_noise[v] for v in noise_values])
+    jt_p_n    = jonckheere_terpstra_p_value([n_vals_by_noise[v]    for v in noise_values])
 
-    # PINN vs L-BFGS-B at each noise level (panels C/D), not vs the σ = 0 baseline.
+    # PINN vs L-BFGS-B at each noise level (panels C/D).
     parameter_pinn_vs_classical_p = {
         v: mann_whitney_p_value(parameter_vals_by_noise[v], cls_parameter_vals_by_noise[v])
         for v in noise_values
@@ -249,23 +246,20 @@ def main():
         for v in noise_values
     }
 
-    # Significance is not fully shown on the figure (only-significant brackets in A/B,
-    # no markers at all in C/D) — exact p-values for the results text live here instead.
-    significance_rows = []
-    for v in noise_values:
-        if v == baseline_noise:
-            continue
-        for comparison_name, significance in (("beta_vs_sigma0", beta_significance), ("n_vs_sigma0", n_significance)):
-            entry = significance.get((baseline_noise, v)) or significance.get((v, baseline_noise))
-            significance_rows.append(
-                {
-                    "comparison": comparison_name,
-                    "noise_level": v,
-                    "raw_p_value": entry["raw_p_value"],
-                    "adjusted_p_value": entry["adjusted_p_value"],
-                    "stars": entry["stars"],
-                }
-            )
+    significance_rows = [
+        {
+            "comparison": "beta_jt_trend",
+            "noise_level": "all",
+            "p_value": jt_p_beta,
+            "stars": p_value_to_stars(jt_p_beta),
+        },
+        {
+            "comparison": "n_jt_trend",
+            "noise_level": "all",
+            "p_value": jt_p_n,
+            "stars": p_value_to_stars(jt_p_n),
+        },
+    ]
     for v in noise_values:
         for comparison_name, p_value in (
             ("parameter_pinn_vs_classical", parameter_pinn_vs_classical_p[v]),
@@ -275,15 +269,14 @@ def main():
                 {
                     "comparison": comparison_name,
                     "noise_level": v,
-                    "raw_p_value": p_value,
-                    "adjusted_p_value": "",
+                    "p_value": p_value,
                     "stars": p_value_to_stars(p_value),
                 }
             )
     write_csv(
         os.path.join(results_dir, "exp1_noise_sweep_significance.csv"),
         significance_rows,
-        ["comparison", "noise_level", "raw_p_value", "adjusted_p_value", "stars"],
+        ["comparison", "noise_level", "p_value", "stars"],
     )
 
     plt.rcParams['axes.formatter.useoffset'] = False
@@ -306,27 +299,22 @@ def main():
         ax.set_xticks(positions, noise_labels)
         ax.set_xlabel(r"Relative $\sigma$")
 
-    position_by_noise = {v: i for i, v in enumerate(noise_values)}
+    def _jt_annotation(ax, p_value):
+        label = f"JT: {format_p_value_label(p_value)} {p_value_to_stars(p_value)}".strip()
+        ax.text(0.97, 0.97, label, transform=ax.transAxes, ha="right", va="top", fontsize=8,
+                bbox=dict(boxstyle="round,pad=0.2", facecolor="white", alpha=0.85, edgecolor="0.7"))
 
-    # Panel A: β recovery (PINN only) + significance vs σ=0
+    # Panel A: β recovery (PINN only) + JT trend annotation
     _ribbon(axes[0, 0], PINN_COLOR, None, beta_means, beta_stds, marker="o")
-    beta_tops = {v: beta_means[i] + (beta_stds[i] if show_eb else 0.0) for i, v in enumerate(noise_values)}
-    annotate_pairwise_comparisons(
-        axes[0, 0], x_positions=position_by_noise, top_values=beta_tops,
-        comparisons=noise_comparisons, significance=beta_significance, use_adjusted_p_value=True,
-        only_significant=True)
+    _jt_annotation(axes[0, 0], jt_p_beta)
     _xformat(axes[0, 0])
     axes[0, 0].set_ylabel("Relative Error")
     axes[0, 0].set_title(r"$\beta$ Recovery")
     _label(axes[0, 0], 'A')
 
-    # Panel B: n recovery (PINN only) + significance vs σ=0
+    # Panel B: n recovery (PINN only) + JT trend annotation
     _ribbon(axes[0, 1], PINN_COLOR, None, n_means, n_stds)
-    n_tops = {v: n_means[i] + (n_stds[i] if show_eb else 0.0) for i, v in enumerate(noise_values)}
-    annotate_pairwise_comparisons(
-        axes[0, 1], x_positions=position_by_noise, top_values=n_tops,
-        comparisons=noise_comparisons, significance=n_significance, use_adjusted_p_value=True,
-        only_significant=True)
+    _jt_annotation(axes[0, 1], jt_p_n)
     _xformat(axes[0, 1])
     axes[0, 1].set_ylabel("Relative Error")
     axes[0, 1].set_title(r"$n$ Recovery")

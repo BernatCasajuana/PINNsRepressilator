@@ -14,7 +14,9 @@ Design:
 
 Figure: single heatmap showing combined parameter error over the (β₀, n₀) grid
   - Combined error: 0.5 × (|Δβ|/β + |Δn|/n) per grid cell
-  - Arrow annotation marking the true parameter location (β=5.0, n=3.0)
+  - Log-scale colormap to reveal structure even when most errors are small
+  - Arrow annotation marking the true parameter location (β=5.0, n=3.0),
+    which are the true values of the synthetic dataset used for training
 
 Key finding expected: the loss landscape is non-convex — some (β₀, n₀) combinations
 trap the optimiser far from the true parameters. The contour reveals the reliable-recovery
@@ -184,15 +186,22 @@ def main():
 
     fig, ax = plt.subplots(1, 1, figsize=(5, 4.2))
 
-    vmax = float(np.nanmax(combined_heatmap))
+    from matplotlib.colors import LogNorm
+    valid = combined_heatmap[np.isfinite(combined_heatmap) & (combined_heatmap > 0)]
+    vmin_data = float(np.min(valid)) if valid.size > 0 else 1e-4
+    vmax_data = float(np.nanmax(combined_heatmap))
+    norm = LogNorm(vmin=max(vmin_data, 1e-6), vmax=max(vmax_data, vmin_data * 10))
 
     im = ax.imshow(
         combined_heatmap, origin="lower", aspect="auto",
-        cmap="viridis", vmin=0.0, vmax=vmax,
-        interpolation="bicubic",
+        cmap="viridis", norm=norm,
+        interpolation="nearest",
     )
-    ax.set_xticks(range(len(beta_guesses)), [str(v) for v in beta_guesses])
-    ax.set_yticks(range(len(n_guesses)), [str(v) for v in n_guesses])
+    import matplotlib.ticker as _ticker
+    ax.xaxis.set_major_locator(_ticker.FixedLocator(range(len(beta_guesses))))
+    ax.xaxis.set_major_formatter(_ticker.FixedFormatter([str(v) for v in beta_guesses]))
+    ax.yaxis.set_major_locator(_ticker.FixedLocator(range(len(n_guesses))))
+    ax.yaxis.set_major_formatter(_ticker.FixedFormatter([str(v) for v in n_guesses]))
     ax.set_xlabel(r"Initial $\beta_0$", fontsize=11)
     ax.set_ylabel(r"Initial $n_0$", fontsize=11)
     ax.set_title("Sensitivity to Initial Parameter Guess")
@@ -208,7 +217,7 @@ def main():
         )
 
     cbar = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
-    cbar.set_label("Combined Error")
+    cbar.set_label("Combined Error (log scale)")
 
     finalize_figure(figure_path)
 

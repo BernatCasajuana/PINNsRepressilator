@@ -84,6 +84,8 @@ def run_preview(spec: PreviewSpec, train_iterations: int, n_seeds: int | None) -
         overrides["table_path"] = os.path.join(ROOT, "tables", f"pilot_{spec.name}.tex")
     if hasattr(module, "observability_table_path"):
         overrides["observability_table_path"] = os.path.join(ROOT, "tables", "pilot_observability.tex")
+    if hasattr(module, "exp2_results_dir"):
+        overrides["exp2_results_dir"] = os.path.join(ROOT, "results", "pilot", "exp2_partial_observation")
     if n_seeds is not None:
         original_seeds = getattr(module, "seeds", [0])
         overrides["seeds"] = original_seeds[:n_seeds]

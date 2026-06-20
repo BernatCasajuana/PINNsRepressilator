@@ -33,7 +33,7 @@ scripts_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if scripts_dir not in sys.path:
     sys.path.insert(0, scripts_dir)
 
-from experiments.experiment_utils import (
+from experiments.utils import (
     aggregate_metrics,
     ensure_project_directories,
     make_synthetic_dataset,
@@ -62,21 +62,26 @@ def _fmt_mean_std(mean, std):
     return f"${mean:.3f} \\pm {std:.3f}$"
 
 
-def _fmt_p(sig_entry):
+def _stars(p):
+    if p is None or not np.isfinite(p) or p >= 0.05:
+        return ""
+    return "***" if p < 0.001 else ("**" if p < 0.01 else "*")
+
+
+def _sig_stars(sig_entry):
     if sig_entry is None:
-        return "--"
-    p = sig_entry.get("adjusted_p_value", float("nan"))
-    stars = sig_entry.get("stars", "")
-    if not np.isfinite(p):
-        return "--"
-    label = "$p < 0.001$" if p < 0.001 else f"$p = {p:.3f}$"
-    return f"{label} {stars}".strip()
+        return ""
+    return _stars(sig_entry.get("adjusted_p_value", float("nan")))
+
+
+def _fmt_with_stars(mean, std, stars_str):
+    base = f"${mean:.3f} \\pm {std:.3f}$"
+    return base + (f"\\rlap{{\\textsuperscript{{{stars_str}}}}}" if stars_str else "")
 
 
 def _write_latex_table(path, rows_by_case, beta_significance, n_significance, rmse_significance):
     os.makedirs(os.path.dirname(path), exist_ok=True)
 
-    # Table order: β=5 stable, β=5 oscillatory, β=8 stable, β=8 oscillatory
     table_cases = [
         ("stable_beta5",      "Stable",      5.0, 1.5),
         ("oscillatory_beta5", "Oscillatory", 5.0, 3.0),
@@ -94,14 +99,12 @@ def _write_latex_table(path, rows_by_case, beta_significance, n_significance, rm
         r"\caption{Regime comparison results. $\beta$ error, $n$ error, and state RMSE "
         r"(mean $\pm$ SD, $n = 5$ seeds) for stable and oscillatory dynamics at two "
         r"production rates ($\beta \in \{5, 8\}$, $n_{\text{stable}}=1.5$, "
-        r"$n_{\text{osc}}=3.0$). $p$-values (Holm--Bonferroni-adjusted Mann--Whitney U) "
-        r"compare stable vs.\ oscillatory at the same $\beta$.}" + "\n"
+        r"$n_{\text{osc}}=3.0$).}" + "\n"
         r"\label{tab:exp5_regime_comparison}" + "\n"
-        r"\small" + "\n"
-        r"\begin{tabular}{lcccccc}" + "\n"
+        r"{\small\setlength{\tabcolsep}{5pt}%" + "\n"
+        r"\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lccc}" + "\n"
         r"\toprule" + "\n"
-        r"Condition & $\beta$ error & $n$ error & State RMSE"
-        r" & $p$ ($\beta$) & $p$ ($n$) & $p$ (RMSE) \\" + "\n"
+        r"Condition & $\beta$ error & $n$ error & State RMSE \\" + "\n"
         r"\midrule"
     )
 
@@ -110,31 +113,33 @@ def _write_latex_table(path, rows_by_case, beta_significance, n_significance, rm
         row = rows_by_case.get(case_name)
         if row is None:
             continue
-        beta_cell = _fmt_mean_std(row["beta_rel_error_mean"], row["beta_rel_error_std"])
-        n_cell    = _fmt_mean_std(row["n_rel_error_mean"],    row["n_rel_error_std"])
-        rmse_cell = _fmt_mean_std(row["state_rmse_mean"],     row["state_rmse_std"])
         if case_name in comparisons_map:
             comp = comparisons_map[case_name]
-            p_beta = _fmt_p(beta_significance.get(comp) or beta_significance.get(comp[::-1]))
-            p_n    = _fmt_p(n_significance.get(comp)    or n_significance.get(comp[::-1]))
-            p_rmse = _fmt_p(rmse_significance.get(comp) or rmse_significance.get(comp[::-1]))
+            sig_b = beta_significance.get(comp) or beta_significance.get(comp[::-1])
+            sig_n = n_significance.get(comp)    or n_significance.get(comp[::-1])
+            sig_r = rmse_significance.get(comp) or rmse_significance.get(comp[::-1])
+            sb = _sig_stars(sig_b)
+            sn = _sig_stars(sig_n)
+            sr = _sig_stars(sig_r)
         else:
-            p_beta = "--"
-            p_n    = "--"
-            p_rmse = "--"
-        condition = f"{regime_label} ($\\beta={beta_val:.0f}$, $n={n_val}$)"
+            sb = sn = sr = ""
+        beta_cell = _fmt_with_stars(row["beta_rel_error_mean"], row["beta_rel_error_std"], sb)
+        n_cell    = _fmt_with_stars(row["n_rel_error_mean"],    row["n_rel_error_std"],    sn)
+        rmse_cell = _fmt_with_stars(row["state_rmse_mean"],     row["state_rmse_std"],     sr)
+        condition = f"{regime_label} ($\\beta={beta_val:.0f}$)"
         body_lines.append(
-            f"{condition} & {beta_cell} & {n_cell} & {rmse_cell}"
-            f" & {p_beta} & {p_n} & {p_rmse} \\\\"
+            f"{condition} & {beta_cell} & {n_cell} & {rmse_cell} \\\\"
         )
-        # Add a thin separator between the β=5 and β=8 groups
         if case_name == "oscillatory_beta5":
             body_lines.append(r"\midrule")
 
     footer = (
         r"\bottomrule" + "\n"
-        r"\multicolumn{7}{l}{\footnotesize *** $p < 0.001$, ** $p < 0.01$, * $p < 0.05$.} \\" + "\n"
-        r"\end{tabular}" + "\n"
+        r"\multicolumn{4}{l}{\footnotesize Superscripts on oscillatory rows: "
+        r"Holm--Bonferroni MWU, stable vs.\ oscillatory at same $\beta$.} \\" + "\n"
+        r"\multicolumn{4}{l}{\footnotesize MWU: Mann--Whitney U; "
+        r"*** $p < 0.001$, ** $p < 0.01$, * $p < 0.05$.} \\" + "\n"
+        r"\end{tabular*}}" + "\n"
         r"\end{table}"
     )
 

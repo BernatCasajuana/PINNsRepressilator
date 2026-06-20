@@ -245,7 +245,8 @@ def run_inverse(
     if isinstance(dataset_path, str):
         dataset_tag = _sanitize_label(os.path.splitext(os.path.basename(dataset_label))[0])
     else:
-        dataset_tag = _sanitize_label(dataset_label)
+        import re as _re
+        dataset_tag = _re.sub(r"_seed\d+$", "", _sanitize_label(dataset_label))
     seed_tag = f"seed-{random_seed}" if random_seed is not None else "seed-none"
 
     # Create results directory

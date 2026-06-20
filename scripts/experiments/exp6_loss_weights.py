@@ -41,7 +41,7 @@ scripts_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if scripts_dir not in sys.path:
     sys.path.insert(0, scripts_dir)
 
-from experiments.experiment_utils import (
+from experiments.utils import (
     aggregate_metrics,
     ensure_project_directories,
     make_synthetic_dataset,
@@ -71,13 +71,15 @@ def _fmt(mean, std):
     return f"${mean:.3f} \\pm {std:.3f}$"
 
 
-def _fmt_p(p):
-    if p is None:
-        return "--"
-    if p < 0.001:
-        return r"$p < 0.001$ ***"
-    stars = "**" if p < 0.01 else ("*" if p < 0.05 else "")
-    return f"$p = {p:.3f}$ {stars}".strip()
+def _stars(p):
+    if p is None or p >= 0.05:
+        return ""
+    return "***" if p < 0.001 else ("**" if p < 0.01 else "*")
+
+
+def _fmt_with_stars(mean, std, stars_str):
+    base = f"${mean:.3f} \\pm {std:.3f}$"
+    return base + (f"\\rlap{{\\textsuperscript{{{stars_str}}}}}" if stars_str else "")
 
 
 def _write_latex_table(path, summary_rows, raw_rows):
@@ -90,15 +92,12 @@ def _write_latex_table(path, summary_rows, raw_rows):
         r"\centering" + "\n"
         r"\caption{Physics loss weight sensitivity. $\beta$ error, $n$ error, and state RMSE "
         r"(mean $\pm$ SD, $n = 5$ seeds) for PINN across five values of the physics "
-        r"loss weight $\lambda_f$ ($\lambda_0 = \lambda_y = 1$ fixed). "
-        r"$p$-values (two-sided Mann--Whitney U) compare each $\lambda_f$ to the "
-        r"baseline $\lambda_f = 1$.}" + "\n"
+        r"loss weight $\lambda_f$ ($\lambda_0 = \lambda_y = 1$ fixed).}" + "\n"
         r"\label{tab:exp6_loss_weights}" + "\n"
-        r"\small" + "\n"
-        r"\begin{tabular}{lcccccc}" + "\n"
+        r"{\small\setlength{\tabcolsep}{5pt}%" + "\n"
+        r"\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lccc}" + "\n"
         r"\toprule" + "\n"
-        r"$\lambda_f$ & $\beta$ error & $n$ error & State RMSE"
-        r" & $p$ ($\beta$ vs $\lambda_f = 1$) & $p$ ($n$ vs $\lambda_f = 1$) & $p$ (RMSE vs $\lambda_f = 1$) \\" + "\n"
+        r"$\lambda_f$ & $\beta$ error & $n$ error & State RMSE \\" + "\n"
         r"\midrule"
     )
 
@@ -107,11 +106,8 @@ def _write_latex_table(path, summary_rows, raw_rows):
         row = rows_by_lf.get(lf)
         if row is None:
             continue
-        beta_str = _fmt(row["beta_rel_error_mean"], row["beta_rel_error_std"])
-        n_str    = _fmt(row["n_rel_error_mean"],    row["n_rel_error_std"])
-        rmse_str = _fmt(row["state_rmse_mean"],     row["state_rmse_std"])
         if lf == baseline_lf:
-            p_beta_str = p_n_str = p_rmse_str = "--"
+            sb = sn = sr = ""
         else:
             beta_lf   = [r["beta_rel_error"] for r in raw_rows if r["lambda_f"] == lf]
             beta_base = [r["beta_rel_error"] for r in raw_rows if r["lambda_f"] == baseline_lf]
@@ -124,16 +120,20 @@ def _write_latex_table(path, summary_rows, raw_rows):
                 _, p_beta = mannwhitneyu(beta_lf,  beta_base,  alternative="two-sided")
                 _, p_n    = mannwhitneyu(n_lf,     n_base,     alternative="two-sided")
                 _, p_rmse = mannwhitneyu(rmse_lf,  rmse_base,  alternative="two-sided")
-            p_beta_str = _fmt_p(p_beta)
-            p_n_str    = _fmt_p(p_n)
-            p_rmse_str = _fmt_p(p_rmse)
+            sb = _stars(p_beta)
+            sn = _stars(p_n)
+            sr = _stars(p_rmse)
+        beta_str = _fmt_with_stars(row["beta_rel_error_mean"], row["beta_rel_error_std"], sb)
+        n_str    = _fmt_with_stars(row["n_rel_error_mean"],    row["n_rel_error_std"],    sn)
+        rmse_str = _fmt_with_stars(row["state_rmse_mean"],     row["state_rmse_std"],     sr)
         label = r"$1.0$ (baseline)" if lf == baseline_lf else f"${lf}$"
-        body_lines.append(f"{label} & {beta_str} & {n_str} & {rmse_str} & {p_beta_str} & {p_n_str} & {p_rmse_str} \\\\")
+        body_lines.append(f"{label} & {beta_str} & {n_str} & {rmse_str} \\\\")
 
     footer = (
         r"\bottomrule" + "\n"
-        r"\multicolumn{7}{l}{\footnotesize *** $p < 0.001$, ** $p < 0.01$, * $p < 0.05$.} \\" + "\n"
-        r"\end{tabular}" + "\n"
+        r"\multicolumn{4}{l}{\footnotesize Superscripts: two-sided Mann--Whitney U vs $\lambda_f = 1$.} \\" + "\n"
+        r"\multicolumn{4}{l}{\footnotesize *** $p < 0.001$, ** $p < 0.01$, * $p < 0.05$.} \\" + "\n"
+        r"\end{tabular*}}" + "\n"
         r"\end{table}"
     )
 

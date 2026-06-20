@@ -34,7 +34,7 @@ scripts_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if scripts_dir not in sys.path:
     sys.path.insert(0, scripts_dir)
 
-from experiments.experiment_utils import (
+from experiments.utils import (
     ensure_project_directories,
     finalize_figure,
     make_synthetic_dataset,

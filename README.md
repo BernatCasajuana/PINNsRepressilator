@@ -28,23 +28,24 @@ Seven experiments characterise when and how this approach succeeds or fails, pro
 
 ```
 pinns-repressilator/
-├── datasets/               # 100 pre-generated .npz datasets (β × n × noise grid)
 ├── scripts/
-│   ├── data/               # ODE definition and dataset generation
-│   │   └── data.py           # ODE, generate_dataset(); run directly to regenerate datasets/
+│   ├── datasets/           # ODE definition and dataset generation
+│   │   └── data.py           # ODE, generate_dataset(); run directly to regenerate .npz files
 │   ├── pinns/              # PINN training modules
 │   │   ├── forward.py      # Forward problem: known β, n → predict trajectory
 │   │   └── inverse.py      # Inverse problem: estimate β, n from observations
+│   ├── figures/            # Standalone figure scripts
+│   │   └── param_space.py    # Repressilator (β, n) bifurcation diagram for paper intro
 │   └── experiments/        # Experiment drivers (one file per experiment)
-│       ├── experiment_utils.py         # Shared: seeding, noise model, statistics, plotting
+│       ├── utils.py         # Shared: seeding, noise model, statistics, plotting
 │       ├── exp1_noise_sweep.py         # Noise sensitivity (σ sweep) + PINN vs classical baseline
 │       ├── exp2_partial_observation.py # Partial observation (1/2/3 repressors) → table
 │       ├── exp3_sampling_density.py    # Sampling density (10–100 points) → table + observability.tex
-│       ├── exp4_initial_guess.py       # Initial guess sensitivity (7×7 grid)
+│       ├── exp4_initial_guess.py       # Initial guess sensitivity (9×9 grid, centred on truth)
 │       ├── exp5_regime_comparison.py   # Stable vs oscillatory regime → table
 │       ├── exp6_loss_weights.py        # Physics loss weight λ_f sensitivity → table
 │       ├── exp7_convergence.py         # Convergence curves (β̂, n̂, losses)
-│       └── run_pilot.py                # Quick preview run with reduced iterations (local use)
+│       └── pilot.py                # Quick preview run with reduced iterations (local use)
 ├── results/                # Output CSVs and per-run metrics (generated at runtime)
 ├── figures/                # Summary figures (generated at runtime)
 ├── tables/                 # LaTeX tables (generated at runtime)
@@ -73,14 +74,14 @@ pip install -r requirements_mac.txt        # macOS
 
 **Run a quick pilot to validate the pipeline locally (~5 min on CPU):**
 ```bash
-python scripts/experiments/run_pilot.py
+python scripts/experiments/pilot.py
 ```
 
 The pilot script accepts optional arguments:
 ```bash
-python scripts/experiments/run_pilot.py --train-iterations 500         # more converged preview
-python scripts/experiments/run_pilot.py --seeds 1                      # fastest check (1 seed)
-python scripts/experiments/run_pilot.py --only exp1_noise_sweep exp4_initial_guess
+python scripts/experiments/pilot.py --train-iterations 500         # more converged preview
+python scripts/experiments/pilot.py --seeds 1                      # fastest check (1 seed)
+python scripts/experiments/pilot.py --only exp1_noise_sweep exp4_initial_guess
 ```
 
 **Run one full experiment locally:**
@@ -93,21 +94,9 @@ python scripts/experiments/exp1_noise_sweep.py
 
 ## Datasets
 
-Stored as `.npz` files under `datasets/`. File names encode the parameters, e.g. `beta5.0_n3.0_noise0.05.npz`.
+All experiment drivers generate synthetic datasets **in memory** via `scripts/datasets/data.py` — no pre-saved files are required. Running `data.py` directly regenerates `.npz` files (useful for inspection), but these files are not tracked in the repository and are not needed to reproduce any result.
 
-The full grid: β ∈ {1.0, 5.0, 10.0, 20.0} × n ∈ {1.5, 2.0, 2.5, 3.0, 3.5} × noise ∈ {0.0, 0.01, 0.05, 0.1, 0.2} = 100 datasets.
-
-Each file contains:
-
-| Key | Description |
-|---|---|
-| `t` | Time grid, shape (1000, 1) |
-| `y` | Noisy observations, shape (1000, 3) |
-| `y_clean` | Clean ODE trajectory, shape (1000, 3) |
-| `beta`, `n` | True parameter values |
-| `noise` | Noise level (fraction of peak-to-peak amplitude) |
-
-The experiment drivers generate datasets **in memory** using the same code path, so files in `datasets/` are not required to run the experiments.
+Each in-memory dataset contains: time grid `t` (1000 points, t ∈ [0, 20]), noisy observations `y` (shape 1000 × 3), clean trajectory `y_clean`, and true parameters `beta`, `n`, `noise`.
 
 ---
 
@@ -146,31 +135,36 @@ Each experiment targets a specific axis of the inverse identification problem. A
 
 ### Experiment 1 — Noise sensitivity and baseline comparison
 
-How gracefully does the inverse PINN degrade as measurement noise increases, and does it outperform classical ODE fitting? Noise levels from 0% to 20% of the peak-to-peak signal amplitude are tested under otherwise ideal conditions — all three repressors observed, dense sampling (1000 points). For each (noise, seed) pair, a classical baseline is also run: `scipy.optimize.minimize` (L-BFGS-B) + `scipy.integrate.odeint`, minimising observation MSE from the same initial guess (β₀ = 4.0, n₀ = 2.5). The 4-panel (2×2) figure shows β error (panel A) and n error (panel B) for the PINN only with significance brackets vs σ = 0; panels C and D overlay both PINN (blue, solid) and L-BFGS-B (orange, dashed) for combined parameter error and state RMSE, titled "Parameter Recovery — PINN vs L-BFGS-B" and "Trajectory Reconstruction — PINN vs L-BFGS-B". The ODE residual provides a regularisation channel absent in the classical fit, and this is where that advantage is quantified.
+How gracefully does the inverse PINN degrade as measurement noise increases, and does it outperform classical ODE fitting? Tested on the **canonical oscillatory case** (β = 5.0, n = 3.0) across five noise levels (0%–20% of peak-to-peak amplitude) with all three repressors observed and dense sampling (1000 points). For each (noise, seed) pair, a classical baseline is also run: `scipy.optimize.minimize` (L-BFGS-B) + `scipy.integrate.odeint`, minimising observation MSE from the same initial guess (β₀ = 4.0, n₀ = 2.5). The 4-panel (2×2) figure shows β error (panel A) and n error (panel B) for the PINN only with a Jonckheere–Terpstra trend annotation (single p-value for the monotonic noise → error trend); panels C and D overlay PINN (blue) and L-BFGS-B (orange) for combined parameter error and state RMSE.
 
 ### Experiment 2 — Partial observation
 
-In many real experiments only a subset of molecular species can be measured. This experiment tests three designs: all three repressors (3/3), two repressors (2/3 — x₃ unobserved), and one repressor (1/3 — x₂ and x₃ unobserved). For each (design, seed), both the PINN and an L-BFGS-B baseline are run on the same data. Both methods use the full three-equation ODE: L-BFGS-B integrates it exactly (so unobserved species are always implicitly constrained through the ODE coupling given β and n), while the PINN enforces it approximately via a residual penalty. The key question is therefore not whether the PINN "knows" more physics about unobserved species, but whether the neural-network parameterisation offers a smoother optimisation landscape than direct parameter search. Physics regularisation pays off precisely when data is incomplete — but if L-BFGS-B matches PINN in the 1/3 setting, exact ODE integration is sufficient. Results are a **LaTeX table** (`tables/exp2_partial_observation.tex`) showing PINN and L-BFGS-B side by side with Mann–Whitney p-values comparing the two methods at each design. A Jonckheere–Terpstra trend test (3/3 → 1/3) is reported in the table caption.
+Tested on the **canonical oscillatory case** (β = 5.0, n = 3.0, noise = 0.05). Three observation designs are compared: all three repressors (3/3), two repressors (2/3 — x₃ unobserved), and one repressor (1/3 — x₂ and x₃ unobserved). For each (design, seed), both the PINN and an L-BFGS-B baseline are run on the same data. Both methods use the full three-equation ODE, but L-BFGS-B integrates it exactly (so unobserved species are always implicitly constrained through ODE coupling), while the PINN enforces it approximately via a residual penalty. The key question is therefore not whether the PINN "knows" more physics about unobserved species, but whether the neural-network parameterisation offers a smoother optimisation landscape. Results are a **LaTeX table** (`tables/exp2_partial_observation.tex`) with PINN and L-BFGS-B side by side, Mann–Whitney p-values comparing the two methods at each design, and a Jonckheere–Terpstra trend test (3/3 → 1/3) in the table caption. In the per-run dynamics plots, data lines show only the observed repressors; all three PINN-predicted trajectories are shown to reveal physics-inferred unobserved species.
 
 ### Experiment 3 — Sampling density
 
-How sparse can the time-series be before parameter recovery degrades, and does the PINN's physics-guided interpolation provide an advantage over classical fitting? Observation counts of 10, 25, 50, and 100 points (1%–10% of the 1000-point grid, evenly spaced) are tested with all three repressors observed and 5% noise. For each (count, seed), both the PINN and an L-BFGS-B baseline are run on identical data. L-BFGS-B integrates the full ODE trajectory but computes MSE only at the sparse observed time points; the PINN enforces the ODE residual at dense collocation points across the full domain regardless of observation density. Physics regularisation pays off precisely when data is incomplete — and unlike the partial-observation case, this is a genuine structural asymmetry: L-BFGS-B receives gradient signal only at observed times, while the PINN's collocation residual fills in physics everywhere between observations. If L-BFGS-B matches PINN, exact integration over the sparse subset is sufficient. Results are a **LaTeX table** (`tables/exp3_sampling_density.tex`) with Mann–Whitney p-values comparing PINN vs L-BFGS-B at each count. A Jonckheere–Terpstra trend test (100 → 10 points) is reported in the table caption. Running experiments 2 and 3 in sequence also produces a **combined observability table** (`tables/observability.tex`) covering both measurement design dimensions side by side.
+Tested on the **canonical oscillatory case** (β = 5.0, n = 3.0, noise = 0.05). Observation counts of 10, 25, 50, and 100 points (1%–10% of the 1000-point grid, evenly spaced) are tested with all three repressors observed. For each (count, seed), both the PINN and an L-BFGS-B baseline are run on identical data. Unlike the partial-observation case, this is a genuine structural asymmetry: L-BFGS-B receives gradient signal only at observed times, while the PINN's collocation residual fills in physics everywhere between observations. Results are a **LaTeX table** (`tables/exp3_sampling_density.tex`) with Mann–Whitney p-values comparing PINN vs L-BFGS-B at each count, and a Jonckheere–Terpstra trend test (100 → 10 points) in the table caption. Running experiments 2 and 3 in sequence also produces a **combined observability table** (`tables/observability.tex`) covering both measurement design dimensions side by side.
 
 ### Experiment 4 — Initial guess sensitivity
 
-Because the joint loss landscape over (β, n, network weights) is non-convex, the initial guesses for β and n can steer the optimiser into different local optima. This experiment runs a 7×7 grid of initial guesses — β₀ ∈ {2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0}, n₀ ∈ {1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5} — with one seed per cell (49 total runs at 10 000 iterations each). The true parameter location (β = 5.0, n = 3.0) is included in the grid and marked in the figure. The figure is a heatmap of combined parameter error over the initial-guess plane, showing which starting points reliably converge to the true parameters and which trap the optimiser in a poor solution.
+Trained on the **canonical oscillatory case** (β = 5.0, n = 3.0, noise = 0.05). Because the joint loss landscape over (β, n, network weights) is non-convex, the initial guesses can steer the optimiser into different local optima. This experiment runs a 9×9 grid of initial guesses with the true parameter location at the exact centre (position 4/8), using escalating symmetric offsets (±0.5, ±1, ±2 around truth) plus one extreme case per axis:
+
+- β₀ ∈ {1.0, 3.0, 4.0, 4.5, **5.0**, 5.5, 6.0, 7.0, 15.0} (true β = 5.0)
+- n₀ ∈ {1.0, 1.5, 2.0, 2.5, **3.0**, 3.5, 4.0, 5.0, 10.0} (true n = 3.0, minimum n = 1.0)
+
+One seed per cell (81 total runs at 10 000 iterations each). The figure is a log-scale heatmap of combined relative parameter error over the (β₀, n₀) plane. The true parameter location (β = 5.0, n = 3.0) is marked with an arrow annotation labelled "Truth".
 
 ### Experiment 5 — Dynamical regime comparison
 
-The Hill coefficient n controls whether the repressilator settles to a steady state (n ≈ 1.5) or sustains oscillations (n ≈ 3.0). These two regimes produce qualitatively different trajectory shapes, and it is not obvious a priori which is easier to identify from inverse PINN training. This experiment runs four cases — β ∈ {5.0, 8.0} crossed with regime ∈ {stable, oscillatory} — and reports β error, n error, and state RMSE separately. Results are presented as a **LaTeX table** (`tables/exp5_regime_comparison.tex`) with both β and n embedded in the condition label (e.g. "Stable (β=5, n=1.5)") and Holm–Bonferroni-adjusted p-values for β error, n error, and state RMSE separately, comparing stable vs oscillatory at each β value.
+The Hill coefficient n controls whether the repressilator settles to a steady state (n = 1.5) or sustains oscillations (n = 3.0 — the **canonical case**). Four cases are compared: β ∈ {5.0, 8.0} × regime ∈ {stable, oscillatory}. Results are a **LaTeX table** (`tables/exp5_regime_comparison.tex`) with condition labels including both β and n (e.g. "Stable (β=5, n=1.5)") and Holm–Bonferroni-adjusted Mann–Whitney p-values comparing stable vs oscillatory at matching β, for β error, n error, and state RMSE.
 
 ### Experiment 6 — Physics loss weight sensitivity
 
-The balance between the ODE residual term (λ_f · L_eq) and the observation term (λ_y · L_obs) is a central hyperparameter of the PINN formulation. Too small a λ_f and the physics constraint is effectively disabled; too large and the network ignores the observations and converges to any trajectory satisfying the ODE — not necessarily the one with the correct parameters. This experiment sweeps λ_f over five decades — {0.01, 0.1, 1.0, 10.0, 100.0} — while holding λ_0 = λ_y = 1.0 fixed. Results are presented as a **LaTeX table** (`tables/exp6_loss_weights.tex`) with β error, n error, and state RMSE (mean ± SD) at each λ_f, and separate Mann–Whitney p-values for β error, n error, and state RMSE comparing each value to the λ_f = 1.0 baseline.
+Tested on the **canonical oscillatory case** (β = 5.0, n = 3.0, noise = 0.05). The balance between the ODE residual term (λ_f · L_eq) and the observation term (λ_y · L_obs) is a central hyperparameter. This experiment sweeps λ_f over five decades — {0.01, 0.1, 1.0, 10.0, 100.0} — while holding λ_0 = λ_y = 1.0 fixed. Results are a **LaTeX table** (`tables/exp6_loss_weights.tex`) with β error, n error, and state RMSE (mean ± SD) at each λ_f, and Holm–Bonferroni-adjusted Mann–Whitney p-values comparing each value to the λ_f = 1.0 baseline. (The λ_f effect is U-shaped — not monotonic — so Jonckheere–Terpstra is not applicable here; pairwise Mann–Whitney is used instead.)
 
 ### Experiment 7 — Training convergence
 
-This diagnostic experiment examines how the loss components and parameter estimates evolve during training on the canonical condition (β = 5.0, n = 3.0, noise = 0.05). The 2×2 figure shows: total loss (semilog, 5 seeds overlaid), individual loss components L_eq, L_IC, and L_obs (semilog, 5 seeds overlaid), β̂ convergence for seven different β₀ initial guesses (fixing n₀ = 2.5), and n̂ convergence for seven different n₀ initial guesses (fixing β₀ = 4.0). Panels C/D use the same initial-guess grid as experiment 4, revealing which starting points converge reliably vs stall or diverge.
+Diagnostic experiment on the **canonical oscillatory case** (β = 5.0, n = 3.0, noise = 0.05). The 2×2 figure shows: total loss (semilog, 5 seeds overlaid), individual loss components L_eq, L_IC, and L_obs (semilog, 5 seeds overlaid), β̂ convergence for seven different β₀ initial guesses (fixing n₀ = 2.5), and n̂ convergence for seven different n₀ initial guesses (fixing β₀ = 4.0).
 
 ---
 
@@ -181,11 +175,11 @@ This diagnostic experiment examines how the loss components and parameter estima
 | 1 Noise sweep + classical | 5 noise levels | 5 | 10 000 | 250 000 |
 | 2 Partial observation | 3 designs | 5 | 10 000 | 150 000 |
 | 3 Sampling density | 4 counts | 5 | 10 000 | 200 000 |
-| 4 Initial guesses | 7×7 grid | 1 | 10 000 | 490 000 |
+| 4 Initial guesses | 9×9 grid | 1 | 10 000 | 810 000 |
 | 5 Regime comparison | 4 cases | 5 | 10 000 | 200 000 |
 | 6 Loss weights | 5 λ_f values | 5 | 10 000 | 250 000 |
 | 7 Convergence | 1 cond. + 14 init. guesses | 5 / 1 | 10 000 | 190 000 |
-| **Total** | | | | **1 730 000** |
+| **Total** | | | | **2 050 000** |
 
 Approximate wall-clock time: 25–55 h on CPU, 2–5 h on GPU.  
 L-BFGS-B fitting in exp 1, 2, and 3 adds negligible compute (seconds per fit).
@@ -238,6 +232,7 @@ results/
                 └── inverse_prediction.png
 
 figures/
+├── param_space.png              # (β, n) bifurcation diagram — paper intro figure
 ├── exp1_noise_sweep.png
 ├── exp4_initial_guess.png
 └── exp7_convergence.png
@@ -250,13 +245,13 @@ tables/
 └── exp3_sampling_density.tex    # intermediate: sampling density detail
 ```
 
-All `.tex` table files use the `booktabs` package (`\toprule`, `\midrule`, `\bottomrule`). Add `\usepackage{booktabs}` to your LaTeX preamble.
+All `.tex` table files use the `booktabs` package (`\toprule`, `\midrule`, `\bottomrule`). Tables are typeset at `\small` with reduced column padding (`\tabcolsep` = 5 pt); footnote rows use `\footnotesize`. Add `\usepackage{booktabs}` to your LaTeX preamble.
 
 ---
 
 ## Cluster execution
 
-The `jobs/` directory contains SLURM scripts for the cluster. Each experiment has its own job script (`exp{N}_<name>_job.sh`) configured for 12 h wall time and 8 GB memory. Submit each independently so they run in parallel:
+The `jobs/` directory contains SLURM scripts for the cluster. Most experiments use 12 h wall time and 8 GB memory. Experiment 4 is configured for 48 h (81 runs × 10 000 iterations). Submit each independently so they run in parallel:
 
 ```bash
 sbatch jobs/exp1_noise_sweep_job.sh
@@ -291,4 +286,4 @@ Full macOS list: `requirements_mac.txt`. For cluster (Linux): `requirements_linu
 
 ## Reproducibility
 
-All random seeds are fixed per run; results are deterministic given the same hardware and library versions. The pilot script (`scripts/experiments/run_pilot.py`) is intended for pipeline validation and figure layout checks only — it uses a reduced iteration budget and results should not be interpreted as final. The full-budget configuration defined in each experiment driver is required to reproduce the paper figures and tables.
+All random seeds are fixed per run; results are deterministic given the same hardware and library versions. The pilot script (`scripts/experiments/pilot.py`) is intended for pipeline validation and figure layout checks only — it uses a reduced iteration budget and results should not be interpreted as final. The full-budget configuration defined in each experiment driver is required to reproduce the paper figures and tables.

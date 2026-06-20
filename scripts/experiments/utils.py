@@ -28,7 +28,7 @@ import scipy.integrate
 import scipy.stats
 import tensorflow as tf
 
-from data.data import protein_repressilator_rhs
+from datasets.data import protein_repressilator_rhs
 
 # Match the paper's LaTeX typesetting (Computer Modern) without requiring a LaTeX install.
 plt.rcParams.update({
@@ -44,7 +44,6 @@ default_n_points = 1000
 
 # Function to ensure necessary directories exist
 def ensure_project_directories():
-    os.makedirs("datasets", exist_ok=True)
     os.makedirs("results", exist_ok=True)
     os.makedirs("figures", exist_ok=True)
 

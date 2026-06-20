@@ -64,7 +64,7 @@ scripts_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if scripts_dir not in sys.path:
     sys.path.insert(0, scripts_dir)
 
-from experiments.experiment_utils import (
+from experiments.utils import (
     aggregate_metrics,
     ensure_project_directories,
     jonckheere_terpstra_p_value,
@@ -73,7 +73,7 @@ from experiments.experiment_utils import (
     write_csv,
     write_run_manifest,
 )
-from data.data import protein_repressilator_rhs
+from datasets.data import protein_repressilator_rhs
 from scripts.pinns.inverse import run_inverse
 
 true_beta = 5.0
@@ -137,13 +137,24 @@ def _fmt(mean, std):
     return f"${mean:.3f} \\pm {std:.3f}$"
 
 
-def _fmt_p(p):
+def _stars(p):
+    if p is None or p >= 0.05:
+        return ""
+    return "***" if p < 0.001 else ("**" if p < 0.01 else "*")
+
+
+def _fmt_stars(mean, std, p):
+    s = _stars(p)
+    base = f"${mean:.3f} \\pm {std:.3f}$"
+    return base + (f"\\rlap{{\\textsuperscript{{{s}}}}}" if s else "")
+
+
+def _fmt_jt(p):
     if p is None:
         return "--"
-    if p < 0.001:
-        return r"$p < 0.001$ ***"
-    stars = "**" if p < 0.01 else ("*" if p < 0.05 else "")
-    return f"$p = {p:.3f}$ {stars}".strip()
+    s = _stars(p)
+    label = "$p < 0.001$" if p < 0.001 else f"$p = {p:.3f}$"
+    return f"{label}{(' ' + s) if s else ''}".strip()
 
 
 def _write_latex_table(path, summary_rows, raw_rows, jt_p_pinn):
@@ -151,7 +162,7 @@ def _write_latex_table(path, summary_rows, raw_rows, jt_p_pinn):
     table_order = ["3/3", "2/3", "1/3"]
     rows_by_design = {r["design"]: r for r in summary_rows}
 
-    jt_label = _fmt_p(jt_p_pinn) if jt_p_pinn is not None else "--"
+    jt_label = _fmt_jt(jt_p_pinn)
 
     header = (
         r"\begin{table}[htbp]" + "\n"
@@ -160,18 +171,14 @@ def _write_latex_table(path, summary_rows, raw_rows, jt_p_pinn):
         r"(mean $\pm$ SD, $n = 5$ seeds) for PINN and L-BFGS-B under three "
         r"observation designs. Both methods use the full three-equation ODE; "
         r"L-BFGS-B minimises MSE only on the observed species while the PINN "
-        r"additionally enforces the ODE residual on all species at collocation points. "
-        r"$p$ (PINN vs L-BFGS-B): two-sided Mann--Whitney U at each design. "
-        r"JT (PINN trend 3/3$\to$1/3): Jonckheere--Terpstra test for monotonic "
-        r"degradation as fewer repressors are observed; "
-        r"$p = " + jt_label.replace("$", "") + r"$.}" + "\n"
+        r"additionally enforces the ODE residual on all species at collocation points.}" + "\n"
         r"\label{tab:exp2_partial_observation}" + "\n"
-        r"\small" + "\n"
-        r"\begin{tabular}{lccccc}" + "\n"
+        r"{\small\setlength{\tabcolsep}{5pt}%" + "\n"
+        r"\begin{tabular}{lcccc}" + "\n"
         r"\toprule" + "\n"
-        r" & \multicolumn{2}{c}{Parameter error} & \multicolumn{2}{c}{State RMSE} & \\" + "\n"
+        r" & \multicolumn{2}{c}{Parameter error} & \multicolumn{2}{c}{State RMSE} \\" + "\n"
         r"\cmidrule(lr){2-3}\cmidrule(lr){4-5}" + "\n"
-        r"Repressors & PINN & L-BFGS-B & PINN & L-BFGS-B & $p$ (PINN vs L-BFGS-B) \\" + "\n"
+        r"Repressors & PINN & L-BFGS-B & PINN & L-BFGS-B \\" + "\n"
         r"\midrule"
     )
 
@@ -180,24 +187,28 @@ def _write_latex_table(path, summary_rows, raw_rows, jt_p_pinn):
         row = rows_by_design.get(design)
         if row is None:
             continue
-        pinn_param = _fmt(row["parameter_rel_error_mean"], row["parameter_rel_error_std"])
-        pinn_rmse  = _fmt(row["state_rmse_mean"], row["state_rmse_std"])
-        cls_param  = _fmt(row["classical_parameter_rel_error_mean"], row["classical_parameter_rel_error_std"])
-        cls_rmse   = _fmt(row["classical_state_rmse_mean"], row["classical_state_rmse_std"])
         pinn_vals = [r["parameter_rel_error"] for r in raw_rows if r["design"] == design]
         cls_vals  = [r["classical_parameter_rel_error"] for r in raw_rows if r["design"] == design]
         p = None
         if len(pinn_vals) >= 2 and len(cls_vals) >= 2:
             _, p = mannwhitneyu(pinn_vals, cls_vals, alternative="two-sided")
+        pinn_param = _fmt_stars(row["parameter_rel_error_mean"], row["parameter_rel_error_std"], p)
+        pinn_rmse  = _fmt(row["state_rmse_mean"], row["state_rmse_std"])
+        cls_param  = _fmt(row["classical_parameter_rel_error_mean"], row["classical_parameter_rel_error_std"])
+        cls_rmse   = _fmt(row["classical_state_rmse_mean"], row["classical_state_rmse_std"])
         label = f"{design} (baseline)" if design == "3/3" else design
         body_lines.append(
-            f"{label} & {pinn_param} & {cls_param} & {pinn_rmse} & {cls_rmse} & {_fmt_p(p)} \\\\"
+            f"{label} & {pinn_param} & {cls_param} & {pinn_rmse} & {cls_rmse} \\\\"
         )
 
     footer = (
         r"\bottomrule" + "\n"
-        r"\multicolumn{6}{l}{\footnotesize *** $p < 0.001$, ** $p < 0.01$, * $p < 0.05$.} \\" + "\n"
-        r"\end{tabular}" + "\n"
+        r"\multicolumn{5}{l}{\footnotesize Superscripts on PINN: Mann--Whitney U vs L-BFGS-B. "
+        r"JT trend (3/3$\to$1/3): "
+        + jt_label
+        + r".} \\" + "\n"
+        r"\multicolumn{5}{l}{\footnotesize *** $p < 0.001$, ** $p < 0.01$, * $p < 0.05$.} \\" + "\n"
+        r"\end{tabular}}" + "\n"
         r"\end{table}"
     )
 

@@ -46,7 +46,7 @@ scripts_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if scripts_dir not in sys.path:
     sys.path.insert(0, scripts_dir)
 
-from experiments.experiment_utils import (
+from experiments.utils import (
     aggregate_metrics,
     ensure_project_directories,
     finalize_figure,
@@ -59,7 +59,7 @@ from experiments.experiment_utils import (
     write_csv,
     write_run_manifest,
 )
-from data.data import protein_repressilator_rhs
+from datasets.data import protein_repressilator_rhs
 from scripts.pinns.inverse import run_inverse
 
 true_beta = 5.0
@@ -301,8 +301,7 @@ def main():
 
     def _jt_annotation(ax, p_value):
         label = f"JT: {format_p_value_label(p_value)} {p_value_to_stars(p_value)}".strip()
-        ax.text(0.97, 0.97, label, transform=ax.transAxes, ha="right", va="top", fontsize=8,
-                bbox=dict(boxstyle="round,pad=0.2", facecolor="white", alpha=0.85, edgecolor="0.7"))
+        ax.text(0.97, 0.97, label, transform=ax.transAxes, ha="right", va="top", fontsize=9.5)
 
     # Panel A: β recovery (PINN only) + JT trend annotation
     _ribbon(axes[0, 0], PINN_COLOR, None, beta_means, beta_stds, marker="o")

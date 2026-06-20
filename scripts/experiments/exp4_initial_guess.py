@@ -4,22 +4,23 @@ Experiment 4 — Initial parameter guesses.
 Question: How sensitive is inverse-PINN training to the initial guesses for β and n?
 
 Design:
-  - True parameters: β = 5.0, n = 3.0
+  - True parameters: β = 5.0, n = 3.0 (canonical oscillatory case)
   - Fixed noise level: 0.05; all three repressors observed; stride = 1 (dense)
-  - 7×7 grid of initial guesses:
-      β₀ ∈ {2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0}  (true β = 5.0 included)
-      n₀ ∈ {1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5}  (true n  = 3.0 included)
-  - 1 seed per grid cell (49 total runs); 10000 iterations each
-  - The grid covers broad offsets to reveal attraction basins and failure modes
+  - 9×9 grid of initial guesses with truth at the exact centre (index 4/8).
+    Escalating symmetric offsets from truth (±0.5, ±1, ±2) plus one extreme per axis:
+      β₀ ∈ {1.0, 3.0, 4.0, 4.5, 5.0, 5.5, 6.0, 7.0, 15.0}  (true β = 5.0 at index 4)
+      n₀ ∈ {1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 5.0, 10.0}  (true n  = 3.0 at index 4;
+                                                               minimum n = 1.0, physiological floor)
+  - 1 seed per grid cell (81 total runs); 10000 iterations each
+  - The true parameters β = 5.0, n = 3.0 are those of the synthetic dataset used for training
 
-Figure: single heatmap showing combined parameter error over the (β₀, n₀) grid
+Figure: single heatmap of combined relative parameter error over the (β₀, n₀) grid
   - Combined error: 0.5 × (|Δβ|/β + |Δn|/n) per grid cell
   - Log-scale colormap to reveal structure even when most errors are small
-  - Arrow annotation marking the true parameter location (β=5.0, n=3.0),
-    which are the true values of the synthetic dataset used for training
+  - Arrow annotation labelled "Truth" marks the true parameter location (β = 5.0, n = 3.0)
 
 Key finding expected: the loss landscape is non-convex — some (β₀, n₀) combinations
-trap the optimiser far from the true parameters. The contour reveals the reliable-recovery
+trap the optimiser far from the true parameters. The heatmap reveals the reliable-recovery
 basin, which may be surprisingly narrow or irregular.
 """
 
@@ -32,7 +33,7 @@ scripts_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if scripts_dir not in sys.path:
     sys.path.insert(0, scripts_dir)
 
-from experiments.experiment_utils import (
+from experiments.utils import (
     aggregate_metrics,
     ensure_project_directories,
     finalize_figure,
@@ -45,15 +46,12 @@ from scripts.pinns.inverse import run_inverse
 true_beta = 5.0
 true_n = 3.0
 noise_level = 0.05
-beta_guesses = [2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]
-n_guesses = [1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5]
+beta_guesses = [1.0, 3.0, 4.0, 4.5, 5.0, 5.5, 6.0, 7.0, 15.0]
+n_guesses = [1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 5.0, 10.0]
 seeds = [0]
 train_iterations = 10000
 results_dir = "results/exp4_initial_guess"
 figure_path = "figures/exp4_initial_guess.png"
-
-CONTOUR_THRESHOLD = 0.10  # 10% relative error contour
-
 
 RAW_CSV_FIELDNAMES = ["beta_guess", "n_guess", "seed", "beta_rel_error", "n_rel_error", "parameter_rel_error", "state_rmse", "outdir"]
 
@@ -208,12 +206,12 @@ def main():
 
     if star_bx is not None and star_nx is not None:
         ax.annotate(
-            "Truth",
+            r"$\mathit{Truth}$",
             xy=(star_bx, star_nx),
-            xytext=(star_bx + 0.6, star_nx + 0.6),
+            xytext=(star_bx + 0.8, star_nx + 0.8),
             fontsize=plt.rcParams["font.size"],
             color="black",
-            arrowprops=dict(arrowstyle="->", color="black", lw=1.2, shrinkA=10),
+            arrowprops=dict(arrowstyle="->", color="black", lw=1.2, shrinkA=4),
         )
 
     cbar = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)

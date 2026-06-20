@@ -62,7 +62,7 @@ scripts_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if scripts_dir not in sys.path:
     sys.path.insert(0, scripts_dir)
 
-from experiments.experiment_utils import (
+from experiments.utils import (
     aggregate_metrics,
     ensure_project_directories,
     evenly_spaced_observation_indices,
@@ -72,7 +72,7 @@ from experiments.experiment_utils import (
     write_csv,
     write_run_manifest,
 )
-from data.data import protein_repressilator_rhs
+from datasets.data import protein_repressilator_rhs
 from scripts.pinns.inverse import run_inverse
 
 true_beta = 5.0
@@ -135,13 +135,24 @@ def _fmt(mean, std):
     return f"${mean:.3f} \\pm {std:.3f}$"
 
 
-def _fmt_p(p):
+def _stars(p):
+    if p is None or p >= 0.05:
+        return ""
+    return "***" if p < 0.001 else ("**" if p < 0.01 else "*")
+
+
+def _fmt_stars(mean, std, p):
+    s = _stars(p)
+    base = f"${mean:.3f} \\pm {std:.3f}$"
+    return base + (f"\\rlap{{\\textsuperscript{{{s}}}}}" if s else "")
+
+
+def _fmt_jt(p):
     if p is None:
         return "--"
-    if p < 0.001:
-        return r"$p < 0.001$ ***"
-    stars = "**" if p < 0.01 else ("*" if p < 0.05 else "")
-    return f"$p = {p:.3f}$ {stars}".strip()
+    s = _stars(p)
+    label = "$p < 0.001$" if p < 0.001 else f"$p = {p:.3f}$"
+    return f"{label}{(' ' + s) if s else ''}".strip()
 
 
 def _pinn_vs_cls_p(raw_rows, group_key, group_val):
@@ -158,7 +169,7 @@ def _write_sampling_density_table(path, summary_rows, raw_rows, jt_p_pinn):
     rows_by_count = {int(r["observation_count"]): r for r in summary_rows}
     table_order = [100, 50, 25, 10]
 
-    jt_label = _fmt_p(jt_p_pinn) if jt_p_pinn is not None else "--"
+    jt_label = _fmt_jt(jt_p_pinn)
 
     header = (
         r"\begin{table}[htbp]" + "\n"
@@ -168,18 +179,14 @@ def _write_sampling_density_table(path, summary_rows, raw_rows, jt_p_pinn):
         r"counts (evenly spaced across 1000 time points, all 3 repressors observed). "
         r"L-BFGS-B integrates the full ODE trajectory but computes MSE only at the "
         r"observed time points; the PINN additionally enforces the ODE residual at dense "
-        r"collocation points across the full domain. "
-        r"$p$ (PINN vs L-BFGS-B): two-sided Mann--Whitney U at each count. "
-        r"JT (PINN trend 100$\to$10): Jonckheere--Terpstra test for monotonic "
-        r"degradation as fewer time points are observed; "
-        r"$p = " + jt_label.replace("$", "") + r"$.}" + "\n"
+        r"collocation points across the full domain.}" + "\n"
         r"\label{tab:exp3_sampling_density}" + "\n"
-        r"\small" + "\n"
-        r"\begin{tabular}{lccccc}" + "\n"
+        r"{\small\setlength{\tabcolsep}{5pt}%" + "\n"
+        r"\begin{tabular}{lcccc}" + "\n"
         r"\toprule" + "\n"
-        r" & \multicolumn{2}{c}{Parameter error} & \multicolumn{2}{c}{State RMSE} & \\" + "\n"
+        r" & \multicolumn{2}{c}{Parameter error} & \multicolumn{2}{c}{State RMSE} \\" + "\n"
         r"\cmidrule(lr){2-3}\cmidrule(lr){4-5}" + "\n"
-        r"Time points & PINN & L-BFGS-B & PINN & L-BFGS-B & $p$ (PINN vs L-BFGS-B) \\" + "\n"
+        r"Time points & PINN & L-BFGS-B & PINN & L-BFGS-B \\" + "\n"
         r"\midrule"
     )
 
@@ -188,20 +195,24 @@ def _write_sampling_density_table(path, summary_rows, raw_rows, jt_p_pinn):
         row = rows_by_count.get(count)
         if row is None:
             continue
-        pinn_param = _fmt(row["parameter_rel_error_mean"], row["parameter_rel_error_std"])
+        p = _pinn_vs_cls_p(raw_rows, "observation_count", count)
+        pinn_param = _fmt_stars(row["parameter_rel_error_mean"], row["parameter_rel_error_std"], p)
         pinn_rmse  = _fmt(row["state_rmse_mean"], row["state_rmse_std"])
         cls_param  = _fmt(row["classical_parameter_rel_error_mean"], row["classical_parameter_rel_error_std"])
         cls_rmse   = _fmt(row["classical_state_rmse_mean"], row["classical_state_rmse_std"])
-        p = _pinn_vs_cls_p(raw_rows, "observation_count", count)
         label = "100 (baseline)" if count == 100 else str(count)
         body_lines.append(
-            f"{label} & {pinn_param} & {cls_param} & {pinn_rmse} & {cls_rmse} & {_fmt_p(p)} \\\\"
+            f"{label} & {pinn_param} & {cls_param} & {pinn_rmse} & {cls_rmse} \\\\"
         )
 
     footer = (
         r"\bottomrule" + "\n"
-        r"\multicolumn{6}{l}{\footnotesize *** $p < 0.001$, ** $p < 0.01$, * $p < 0.05$.} \\" + "\n"
-        r"\end{tabular}" + "\n"
+        r"\multicolumn{5}{l}{\footnotesize Superscripts on PINN: Mann--Whitney U vs L-BFGS-B. "
+        r"JT trend (100$\to$10): "
+        + jt_label
+        + r".} \\" + "\n"
+        r"\multicolumn{5}{l}{\footnotesize *** $p < 0.001$, ** $p < 0.01$, * $p < 0.05$.} \\" + "\n"
+        r"\end{tabular}}" + "\n"
         r"\end{table}"
     )
 
@@ -233,7 +244,7 @@ def _load_exp2_raw(exp2_results_dir):
 
 
 def _write_combined_observability_table(
-    path, partial_obs_raw, density_summary_rows, density_raw_rows,
+    path, partial_obs_raw, density_summary_rows, density_raw_rows, jt_p_density=None,
 ):
     os.makedirs(os.path.dirname(path), exist_ok=True)
 
@@ -248,6 +259,14 @@ def _write_combined_observability_table(
     )
     partial_by_design = {r["design"]: r for r in partial_summary}
 
+    # JT trend for partial observation (3/3 → 1/3)
+    partial_vals_by_design = metric_values_by_group(partial_obs_raw, "design", "parameter_rel_error")
+    jt_p_partial = jonckheere_terpstra_p_value(
+        [partial_vals_by_design.get(d, []) for d in partial_design_order]
+    )
+    jt_label_partial = _fmt_jt(jt_p_partial)
+    jt_label_density = _fmt_jt(jt_p_density)
+
     # --- sampling density block ---
     density_by_count = {int(r["observation_count"]): r for r in density_summary_rows}
     density_order = [100, 50, 25, 10]
@@ -261,19 +280,18 @@ def _write_combined_observability_table(
         r"\centering" + "\n"
         r"\caption{Measurement observability. Parameter error and state RMSE "
         r"(mean $\pm$ SD, $n = 5$ seeds) for PINN and L-BFGS-B across two "
-        r"observability dimensions: number of observed repressor species (top) and "
-        r"number of observed time points (bottom). "
-        r"Both methods use the full three-equation ODE. "
-        r"L-BFGS-B minimises MSE only on the available measurements; "
-        r"the PINN additionally enforces the ODE residual at dense collocation points. "
-        r"$p$-values (two-sided Mann--Whitney U) compare PINN vs L-BFGS-B "
-        r"parameter error at each condition.}" + "\n"
+        r"observability dimensions: observed repressor species (top) and "
+        r"observed time points (bottom). "
+        r"Both methods use the full three-equation ODE; "
+        r"L-BFGS-B minimises MSE on available measurements only while the PINN "
+        r"additionally enforces the ODE residual at dense collocation points.}" + "\n"
         r"\label{tab:observability}" + "\n"
-        r"\begin{tabular}{lcccccc}" + "\n"
+        r"{\small\setlength{\tabcolsep}{5pt}%" + "\n"
+        r"\begin{tabular}{lcccc}" + "\n"
         r"\toprule" + "\n"
-        r" & \multicolumn{2}{c}{Parameter error} & \multicolumn{2}{c}{State RMSE} & \\" + "\n"
+        r" & \multicolumn{2}{c}{Parameter error} & \multicolumn{2}{c}{State RMSE} \\" + "\n"
         r"\cmidrule(lr){2-3}\cmidrule(lr){4-5}" + "\n"
-        r"Condition & PINN & L-BFGS-B & PINN & L-BFGS-B & $p$ (PINN vs L-BFGS-B) \\" + "\n"
+        r"Condition & PINN & L-BFGS-B & PINN & L-BFGS-B \\" + "\n"
         r"\midrule"
     )
 
@@ -281,50 +299,56 @@ def _write_combined_observability_table(
 
     # Section 1: observed species
     body_lines.append(
-        r"\multicolumn{6}{l}{\textit{Observed repressors (1000 time points)}} \\"
+        r"\multicolumn{5}{l}{\textit{Repressors}} \\"
     )
     for design in partial_design_order:
         row = partial_by_design.get(design)
         if row is None:
             continue
-        pinn_param = _fmt(row["parameter_rel_error_mean"], row["parameter_rel_error_std"])
-        pinn_rmse  = _fmt(row["state_rmse_mean"], row["state_rmse_std"])
         if has_cls_partial:
             cls_param = _fmt(row["classical_parameter_rel_error_mean"], row["classical_parameter_rel_error_std"])
             cls_rmse  = _fmt(row["classical_state_rmse_mean"], row["classical_state_rmse_std"])
             p = _pinn_vs_cls_p(partial_obs_raw, "design", design)
-            p_str = _fmt_p(p)
         else:
-            cls_param = cls_rmse = p_str = "--"
+            cls_param = cls_rmse = "--"
+            p = None
+        pinn_param = _fmt_stars(row["parameter_rel_error_mean"], row["parameter_rel_error_std"], p)
+        pinn_rmse  = _fmt(row["state_rmse_mean"], row["state_rmse_std"])
         label = r"\quad 3/3 (baseline)" if design == "3/3" else rf"\quad {design}"
         body_lines.append(
-            f"{label} & {pinn_param} & {cls_param} & {pinn_rmse} & {cls_rmse} & {p_str} \\\\"
+            f"{label} & {pinn_param} & {cls_param} & {pinn_rmse} & {cls_rmse} \\\\"
         )
 
     body_lines.append(r"\midrule")
 
     # Section 2: observation count
     body_lines.append(
-        r"\multicolumn{6}{l}{\textit{Observed time points (all 3 repressors)}} \\"
+        r"\multicolumn{5}{l}{\textit{Time points}} \\"
     )
     for count in density_order:
         row = density_by_count.get(count)
         if row is None:
             continue
-        pinn_param = _fmt(row["parameter_rel_error_mean"], row["parameter_rel_error_std"])
+        p = _pinn_vs_cls_p(density_raw_rows, "observation_count", count)
+        pinn_param = _fmt_stars(row["parameter_rel_error_mean"], row["parameter_rel_error_std"], p)
         pinn_rmse  = _fmt(row["state_rmse_mean"], row["state_rmse_std"])
         cls_param  = _fmt(row["classical_parameter_rel_error_mean"], row["classical_parameter_rel_error_std"])
         cls_rmse   = _fmt(row["classical_state_rmse_mean"], row["classical_state_rmse_std"])
-        p = _pinn_vs_cls_p(density_raw_rows, "observation_count", count)
         label = r"\quad 100 (baseline)" if count == 100 else rf"\quad {count}"
         body_lines.append(
-            f"{label} & {pinn_param} & {cls_param} & {pinn_rmse} & {cls_rmse} & {_fmt_p(p)} \\\\"
+            f"{label} & {pinn_param} & {cls_param} & {pinn_rmse} & {cls_rmse} \\\\"
         )
 
     footer = (
         r"\bottomrule" + "\n"
-        r"\multicolumn{6}{l}{\footnotesize *** $p < 0.001$, ** $p < 0.01$, * $p < 0.05$.} \\" + "\n"
-        r"\end{tabular}" + "\n"
+        r"\multicolumn{5}{l}{\footnotesize Superscripts on PINN: Mann--Whitney U vs L-BFGS-B.} \\" + "\n"
+        r"\multicolumn{5}{l}{\footnotesize JT trend (3/3$\to$1/3): "
+        + jt_label_partial
+        + r"; JT trend (100$\to$10): "
+        + jt_label_density
+        + r".} \\" + "\n"
+        r"\multicolumn{5}{l}{\footnotesize *** $p < 0.001$, ** $p < 0.01$, * $p < 0.05$.} \\" + "\n"
+        r"\end{tabular}}" + "\n"
         r"\end{table}"
     )
 
@@ -441,6 +465,7 @@ def main():
     if partial_obs_raw is not None:
         _write_combined_observability_table(
             observability_table_path, partial_obs_raw, summary_rows, raw_rows,
+            jt_p_density=jt_p_pinn,
         )
     else:
         print("Skipping combined observability table: exp2 raw results not found. Run exp2 first.")

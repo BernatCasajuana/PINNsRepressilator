@@ -180,7 +180,7 @@ Diagnostic experiment. The 2×2 figure shows: total loss (semilog, 5 seeds overl
 | 7 Convergence | 1 cond. + 14 init. guesses | 5 / 1 | 10 000 | 190 000 |
 | **Total** | | | | **2 050 000** |
 
-Approximate wall-clock time: 25–65 h on CPU, 2–6 h on GPU.  
+Approximate wall-clock time: 25–55 h on CPU, 2–5 h on GPU.  
 L-BFGS-B fitting in exp 1, 2, and 3 adds negligible compute (seconds per fit).
 
 ---

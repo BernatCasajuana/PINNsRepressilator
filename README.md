@@ -34,8 +34,6 @@ pinns-repressilator/
 │   ├── pinns/              # PINN training modules
 │   │   ├── forward.py      # Forward problem: known β, n → predict trajectory
 │   │   └── inverse.py      # Inverse problem: estimate β, n from observations
-│   ├── figures/            # Standalone figure scripts
-│   │   └── param_space.py    # Repressilator (β, n) bifurcation diagram for paper intro
 │   └── experiments/        # Experiment drivers (one file per experiment)
 │       ├── utils.py         # Shared: seeding, noise model, statistics, plotting
 │       ├── exp1_noise_sweep.py         # Noise sensitivity (σ sweep) + PINN vs classical baseline
@@ -231,7 +229,6 @@ results/
                 └── inverse_prediction.png
 
 figures/
-├── param_space.png              # (β, n) bifurcation diagram — paper intro figure
 ├── exp1_noise_sweep.png
 ├── exp4_initial_guess.png
 └── exp7_convergence.png

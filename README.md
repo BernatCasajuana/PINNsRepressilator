@@ -34,6 +34,8 @@ pinns-repressilator/
 │   ├── pinns/              # PINN training modules
 │   │   ├── forward.py      # Forward problem: known β, n → predict trajectory
 │   │   └── inverse.py      # Inverse problem: estimate β, n from observations
+│   ├── figures/            # Standalone figure scripts
+│   │   └── dynamics.py       # Two-panel dynamics figure (oscillatory + stable, σ=0); caches results under results/dynamics_figure/
 │   └── experiments/        # Experiment drivers (one file per experiment)
 │       ├── utils.py         # Shared: seeding, noise model, statistics, plotting
 │       ├── exp1_noise_sweep.py         # Noise sensitivity (σ sweep) + PINN vs classical baseline
@@ -229,6 +231,7 @@ results/
                 └── inverse_prediction.png
 
 figures/
+├── dynamics.png                 # two-panel dynamics figure (oscillatory + stable, σ=0)
 ├── exp1_noise_sweep.png
 ├── exp4_initial_guess.png
 └── exp7_convergence.png

@@ -1,0 +1,21 @@
+{
+  "expected_runs": 5,
+  "expected_total_train_iterations": 50000,
+  "experiment_name": "exp7_convergence",
+  "figure_path": "figures/exp7_convergence.png",
+  "generated_at_utc": "2026-06-21T04:16:34+00:00",
+  "noise_level": 0.05,
+  "note": "parameter_evolution sampled every 100 iterations (controlled by SaveVariablesCallback period=100 in inverse.py)",
+  "results_dir": "results/exp7_convergence",
+  "script_path": "/home/10040984@uvic.local/projects/pinns-repressilator/scripts/experiments/exp7_convergence.py",
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "train_iterations": 10000,
+  "true_beta": 5.0,
+  "true_n": 3.0
+}

@@ -1,21 +1,10 @@
 # =========================
 # EXPERIMENT OUTPUTS
 # =========================
-results/
+# results/
 # figures/
 logs/
-outputs/
-tests/
 def/
-
-# *.png
-*.jpg
-*.jpeg
-*.pdf
-*.csv
-*.txt
-*.h5
-*.ckpt
 
 # IMPORTANT EXCEPTION (see note below)
 !jobs/*.sh

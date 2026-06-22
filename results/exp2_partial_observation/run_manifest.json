@@ -1,0 +1,44 @@
+{
+  "classical_method": "L-BFGS-B (scipy.optimize.minimize + scipy.integrate.odeint, MSE on observed species only)",
+  "expected_runs": 15,
+  "expected_total_train_iterations": 150000,
+  "experiment_name": "exp2_partial_observation",
+  "generated_at_utc": "2026-06-20T16:03:37+00:00",
+  "noise_level": 0.05,
+  "observation_designs": [
+    {
+      "label": "3/3",
+      "observed_components": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "label": "2/3",
+      "observed_components": [
+        0,
+        1
+      ]
+    },
+    {
+      "label": "1/3",
+      "observed_components": [
+        0
+      ]
+    }
+  ],
+  "results_dir": "results/exp2_partial_observation",
+  "script_path": "/home/10040984@uvic.local/projects/pinns-repressilator/scripts/experiments/exp2_partial_observation.py",
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "table_path": "tables/exp2_partial_observation.tex",
+  "train_iterations": 10000,
+  "true_beta": 5.0,
+  "true_n": 3.0
+}

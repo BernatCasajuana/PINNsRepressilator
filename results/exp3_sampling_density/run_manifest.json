@@ -1,0 +1,29 @@
+{
+  "classical_method": "L-BFGS-B (scipy.optimize.minimize + scipy.integrate.odeint, MSE at sparse indices over full trajectory)",
+  "expected_runs": 20,
+  "expected_total_train_iterations": 200000,
+  "experiment_name": "exp3_sampling_density",
+  "generated_at_utc": "2026-06-21T10:49:20+00:00",
+  "noise_level": 0.05,
+  "observability_table_path": "tables/observability.tex",
+  "observation_counts": [
+    10,
+    25,
+    50,
+    100
+  ],
+  "results_dir": "results/exp3_sampling_density",
+  "script_path": "/home/10040984@uvic.local/projects/pinns-repressilator/scripts/experiments/exp3_sampling_density.py",
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "table_path": "tables/exp3_sampling_density.tex",
+  "total_grid_points": 1000,
+  "train_iterations": 10000,
+  "true_beta": 5.0,
+  "true_n": 3.0
+}

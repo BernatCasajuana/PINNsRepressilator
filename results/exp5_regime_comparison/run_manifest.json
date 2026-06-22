@@ -1,0 +1,44 @@
+{
+  "expected_runs": 20,
+  "expected_total_train_iterations": 200000,
+  "experiment_name": "exp5_regime_comparison",
+  "generated_at_utc": "2026-06-20T20:59:49+00:00",
+  "noise_level": 0.05,
+  "regimes": [
+    {
+      "beta": 5.0,
+      "case": "stable_beta5",
+      "n": 1.5,
+      "regime": "stable"
+    },
+    {
+      "beta": 8.0,
+      "case": "stable_beta8",
+      "n": 1.5,
+      "regime": "stable"
+    },
+    {
+      "beta": 5.0,
+      "case": "oscillatory_beta5",
+      "n": 3.0,
+      "regime": "oscillatory"
+    },
+    {
+      "beta": 8.0,
+      "case": "oscillatory_beta8",
+      "n": 3.0,
+      "regime": "oscillatory"
+    }
+  ],
+  "results_dir": "results/exp5_regime_comparison",
+  "script_path": "/home/10040984@uvic.local/projects/pinns-repressilator/scripts/experiments/exp5_regime_comparison.py",
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "table_path": "tables/exp5_regime_comparison.tex",
+  "train_iterations": 10000
+}

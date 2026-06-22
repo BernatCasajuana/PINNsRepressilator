@@ -1,0 +1,29 @@
+{
+  "expected_runs": 25,
+  "expected_total_train_iterations": 250000,
+  "experiment_name": "exp6_loss_weights",
+  "generated_at_utc": "2026-06-21T01:47:20+00:00",
+  "lambda_0": 1.0,
+  "lambda_f_values": [
+    0.01,
+    0.1,
+    1.0,
+    10.0,
+    100.0
+  ],
+  "lambda_y": 1.0,
+  "noise_level": 0.05,
+  "results_dir": "results/exp6_loss_weights",
+  "script_path": "/home/10040984@uvic.local/projects/pinns-repressilator/scripts/experiments/exp6_loss_weights.py",
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "table_path": "tables/exp6_loss_weights.tex",
+  "train_iterations": 10000,
+  "true_beta": 5.0,
+  "true_n": 3.0
+}

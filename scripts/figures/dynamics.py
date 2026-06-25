@@ -27,8 +27,9 @@ plt.rcParams.update({
     "axes.formatter.useoffset": False,
 })
 
-FIGURE_PATH  = "figures/dynamics.png"
-OUTDIR_BASE  = "results/dynamics_figure/runs"
+FIGURE_PATH            = "figures/dynamics.png"
+FIGURE_PATH_OSC        = "figures/dynamics_oscillatory.png"
+OUTDIR_BASE            = "results/dynamics_figure/runs"
 SEED         = 0
 COLORS       = ("#0072B2", "#E69F00", "#009E73")
 REPRESSORS   = ["Repressor 1", "Repressor 2", "Repressor 3"]
@@ -75,18 +76,21 @@ def _run_or_load(case, seed):
     return t, y_true, y_pred
 
 
-def _plot_panel(ax, t, y_true, y_pred, case):
+def _plot_panel(ax, t, y_true, y_pred, case, xlim=None, show_panel=True, title=None):
     t_flat = t.flatten()
     for i in range(3):
         ax.plot(t_flat, y_true[:, i], "-",  color=COLORS[i], label=f"{REPRESSORS[i]} (Data)")
         ax.plot(t_flat, y_pred[:, i], "--", color=COLORS[i], label=f"{REPRESSORS[i]} (PINN)")
     ax.set_xlabel("Time")
     ax.set_ylabel("Protein Concentration")
-    ax.set_title(case["title"])
+    ax.set_title(title if title is not None else case["title"])
     ax.legend()
-    ax.text(-0.02, 1.04, case["panel"], transform=ax.transAxes,
-            fontsize=15, fontweight="bold", va="bottom", ha="left",
-            color="black", clip_on=False)
+    if xlim is not None:
+        ax.set_xlim(xlim)
+    if show_panel:
+        ax.text(-0.02, 1.04, case["panel"], transform=ax.transAxes,
+                fontsize=15, fontweight="bold", va="bottom", ha="left",
+                color="black", clip_on=False)
 
 
 def main():
@@ -101,5 +105,20 @@ def main():
     print(f"Saved: {FIGURE_PATH}")
 
 
+def main_oscillatory():
+    """Single-panel figure for the oscillatory case only."""
+    os.makedirs("figures", exist_ok=True)
+    _, ax = plt.subplots(1, 1, figsize=(12, 4.5))
+
+    case = CASES[0]  # oscillatory
+    t, y_true, y_pred = _run_or_load(case, SEED)
+    _plot_panel(ax, t, y_true, y_pred, case, show_panel=False,
+                title=r"Oscillatory Dynamics Prediction ($\beta=5,\,n=3,\,\sigma=0$)")
+
+    finalize_figure(FIGURE_PATH_OSC)
+    print(f"Saved: {FIGURE_PATH_OSC}")
+
+
 if __name__ == "__main__":
     main()
+    main_oscillatory()

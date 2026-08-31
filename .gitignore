@@ -3,6 +3,7 @@
 # =========================
 # results/
 # figures/
+archives/
 
 # IMPORTANT EXCEPTION (see note below)
 !jobs/*.sh

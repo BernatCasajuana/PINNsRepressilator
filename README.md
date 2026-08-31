@@ -124,7 +124,7 @@ All inverse PINNs use the same architecture (Section 2.3 of the paper):
 - Trainable scalars: β̂, n̂ (initial guesses configurable per experiment; defaults β₀ = 4.0, n₀ = 2.5)
 - Optimizer: Adam, lr = 10⁻³
 
-All experiments use **10 000 iterations**.
+All experiments use **10 000 iterations**, except experiment 4 (**2 000 iterations**, deliberately — see below).
 
 ---
 
@@ -146,12 +146,14 @@ Observation counts of 10, 25, 50, and 100 points (1%–10% of the 1000-point gri
 
 ### Experiment 4 — Initial guess sensitivity
 
-Because the joint loss landscape over (β, n, network weights) is non-convex, the initial guesses can steer the optimiser into different local optima. This experiment runs a 9×9 grid of initial guesses with the true parameter location at the exact centre (position 4/8), using escalating symmetric offsets (±0.5, ±1, ±2 around truth) plus one extreme case per axis:
+Because the joint loss landscape over (β, n, network weights) is non-convex, initial guesses can steer the optimiser into different local optima. The objective of this experiment is to visualise the resulting error landscape: how parameter-recovery error grows as the initial guess sits increasingly far from the ground truth, before the optimiser has had time to fully converge. It does this with a 9×9 **uniform** grid of initial guesses, with the true parameters landing exactly at the grid centre (index 4/8):
 
-- β₀ ∈ {1.0, 3.0, 4.0, 4.5, 5.0, 5.5, 6.0, 7.0, 15.0} (true β = 5.0)
-- n₀ ∈ {1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 5.0, 10.0} (true n = 3.0, minimum n = 1.0)
+- β₀ ∈ {1, 2, 3, 4, 5, 6, 7, 8, 9} (true β = 5.0)
+- n₀ ∈ {1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0} (true n = 3.0)
 
-One seed per cell (81 total runs at 10 000 iterations each). The figure is a log-scale heatmap of combined relative parameter error over the (β₀, n₀) plane. The true parameter location is marked with an arrow annotation labelled "Truth".
+Training is deliberately capped at **2 000 iterations** rather than the usual 10 000: at 10 000 iterations the optimiser converges to within noise from nearly every starting point in this grid, leaving no landscape to show; at 2 000 iterations, guesses far from the truth have not fully converged, so the resulting error surface reflects the real cost of a bad initial guess. One seed per cell (81 total runs).
+
+The figure is a 3D surface over the (β₀, n₀) plane, with height and color both driven by combined relative parameter error on a log10 scale (so adjacent-node shading is an honest reading of a dense, uniform grid rather than an interpolation across large gaps); tick labels on the z-axis and colorbar are converted back to the actual error magnitude for readability. A marker and drop-line highlight the true parameters. The driver also supports resuming an interrupted run (it skips any (β₀, n₀, seed) already present in the raw CSV) and refuses to silently mix in stale runs from a prior design that used a different `train_iterations`.
 
 ### Experiment 5 — Dynamical regime comparison
 
@@ -174,13 +176,13 @@ Diagnostic experiment. The 2×2 figure shows: total loss (semilog, 5 seeds overl
 | 1 Noise sweep + classical | 5 noise levels | 5 | 10 000 | 250 000 |
 | 2 Partial observation | 3 designs | 5 | 10 000 | 150 000 |
 | 3 Sampling density | 4 counts | 5 | 10 000 | 200 000 |
-| 4 Initial guesses | 9×9 grid | 1 | 10 000 | 810 000 |
+| 4 Initial guesses | 9×9 uniform grid | 1 | 2 000 | 162 000 |
 | 5 Regime comparison | 4 cases | 5 | 10 000 | 200 000 |
 | 6 Loss weights | 5 λ_f values | 5 | 10 000 | 250 000 |
 | 7 Convergence | 1 cond. + 14 init. guesses | 5 / 1 | 10 000 | 190 000 |
-| **Total** | | | | **2 050 000** |
+| **Total** | | | | **1 402 000** |
 
-Approximate wall-clock time: 25–55 h on CPU, 2–5 h on GPU.  
+Approximate wall-clock time: 18–40 h on CPU, 2–4 h on GPU.  
 L-BFGS-B fitting in exp 1, 2, and 3 adds negligible compute (seconds per fit).
 
 ---
@@ -250,7 +252,7 @@ All `.tex` table files use the `booktabs` package (`\toprule`, `\midrule`, `\bot
 
 ## Cluster execution
 
-The `jobs/` directory contains SLURM scripts for the cluster. Most experiments use 12 h wall time and 8 GB memory. Experiment 4 is configured for 48 h (81 runs × 10 000 iterations). Submit each independently so they run in parallel:
+The `jobs/` directory contains SLURM scripts for the cluster. Most experiments use 12 h wall time and 8 GB memory. Experiment 4's job requests 48 h as a safety margin (81 runs, though each is now only 2 000 iterations). Submit each independently so they run in parallel:
 
 ```bash
 sbatch jobs/exp1_noise_sweep_job.sh

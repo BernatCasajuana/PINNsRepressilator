@@ -21,8 +21,12 @@ Design:
   - 1 seed per grid cell (81 total runs, 2000 iterations each)
   - The true parameters β = 5.0, n = 3.0 are those of the synthetic dataset used for training
 
-Figure: 3D error-landscape surface over the (β₀, n₀) plane — z = log10(combined
-relative parameter error), with a marker + drop-line at the true parameters.
+Figure: 3D error-landscape surface over the (Δβ₀, Δn₀) plane, where Δβ₀ = β₀ − β_true
+and Δn₀ = n₀ − n_true — z = log10(combined relative parameter error). Axes show the
+OFFSET of the initial guess from the truth (not the raw guess value), so the true
+parameters always sit at the grid centre (0, 0). No separate marker or legend is
+needed for that point: it's already labelled by the axes and already plotted as one
+of the ordinary grid-point dots.
   - Combined error: 0.5 × (|Δβ|/β + |Δn|/n) per grid cell
   - Because the grid is uniform and dense, plot_surface's bilinear shading between
     adjacent nodes is an honest reading of the surface (unlike the old sparse grid,
@@ -207,7 +211,7 @@ def main():
     )
 
     # 3D error landscape over the (beta0, n0) plane, built from the dense uniform
-    # 13x13 grid. Unlike the old sparse grid, every adjacent pair of nodes here is
+    # 9x9 grid. Unlike the old sparse grid, every adjacent pair of nodes here is
     # close together, so plot_surface's bilinear shading between them is an honest
     # reading of the surface rather than an interpolation across unmeasured gaps.
     combined_heatmap = np.full((len(n_guesses), len(beta_guesses)), np.nan)
@@ -217,7 +221,14 @@ def main():
         combined_heatmap[ni, bi] = row["parameter_rel_error_mean"]
 
     log_error = np.log10(np.clip(combined_heatmap, 1e-4, None))
-    X, Y = np.meshgrid(beta_guesses, n_guesses)
+
+    # Plot axes show the OFFSET of each initial guess from the truth, not the raw
+    # guess value, so the true parameters land at (0, 0) -- the grid centre -- no
+    # matter what beta_true/n_true happen to be. bi/ni indices above are unaffected:
+    # they still key off the absolute beta_guesses/n_guesses used to run the PINNs.
+    beta_deltas = [round(b - true_beta, 10) for b in beta_guesses]
+    n_deltas = [round(n - true_n, 10) for n in n_guesses]
+    X, Y = np.meshgrid(beta_deltas, n_deltas)
 
     plt.rcParams['axes.formatter.useoffset'] = False
 
@@ -260,20 +271,18 @@ def main():
 
     # Tight to the actual sampled range (not padded out to 0): the plotted region
     # should only ever cover grid points that were really measured.
-    ax.set_xlim3d(min(beta_guesses), max(beta_guesses))
-    ax.set_ylim3d(min(n_guesses), max(n_guesses))
+    ax.set_xlim3d(min(beta_deltas), max(beta_deltas))
+    ax.set_ylim3d(min(n_deltas), max(n_deltas))
     ax.set_zlim3d(z_min, z_max)
     ax.invert_yaxis()  # n0 runs high-to-low from front to back instead of low-to-high
 
-    # Tick marks sit exactly at the tested grid values. Both axes happen to
-    # start at 1.0, and at the shared front corner mplot3d draws both "1"
-    # labels right on top of each other -- blanking the n0 one (keeping its
-    # tick mark) avoids the doubled-up "1".
-    ax.set_xticks(beta_guesses)
-    ax.set_yticks(n_guesses)
-    n_tick_labels = [f"{v:g}" for v in n_guesses]
-    n_tick_labels[n_guesses.index(1.0)] = ""
-    ax.set_yticklabels(n_tick_labels)
+    # Tick marks sit exactly at the tested grid offsets. Unlike the old raw-value
+    # axes (which both happened to start at 1.0 and drew a doubled-up "1" label at
+    # the shared front corner), the min/max offsets differ between beta and n here,
+    # so no corner tick needs to be blanked out.
+    ax.set_xticks(beta_deltas)
+    ax.set_yticks(n_deltas)
+    ax.set_yticklabels([f"{v:g}" for v in n_deltas])
 
     # Uniform z-tick label offset from the axis line: mplot3d's default pad is a
     # fixed data-space (not screen-space) gap, so under perspective it looks
@@ -295,23 +304,18 @@ def main():
     ax.xaxis.set_rotate_label(False)
     ax.yaxis.set_rotate_label(False)
     ax.zaxis.set_rotate_label(False)
-    ax.set_xlabel(r"Initial $\beta_0$", fontsize=11, labelpad=10, rotation=0)
-    ax.set_ylabel(r"Initial $n_0$", fontsize=11, labelpad=20, rotation=0)
-    ax.set_zlabel("Combined Parameter Error", fontsize=11, labelpad=20, rotation=90)
+    # Delta notation (rather than spelling out "beta0 - beta_true") reads as
+    # "distance/difference from truth" at a glance -- the true parameters sit at
+    # offset (0, 0) by construction, so no separate marker is needed to point
+    # that out (see below).
+    ax.set_xlabel(r"$\Delta\beta_0 = \beta_0 - \beta_{\mathrm{true}}$", labelpad=10, rotation=0)
+    ax.set_ylabel(r"$\Delta n_0 = n_0 - n_{\mathrm{true}}$", labelpad=20, rotation=0)
+    ax.set_zlabel("Combined Parameter Error", labelpad=20, rotation=90)
 
-    # Drop-line to the axis floor (the true data minimum, since the z-axis is now
-    # tight to the data), in a color distinct from the black grid-point dots.
-    TRUTH_COLOR = "#C62828"
-    true_z = log_error[n_guesses.index(true_n), beta_guesses.index(true_beta)]
-    ax.plot(
-        [true_beta, true_beta], [true_n, true_n], [z_min, true_z],
-        color=TRUTH_COLOR, linestyle="--", linewidth=2.2, zorder=10,
-    )
-    ax.scatter(
-        [true_beta], [true_n], [true_z], color="black", s=45,
-        edgecolor=TRUTH_COLOR, linewidth=0.9, depthshade=False, zorder=11,
-        label=rf"True parameters ($\beta$={true_beta}, $n$={true_n})",
-    )
+    # No separate truth marker/legend: the axis labels already say (0, 0) is the
+    # truth, and the (0, 0) point is already part of the black grid-point dots
+    # plotted above -- adding a second, differently-colored marker there would
+    # just be redundant.
 
     # Standard vertical colorbar next to the (also vertical) z-axis. Its ticks
     # are a fixed reference scale -- whole decades (10^0, 10^-1, ...) that a
@@ -322,24 +326,29 @@ def main():
     # than the z-axis (not just a duplicate), that label is no longer redundant.
     cbar_ticks = list(range(decade_lo, decade_hi + 1))
     cbar = fig.colorbar(surf, ax=ax, shrink=0.45, aspect=18, pad=0.12, ticks=cbar_ticks)
-    cbar.set_label("Error Magnitude (log scale)")
+    # Colorbar label reads left-to-right as "title, then bar, then tick numbers":
+    # moved off the default right-hand label position (which stacks it past the
+    # tick numbers, outside the bar) onto the left instead.
+    cbar.ax.yaxis.set_label_position("left")
+    cbar.set_label("Error Magnitude (log scale)", labelpad=10)
     # set_yticklabels() alone doesn't reliably register as a FixedFormatter here,
     # so finalize_figure()'s "only touch non-fixed formatters" sweep silently
     # overwrites it with raw decimal values right before saving (same issue as
     # before with the z-axis). Setting the FixedFormatter explicitly avoids that.
     cbar.ax.yaxis.set_major_formatter(mticker.FixedFormatter([rf"$10^{{{t}}}$" for t in cbar_ticks]))
+    # Moved from its default right-hand slot (next to the z-axis) into the empty
+    # upper-left region of the figure. fig.colorbar() doesn't support that
+    # placement directly, so the axes position is overridden by hand afterward.
     cbar_pos = cbar.ax.get_position()
-    cbar.ax.set_position([cbar_pos.x0 - 0.05, cbar_pos.y0 + 0.06, cbar_pos.width, cbar_pos.height])
-
-    # handletextpad pulls the marker in the legend swatch right up against its
-    # text, and the legend sits above the plot (not inline in the 3D scene).
-    ax.legend(loc="upper left", frameon=False, fontsize=9, handletextpad=0.3)
+    cbar.ax.set_position([0.27, 0.50, cbar_pos.width, cbar_pos.height])
 
     # bbox_inches="tight" crops the saved PNG to the actual rendered content
-    # (plot + legend + colorbar) instead of the full fixed-size canvas --
-    # tight_layout() can't do this for 3D axes, which is why the figure had a
-    # lot of unused blank margin otherwise.
-    finalize_figure(figure_path, bbox_inches="tight")
+    # (plot + colorbar) instead of the full fixed-size canvas -- tight_layout()
+    # can't do this for 3D axes, which is why the figure had a lot of unused
+    # blank margin otherwise. mplot3d's get_tightbbox() doesn't reliably include
+    # the z-axis label in that automatic bbox, so it gets silently cropped off
+    # unless it's passed explicitly via bbox_extra_artists.
+    finalize_figure(figure_path, bbox_inches="tight", bbox_extra_artists=[ax.zaxis.label])
 
 
 if __name__ == "__main__":

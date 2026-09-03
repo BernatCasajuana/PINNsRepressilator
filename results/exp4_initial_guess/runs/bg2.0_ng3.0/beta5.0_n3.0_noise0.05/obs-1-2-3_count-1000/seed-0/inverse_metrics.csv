@@ -1,0 +1,17 @@
+metric,value
+dataset_path,beta5.0_n3.0_noise0.05_seed0
+beta_true,5.000000
+n_true,3.000000
+beta_estimated,3.434723
+n_estimated,3.265930
+beta_abs_error,1.565277
+n_abs_error,0.265930
+beta_rel_error,0.313055
+n_rel_error,0.088643
+parameter_rel_error,0.200849
+state_rmse,0.157670
+observation_stride,1
+observation_count,1000
+observed_components,"0,1,2"
+train_iterations,2000
+random_seed,0

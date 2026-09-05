@@ -173,6 +173,16 @@ def main():
                 }
             )
 
+    build_outputs(raw_rows, results_dir, figure_path)
+
+
+def build_outputs(raw_rows, results_dir, figure_path):
+    """Aggregate raw per-run rows into summary/significance CSVs and the figure.
+
+    Split out from main() so the figure can be regenerated (e.g. after a
+    styling tweak) from an existing exp1_noise_sweep_raw.csv without rerunning
+    the full PINN/classical-fitting sweep.
+    """
     summary_rows = aggregate_metrics(
         raw_rows,
         group_keys=["noise_level"],
@@ -295,9 +305,13 @@ def main():
         if show_eb:
             ax.fill_between(positions, m - s, m + s, color=color, alpha=0.15, zorder=3)
 
+    LABEL_FONTSIZE = 14
+    TITLE_FONTSIZE = 16
+    TITLE_FONTSIZE_LONG = 13
+
     def _xformat(ax):
         ax.set_xticks(positions, noise_labels)
-        ax.set_xlabel(r"Relative $\sigma$")
+        ax.set_xlabel(r"Relative $\sigma$", fontsize=LABEL_FONTSIZE)
 
     def _jt_annotation(ax, p_value):
         label = f"JT: {format_p_value_label(p_value)} {p_value_to_stars(p_value)}".strip()
@@ -307,16 +321,16 @@ def main():
     _ribbon(axes[0, 0], PINN_COLOR, None, beta_means, beta_stds, marker="o")
     _jt_annotation(axes[0, 0], jt_p_beta)
     _xformat(axes[0, 0])
-    axes[0, 0].set_ylabel("Relative Error")
-    axes[0, 0].set_title(r"$\beta$ Recovery")
+    axes[0, 0].set_ylabel("Relative Error", fontsize=LABEL_FONTSIZE)
+    axes[0, 0].set_title(r"$\beta$ Recovery", fontsize=TITLE_FONTSIZE)
     _label(axes[0, 0], 'A')
 
     # Panel B: n recovery (PINN only) + JT trend annotation
     _ribbon(axes[0, 1], PINN_COLOR, None, n_means, n_stds)
     _jt_annotation(axes[0, 1], jt_p_n)
     _xformat(axes[0, 1])
-    axes[0, 1].set_ylabel("Relative Error")
-    axes[0, 1].set_title(r"$n$ Recovery")
+    axes[0, 1].set_ylabel("Relative Error", fontsize=LABEL_FONTSIZE)
+    axes[0, 1].set_title(r"$n$ Recovery", fontsize=TITLE_FONTSIZE)
     _label(axes[0, 1], 'B')
 
     # Panel C: combined parameter error — PINN vs L-BFGS-B
@@ -324,8 +338,8 @@ def main():
     _ribbon(axes[1, 0], CLASSICAL_COLOR, "L-BFGS-B",
             cls_param_means, cls_param_stds, linestyle="--", marker="s")
     _xformat(axes[1, 0])
-    axes[1, 0].set_ylabel("Error")
-    axes[1, 0].set_title("Parameter Recovery — PINN vs L-BFGS-B")
+    axes[1, 0].set_ylabel("Error", fontsize=LABEL_FONTSIZE)
+    axes[1, 0].set_title("Parameter Recovery — PINN vs L-BFGS-B", fontsize=TITLE_FONTSIZE_LONG)
     axes[1, 0].legend(fontsize=8, handlelength=3)
     _label(axes[1, 0], 'C')
 
@@ -334,8 +348,8 @@ def main():
     _ribbon(axes[1, 1], CLASSICAL_COLOR, "L-BFGS-B",
             cls_state_means, cls_state_stds, linestyle="--", marker="s")
     _xformat(axes[1, 1])
-    axes[1, 1].set_ylabel("State RMSE")
-    axes[1, 1].set_title("Trajectory Reconstruction — PINN vs L-BFGS-B")
+    axes[1, 1].set_ylabel("State RMSE", fontsize=LABEL_FONTSIZE)
+    axes[1, 1].set_title("Trajectory Reconstruction — PINN vs L-BFGS-B", fontsize=TITLE_FONTSIZE_LONG)
     axes[1, 1].legend(fontsize=8, handlelength=3)
     _label(axes[1, 1], 'D')
 

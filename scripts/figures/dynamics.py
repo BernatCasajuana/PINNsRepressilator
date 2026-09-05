@@ -76,14 +76,15 @@ def _run_or_load(case, seed):
     return t, y_true, y_pred
 
 
-def _plot_panel(ax, t, y_true, y_pred, case, xlim=None, show_panel=True, title=None):
+def _plot_panel(ax, t, y_true, y_pred, case, xlim=None, show_panel=True, title=None,
+                 label_fontsize=None, title_fontsize=None):
     t_flat = t.flatten()
     for i in range(3):
         ax.plot(t_flat, y_true[:, i], "-",  color=COLORS[i], label=f"{REPRESSORS[i]} (Data)")
         ax.plot(t_flat, y_pred[:, i], "--", color=COLORS[i], label=f"{REPRESSORS[i]} (PINN)")
-    ax.set_xlabel("Time")
-    ax.set_ylabel("Protein Concentration")
-    ax.set_title(title if title is not None else case["title"])
+    ax.set_xlabel("Time", fontsize=label_fontsize)
+    ax.set_ylabel("Protein Concentration", fontsize=label_fontsize)
+    ax.set_title(title if title is not None else case["title"], fontsize=title_fontsize)
     ax.legend()
     if xlim is not None:
         ax.set_xlim(xlim)
@@ -113,7 +114,8 @@ def main_oscillatory():
     case = CASES[0]  # oscillatory
     t, y_true, y_pred = _run_or_load(case, SEED)
     _plot_panel(ax, t, y_true, y_pred, case, show_panel=False,
-                title=r"Oscillatory Dynamics Prediction ($\beta=5,\,n=3,\,\sigma=0$)")
+                title=r"Oscillatory Dynamics Prediction ($\beta=5,\,n=3,\,\sigma=0$)",
+                label_fontsize=16, title_fontsize=18)
 
     finalize_figure(FIGURE_PATH_OSC)
     print(f"Saved: {FIGURE_PATH_OSC}")

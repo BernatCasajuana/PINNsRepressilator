@@ -39,6 +39,7 @@ import sys
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 import numpy as np
+from matplotlib.text import Text
 
 scripts_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if scripts_dir not in sys.path:
@@ -308,9 +309,44 @@ def main():
     # "distance/difference from truth" at a glance -- the true parameters sit at
     # offset (0, 0) by construction, so no separate marker is needed to point
     # that out (see below).
-    ax.set_xlabel(r"$\Delta\beta_0 = \beta_0 - \beta_{\mathrm{true}}$", labelpad=10, rotation=0)
-    ax.set_ylabel(r"$\Delta n_0 = n_0 - n_{\mathrm{true}}$", labelpad=20, rotation=0)
-    ax.set_zlabel("Combined Parameter Error", labelpad=20, rotation=90)
+    ax.set_xlabel(r"$\Delta\beta_0 = \beta_0 - \beta_{\mathrm{true}}$", labelpad=10, rotation=0, fontsize=18)
+    ax.set_ylabel(r"$\Delta n_0 = n_0 - n_{\mathrm{true}}$", labelpad=20, rotation=0, fontsize=18)
+    ax.set_zlabel("Combined Parameter Error", labelpad=20, rotation=90, fontsize=15)
+    # mplot3d hardcodes label ha/va to 'center' in a class-level _AXINFO table
+    # shared across all three axes, and reapplies it on every draw (see
+    # axis3d.py _draw_labels), which silently overrides any ha= passed to
+    # set_xlabel/set_ylabel above. Swapping in a fresh 'label' dict on just
+    # this axis (instead of mutating the shared one, which would also shift
+    # the y/z labels) is what actually nudges the label sideways off its
+    # computed anchor and survives the redraw.
+    ax.xaxis._axinfo["label"] = {**ax.xaxis._axinfo["label"], "ha": "right"}
+    ax.yaxis._axinfo["label"] = {**ax.yaxis._axinfo["label"], "ha": "left"}
+
+    def _nudge_label_x(label, dx_points):
+        """Pull a 3D axis label back toward center by a fixed screen-space
+        amount, on top of whatever the ha='right'/'left' override above and
+        mplot3d's own per-draw position computation already place it at.
+
+        mplot3d recomputes and overwrites label.set_position(...) on every
+        draw (axis3d.py _draw_labels) using data-space coordinates, so a
+        one-off position/transform tweak made now would just be discarded at
+        render time. Shadowing set_position with a wrapper that intercepts
+        each of those calls and offsets them in display space (points) is
+        what makes the nudge survive every redraw, including the extra ones
+        bbox_inches='tight' triggers while computing the crop.
+        """
+        original_set_position = Text.set_position.__get__(label)
+        dx_pixels = dx_points * fig.dpi / 72.0
+
+        def wrapped(xy):
+            trans = label.get_transform()
+            dx_disp, dy_disp = trans.transform(xy)
+            original_set_position(trans.inverted().transform((dx_disp + dx_pixels, dy_disp)))
+
+        label.set_position = wrapped
+
+    _nudge_label_x(ax.xaxis.label, dx_points=12)   # beta label: pull back right
+    _nudge_label_x(ax.yaxis.label, dx_points=-28)  # n label: pull back left
 
     # No separate truth marker/legend: the axis labels already say (0, 0) is the
     # truth, and the (0, 0) point is already part of the black grid-point dots
@@ -340,7 +376,7 @@ def main():
     # upper-left region of the figure. fig.colorbar() doesn't support that
     # placement directly, so the axes position is overridden by hand afterward.
     cbar_pos = cbar.ax.get_position()
-    cbar.ax.set_position([0.27, 0.50, cbar_pos.width, cbar_pos.height])
+    cbar.ax.set_position([0.27, 0.38, cbar_pos.width, cbar_pos.height])
 
     # bbox_inches="tight" crops the saved PNG to the actual rendered content
     # (plot + colorbar) instead of the full fixed-size canvas -- tight_layout()
@@ -348,7 +384,10 @@ def main():
     # blank margin otherwise. mplot3d's get_tightbbox() doesn't reliably include
     # the z-axis label in that automatic bbox, so it gets silently cropped off
     # unless it's passed explicitly via bbox_extra_artists.
-    finalize_figure(figure_path, bbox_inches="tight", bbox_extra_artists=[ax.zaxis.label])
+    finalize_figure(
+        figure_path, bbox_inches="tight",
+        bbox_extra_artists=[ax.xaxis.label, ax.yaxis.label, ax.zaxis.label],
+    )
 
 
 if __name__ == "__main__":

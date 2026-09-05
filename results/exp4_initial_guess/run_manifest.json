@@ -14,7 +14,7 @@
   "expected_total_train_iterations": 162000,
   "experiment_name": "exp4_initial_guess",
   "figure_path": "figures/exp4_initial_guess.png",
-  "generated_at_utc": "2026-09-03T08:38:37+00:00",
+  "generated_at_utc": "2026-09-05T16:02:55+00:00",
   "n_guesses": [
     1.0,
     1.5,
@@ -28,7 +28,7 @@
   ],
   "noise_level": 0.05,
   "results_dir": "results/exp4_initial_guess",
-  "script_path": "/home/10040984@uvic.local/projects/pinns-repressilator/scripts/experiments/exp4_initial_guess.py",
+  "script_path": "/Users/bernatcasajuana/projects/pinns-repressilator/scripts/experiments/exp4_initial_guess.py",
   "seeds": [
     0
   ],
